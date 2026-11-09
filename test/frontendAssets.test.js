@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 /**
  * Contrato de assets del frontend.
@@ -1262,52 +1262,28 @@ test('las fuentes candy se sirven como WOFF2 propios y sin bloquear el render', 
 
 
 
-test('los rotulos del case no se repintan: el DOM solo guarda nombre accesible y estado', () => {
+test('los rotulos del panel se leen y el arte ya no los pinta', () => {
   const css = read(STYLE_PATH);
 
-  // Las capsulas de la fila inferior (AUTOGIRO · AUTO · GIRAR · APUESTA) vienen
-  // vacias en `console-mobile.webp`: los rotulos visibles los pone la hoja de
-  // estilo (los `::after` de la seccion 6, la ventana de chips del autogiro y
-  // `.bet-readout`). Lo que ninguna regla puede volver a pintar es el texto del
-  // DOM, que solo guarda el nombre accesible: se recorta a 1x1 en una sola
-  // regla compartida, que ademas es la unica que toca a `#spin-label`.
-  const start = css.indexOf('.machine__side .controls #btn-feature .btn__title,');
-  assert.ok(start > -1, 'Debe existir una regla unica para los rotulos impresos en el case');
+  // El modulo escribe los rotulos en el DOM: no queda ninguna capsula decorativa
+  // que los repinte con `content` sobre la consola movil.
+  assert.doesNotMatch(css, /content: "AUTO";/, 'La capsula AUTO del lienzo ya no existe');
+  assert.doesNotMatch(css, /content: "GIRAR";/, 'La capsula GIRAR del lienzo ya no existe');
+  assert.doesNotMatch(css, /content: "MAX";/, 'La pastilla MAX del lienzo ya no existe');
 
-  const block = css.slice(start, css.indexOf('}', start));
-  for (const selector of [
-    '.machine__side .controls #btn-auto .btn__title,',
-    '.machine__side .controls__bet #btn-bet-max .chip__label,',
-    '.machine__side .controls #spin-label {'
-  ]) {
-    assert.ok(
-      block.includes(selector),
-      `La regla compartida debe cubrir ${selector.replace(/[,\s{]+$/, '')}`
-    );
-  }
-
-  for (const declaration of [
-    'position: absolute;',
-    'width: 1px;',
-    'height: 1px;',
-    'overflow: hidden;',
-    'clip-path: inset(50%);'
-  ]) {
-    assert.ok(block.includes(declaration), `Un rotulo impreso en el case necesita \`${declaration}\``);
-  }
-
-  // Oculto de verdad: sin colocacion ni tipografia propia sobre el arte.
-  assert.doesNotMatch(
-    block,
-    /\b(?:top|left|right|bottom|transform|font-size|letter-spacing|color|text-shadow):/,
-    'Si la placa la pinta el case, el rotulo no necesita geometria ni estilo de texto'
-  );
-
-  // El case es la unica capa grafica de la consola movil.
+  // En movil los rotulos vuelven al flujo: eran 1x1 porque el arte del pie los
+  // pintaba y ahora el panel los necesita legibles.
   assert.match(
     css,
-    /\.machine__side \.controls \{[\s\S]*?background: url\('\.\.\/\.\.\/assets\/santa-crush\/console\/console-mobile\.webp'\) no-repeat center \/ contain;/,
-    'La carcasa movil debe pintar `console-mobile.webp`, que ya trae los discos y las capsulas dibujados'
+    /\.machine__side \.controls #btn-feature \.btn__title,[\s\S]*?clip-path: none;/,
+    'La regla que devuelve los rotulos al flujo cubre FEVER, AUTO, MAX y el GIRAR'
+  );
+
+  // La consola movil ya no pinta su lienzo: el panel lo construye el modulo.
+  assert.doesNotMatch(
+    css,
+    /url\('\.\.\/\.\.\/assets\/santa-crush\/console\/console-mobile\.webp'\)/,
+    'La carcasa movil de discos y capsulas se retiro del CSS'
   );
 
   // Y los textos siguen en el HTML: son el nombre accesible de cada pulsador y
@@ -1321,15 +1297,15 @@ test('los rotulos del case no se repintan: el DOM solo guarda nombre accesible y
   assert.match(
     html,
     /<span class="chip__label">MAX<\/span>/,
-    'El nombre accesible de la apuesta maxima no se borra: solo se oculta'
+    'El nombre accesible de la apuesta maxima no se borra: se pinta como tecla'
   );
   assert.match(
     html,
     /id="btn-auto"[^>]*>[\s\S]*?<span class="btn__title">AUTO<\/span>/,
     'El pulsador AUTO conserva su texto como nombre accesible'
   );
-  assert.match(html, /<span class="balance__value" id="balance-value">/, 'El saldo dinamico sigue en el HUD');
-  assert.match(html, /<strong class="bet-readout__value" id="bet-readout">/, 'La apuesta dinamica sigue en el HUD');
+  assert.match(html, /<span class="balance__value" id="balance-value">/, 'El saldo dinamico sigue en la cabecera del panel');
+  assert.match(html, /<strong class="bet-readout__value" id="bet-readout">/, 'La apuesta dinamica sigue en el panel');
 });
 test('la consola y el tablero comparten el mismo eje X en movil', () => {
   const css = read(STYLE_PATH);
@@ -1351,38 +1327,33 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   );
   // El ancho sale del alto libre menos la separacion, repartido entre la
   // relacion del marco (1076 / 1447 = 0,7436, la del recorte sin estirar) y la
-  // de la consola (879 / 1775 = 0,4952): 1,2388 en total.
+  // del panel de mandos (0,70 de su ancho): 1,4436 en total.
   // `cqw`/`cqh` en lugar de `%`: dentro de una custom property un `%` se
   // resuelve contra la propiedad que la usa, y el mismo token medía el ancho en
   // `width` y el alto en `height` (el HUD caía 12 px bajo sus placas).
   assert.match(
     machineGrid[0],
-    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - clamp\(4px, 1\.2dvh, 10px\)\) \/ 1\.2388\)\);/,
-    'El ancho de la maquina descuenta marco + separacion + consola del alto libre'
+    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - clamp\(4px, 1\.2dvh, 10px\)\) \/ 1\.4436\)\);/,
+    'El ancho de la maquina descuenta marco + separacion + panel del alto libre'
   );
 
-  // 2) Las dos piezas se miden con esa unidad y con la relacion exacta de su
-  //    lienzo (`contain` sobre una caja con esa relacion llena el 100%).
+  // 2) Las dos piezas se miden con esa unidad. El marco conserva la relacion
+  //    exacta de su lienzo; el panel de mandos es una caja de CSS con su propia
+  //    proporcion (0,70), no un recorte de arte.
   const frameRule = css.match(/\.machine__table\s*\{[^}]*aspect-ratio:\s*1447 \/ 1076;[^}]*\}/);
   assert.ok(frameRule, 'El marco debe declarar la relacion exacta de su recorte, 1447/1076');
   assert.match(frameRule[0], /width:\s*var\(--m-w\);/, 'El marco se mide con `--m-w`');
 
   const caseRule = css.match(
-    /\.machine__side \.controls\s*\{[^}]*aspect-ratio:\s*1775 \/ 879;[^}]*\}/
+    /\.machine__side \.controls\s*\{[^}]*grid-area:\s*console;[^}]*\}[^@]*?\n\}/
   );
-  assert.ok(caseRule, 'La consola debe declarar su relacion 1775/879');
+  assert.ok(caseRule, 'La consola debe declarar su caja en la fila `console`');
   const rule = caseRule[0];
-  assert.match(rule, /grid-area:\s*console;/, 'La consola vive en la fila `console`');
+  assert.match(rule, /--mod:\s*calc\(var\(--m-w\) \* 0\.01\);/, 'La consola declara su propia unidad de escala');
   assert.match(rule, /width:\s*var\(--m-w\);/, 'La consola comparte el ancho exacto del marco');
+  assert.match(rule, /height:\s*calc\(var\(--m-w\) \* 0\.70\);/, 'El panel mide 0,70 de su ancho');
   assert.match(rule, /justify-self:\s*center;/, 'Centrada por rejilla, no por un margen heredado');
-  assert.match(rule, /padding:\s*0;/, 'Sin aire lateral descompensado');
-  assert.match(rule, /border:\s*0;/, 'Sin filo que desplace el dibujo');
-  assert.match(rule, /align-self:\s*center;/, 'La fila no estira el case');
-  assert.match(
-    rule,
-    /background:\s*url\('\.\.\/\.\.\/assets\/santa-crush\/console\/console-mobile\.webp'\)\s*no-repeat\s*center\s*\/\s*contain;/,
-    'El dibujo se pinta centrado en su propia caja'
-  );
+  assert.match(rule, /align-self:\s*center;/, 'La fila no estira el panel');
 
   // 3) El tablero tapa la ventana transparente del marco con % del recorte
   //    (medido: x 8,29-91,57 %, y 42,30-90,45 %), con un pelo de aire por fuera
@@ -1492,7 +1463,7 @@ test('el logo recupera presencia en tablets con aire reservado y sin mover su ba
 
   assert.match(
     midBlock,
-    /--m-w:\s*min\(\s*100cqw,\s*calc\(\(100cqh - var\(--row-gap\) - var\(--logo-air\)\) \/ 1\.2388\)\s*\);/,
+    /--m-w:\s*min\(\s*100cqw,\s*calc\(\(100cqh - var\(--row-gap\) - var\(--logo-air\)\) \/ 1\.4436\)\s*\);/,
     'El aire se descuenta del alto libre y el ancho del viewport sigue siendo el tope'
   );
   assert.match(
@@ -1745,224 +1716,140 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   );
 });
 
-test('el pulsador se hunde en 80 ms al tocarlo y vuelve con la misma curva', () => {
+test('el pulsador del panel se hunde al tocarlo y vuelve con la misma curva', () => {
   const css = read(STYLE_PATH);
 
-  // La transicion vive en la capa tactil (no en `:active`), asi el retorno al
-  // soltar tambien anima y el hundimiento no aparece de golpe.
-  const touchLayer = css.match(/\.machine__side \.controls \.gbtn,[\s\S]*?\}/);
-  assert.ok(touchLayer, 'La capa tactil del case debe declarar sus reglas base');
-  assert.match(
-    touchLayer[0],
-    /transition:\s*transform 0\.08s ease,\s*filter 0\.08s ease,\s*box-shadow 0\.08s ease;/,
-    'El hundimiento entra y sale en 80 ms'
+  // La transicion vive en el pulsador (no en `:active`), asi el retorno al soltar
+  // tambien anima y el hundimiento no aparece de golpe.
+  const layers = [...css.matchAll(/\.machine__side \.controls \.gbtn \{([^}]*)\}/g)]
+    .map((match) => match[1]);
+  assert.ok(layers.length, 'La capa de pulsadores debe declarar sus reglas base');
+  assert.ok(
+    layers.some((body) => /transition:\s*transform 0\.14s/.test(body)),
+    'El pulsador conserva su transicion de relieve'
   );
 
-  // Los seis pulsadores comparten la misma respuesta fisica: 6 % menos y 1 px
-  // hacia abajo, con un punto de brillo que ilumina la tinta del case.
+  // Los seis pulsadores comparten la respuesta fisica del modulo: 3 % menos y
+  // 1 px hacia abajo, con menos luz mientras el dedo esta encima.
   const press = css.match(
-    /\.machine__side \.controls #btn-feature:active:not\(:disabled\),[\s\S]*?transform: scale\(0\.94\) translateY\(1px\);[\s\S]*?filter: brightness\(1\.06\) saturate\(1\.04\);\s*\}/
+    /\.machine__side \.controls \.gbtn:active:not\(:disabled\) \{\s*transform: scale\(0\.97\) translateY\(1px\);\s*filter: brightness\(0\.96\) saturate\(1\.03\);\s*\}/
   );
-  assert.ok(press, 'La seccion 7bis debe hundir el pulsador con `scale(0.94)`');
-  for (const id of ['#btn-feature', '#btn-auto', '.btn--spin', '#btn-bet-down', '#btn-bet-up', '#btn-bet-max']) {
-    assert.ok(press[0].includes(id), `El hundimiento debe cubrir ${id}`);
-  }
+  assert.ok(press, 'La seccion del modulo debe hundir el pulsador con `scale(0.97)`');
 
-  // El origen se clava en el centro de la caja tactil, que ahora es el bbox
-  // medido del disco: el hundimiento cierra el bisel hacia el pulsador fisico y
-  // no desplaza el arte ni un pixel.
+  // El origen se clava en el centro de la tecla: el encogimiento no desplaza el
+  // pulsador dentro de su fila.
   assert.match(
     css,
-    /#btn-feature\s*\{\s*transform-origin:\s*50% 50%;\s*\}/,
-    'FEVER encoge hacia el centro de su disco'
-  );
-  assert.match(
-    css,
-    /#btn-auto\s*\{\s*transform-origin:\s*50% 50%;\s*\}/,
-    'AUTO encoge hacia el centro de su disco'
-  );
-  assert.match(
-    css,
-    /\.btn--spin\s*\{\s*transform-origin:\s*50% 50%;\s*\}/,
-    'El GIRAR encoge hacia el centro de su disco'
+    /\.machine__side \.controls \.gbtn \{\s*transform-origin: 50% 50%;\s*\}/,
+    'El modulo encoge cada tecla hacia su centro'
   );
 });
 
 
-test('la caja tactil de cada pulsador es su bbox del arte y el velo se recorta con --disc', () => {
+test('los pulsadores del panel se miden con el modulo y no con el arte', () => {
   const css = read(STYLE_PATH);
 
-  // Medido sobre `console-mobile.webp` (1775 x 879) con el analisis de alfa y
-  // color: discos x 3,3-18,3 / 18,9-34,3 / 65,2-80,2 / 80,9-96,1 % · y
-  // 40,77-70,60 %, aro del GIRAR x 35,3-64,2 % (la caja tactil se queda con el
-  // cuadrado que cabe entero sobre el disco y encima de la capsula GIRAR:
-  // x 37,9-61,6 % · y 21,4-69,2 %) y el tramo MAX de la capsula APUESTA
-  // x 86,0-92,4 % · y 75,5-80,7 %. La caja tactil es exactamente ese recuadro,
-  // asi que el dedo siempre cae sobre el dibujo.
+  // La consola ya no recorta el lienzo: cada tecla se mide en `--mod`, el 1 % del
+  // ancho del panel, asi que el mismo juego de numeros vale en escritorio y movil.
+  const section = css.slice(css.lastIndexOf('CONSOLA · MODULO DE MANDOS EN CUATRO FILAS'));
+  assert.ok(section.length > 2000, 'La seccion del modulo debe existir al final de la hoja');
+  assert.doesNotMatch(section, /--art-[xywh]:/, 'El modulo no recorta el lienzo');
+  assert.doesNotMatch(section, /url\([^)]*console-desktop\.webp/, 'El modulo no pinta botones del lienzo');
+
   const boxes = [
-    [/\.machine__side \.controls #btn-feature\.gbtn \{([^}]*)\}/, ['left: 3.30%;', 'top: 40.77%;', 'width: 15.00%;', 'height: 29.83%;']],
-    [/\.machine__side \.controls #btn-auto\.gbtn \{([^}]*)\}/, ['left: 18.90%;', 'top: 40.77%;', 'width: 15.40%;', 'height: 29.83%;']],
-    [/\.machine__side \.controls \.btn--spin\.gbtn \{([^}]*)\}/, ['left: 37.9%;', 'top: 21.4%;', 'width: 23.7%;', 'height: 47.8%;']],
-    [/\.machine__side \.controls__bet #btn-bet-down \{([^}]*)\}/, ['left: 65.20%;', 'top: 40.77%;']],
-    [/\.machine__side \.controls__bet #btn-bet-up \{([^}]*)\}/, ['left: 80.90%;', 'top: 40.77%;']],
-    [/\.machine__side \.controls__bet #btn-bet-max \{([^}]*)\}/, ['left: 86.0%;', 'top: 75.5%;', 'width: 6.4%;', 'height: 5.2%;']]
+    ['.machine__side .controls .gbtn#btn-spin', ['width: auto;', 'height: calc(var(--mod) * 19);']],
+    ['.machine__side .controls .gbtn#btn-feature', ['width: auto;', 'height: calc(var(--mod) * 13.6);']],
+    ['.machine__side .controls .gbtn#btn-auto', ['width: auto;', 'height: calc(var(--mod) * 13.6);']]
   ];
-  for (const [pattern, declarations] of boxes) {
-    // Las reglas de `--disc` no llevan geometria: se busca la que la declare
-    // completa, que es la que coloca el pulsador sobre el dibujo.
-    const bodies = [...css.matchAll(new RegExp(pattern.source, 'g'))].map((match) => match[1]);
-    assert.ok(bodies.length, `Falta la regla tactil ${pattern.source}`);
+  for (const [selector, declarations] of boxes) {
+    const bodies = [...css.matchAll(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{([^}]*)\\}`, 'g'))]
+      .map((match) => match[1]);
+    assert.ok(bodies.length, `Falta la regla del modulo ${selector}`);
     assert.ok(
       bodies.some((body) => declarations.every((declaration) => body.includes(declaration))),
-      `Ninguna regla de ${pattern.source} declara ${declarations.join(' ')}`
+      `Ninguna regla de ${selector} declara ${declarations.join(' ')}`
     );
   }
 
-  // Los dos discos que comparten caja declaran una sola vez el tamano comun.
-  const discPair = css.match(
-    /\.machine__side \.controls__bet #btn-bet-down,\s*\n\s*\.machine__side \.controls__bet #btn-bet-up \{([^}]*)\}/
+  // Las tres teclas de la apuesta comparten una sola regla de tecla.
+  const keys = css.match(
+    /\.machine__side \.controls \.gbtn#btn-bet-down,\s*\n\s*\.machine__side \.controls \.gbtn#btn-bet-up,\s*\n\s*\.machine__side \.controls \.gbtn#btn-bet-max \{([^}]*)\}/
   );
-  assert.ok(discPair, 'Los discos − y + comparten su regla base');
-  assert.ok(discPair[1].includes('width: 15.00%;'), 'Los dos discos minus/plus miden 15,00 % de ancho');
-  assert.ok(discPair[1].includes('height: 29.83%;'), 'Los dos discos minus/plus miden 29,83 % de alto');
-
-  // `--disc` (top right bottom left, en % de la caja tactil) recorta el velo del
-  // hundimiento. Con la caja ceñida al bbox del arte el recorte no necesita
-  // aire: si alguien vuelve a estirar una caja para incluir la placa, este es el
-  // valor que debe crecer con ella.
-  const discs = {
-    '.machine__side .controls #btn-feature': '0',
-    '.machine__side .controls #btn-auto': '0',
-    '.machine__side .controls .btn--spin': '0',
-    '.machine__side .controls__bet #btn-bet-down': '0',
-    '.machine__side .controls__bet #btn-bet-up': '0',
-    '.machine__side .controls__bet #btn-bet-max': '0',
-  };
-  for (const [selector, disc] of Object.entries(discs)) {
-    const rule = css.match(
-      new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{\\s*--disc:\\s*([^;]+);`)
-    );
-    assert.ok(rule, `${selector} debe declarar su recorte --disc`);
-    assert.equal(rule[1].trim(), disc, `${selector} recorta el velo a su disco`);
-  }
-
-  // El velo es un `::before` absoluto que se ciñe con `inset: var(--disc)`.
+  assert.ok(keys, 'Las teclas −, + y MAX comparten su regla base');
+  assert.ok(keys[1].includes('width: calc(var(--mod) * 12.4);'), 'Las teclas miden 12,4 `--mod` de ancho');
+  assert.ok(keys[1].includes('border-radius: calc(var(--mod) * 3.4);'), 'Las teclas se redondean con el modulo');
+  // MAX es un pelo mas ancha y dorada.
   assert.match(
     css,
-    /#btn-feature:active:not\(:disabled\)::before,[\s\S]*?#btn-auto:active:not\(:disabled\)::before,[\s\S]*?\.chip\.gbtn:active:not\(:disabled\)::before\s*\{[\s\S]*?inset: var\(--disc\);[\s\S]*?pointer-events: none;/,
-    'El velo de los pulsadores circulares se recorta con `--disc` y no captura el toque'
+    /\.machine__side \.controls \.gbtn#btn-bet-max \{[^}]*width: calc\(var\(--mod\) \* 13\.4\);/,
+    'MAX se lleva el tramo mas ancho de la fila'
   );
 
-  // Un borde duro dibujaria un circulo sobre el aro (y cruzaria la corona del
-  // GIRAR), asi que los circulares difuminan el ultimo tramo con una mascara.
+  // La fila de apuesta reparte las cuatro piezas en una rejilla de teclas y la
+  // lectura se queda con todo el sobrante.
   assert.match(
     css,
-    /#btn-feature:active:not\(:disabled\)::before,[\s\S]*?mask-image: radial-gradient\(closest-side,[\s\S]*?\);/,
-    'El velo circular debe difuminar su borde con una mascara radial'
+    /\.machine__side \.controls__bet \{[^}]*grid-template-columns: auto minmax\(0, 1fr\) auto auto;/,
+    'La fila APUESTA se reparte en âˆ’ / lectura / + / MAX'
   );
   assert.match(
     css,
-    /\.btn--spin:active:not\(:disabled\)::before\s*\{[\s\S]*?mask-image: radial-gradient\(closest-side,/,
-    'El GIRAR tambien difumina el borde de su velo'
+    /\.machine__side \.controls__bet \{[^}]*height: calc\(var\(--mod\) \* 12\.4\);/,
+    'Las teclas de la apuesta miden 12,4 `--mod`'
   );
-
-  // La placa APUESTA es una pildora con aro dorado nitido: borde recto y sin
-  // mascara heredada del grupo circular.
-  const maxVeil = css.match(/#btn-bet-max:active:not\(:disabled\)::before\s*\{[\s\S]*?\}/);
-  assert.ok(maxVeil, 'La placa APUESTA debe tener su propio velo');
-  assert.match(maxVeil[0], /border-radius: 999px;/, 'APUESTA se hunde como pildora');
-  assert.match(maxVeil[0], /mask-image: none;/, 'La pildora anula la mascara circular');
 });
 
 
-test('el reset de pintura del case deja viva la respuesta al toque', () => {
+test('el panel no arrastra la pintura del lienzo y conserva la respuesta al toque', () => {
   const css = read(STYLE_PATH);
+  const section = css.slice(css.lastIndexOf('CONSOLA · MODULO DE MANDOS EN CUATRO FILAS'));
+  assert.ok(section.length > 2000, 'La seccion del modulo debe existir al final de la hoja');
 
-  // El boton candy pinta fondo, halos y un `inset` blanco en `:active`; si el
-  // reset no incluyera ese estado, el velo candy taparia el disco del case.
-  const reset = css.match(
-    /\.machine__side \.controls #btn-spin,\s*\n[\s\S]*?\{\s*background: none;\s*box-shadow: none;\s*border: 0;\s*animation: none;\s*\}/
-  );
-  assert.ok(reset, 'Debe existir un reset de pintura por id para la capa tactil');
-  for (const selector of [
-    '#btn-spin:active:not(:disabled)',
-    '#btn-feature:active:not(:disabled)',
-    '#btn-auto:active:not(:disabled)',
-    '#btn-bet-down:active:not(:disabled)',
-    '#btn-bet-up:active:not(:disabled)',
-    '#btn-bet-max:active:not(:disabled)',
-  ]) {
-    assert.ok(reset[0].includes(selector), `El reset debe cubrir ${selector}, no solo el reposo`);
-  }
-  assert.doesNotMatch(
-    reset[0],
-    /transform:|filter:/,
-    'El reset solo apaga pintura: `transform` y `filter` son el hundimiento'
-  );
+  // Cada pulsador del panel repinta su propio relieve: degradado y sombra de
+  // contacto, sin `url()` del lienzo.
+  assert.doesNotMatch(section, /background[^;]*url\(/, 'El modulo no pinta recortes del lienzo');
 
-  // El reset de reposo/hover se excluye de `:active` para no cancelar el
-  // hundimiento mientras el dedo sigue apoyado (el hover tactil se queda pegado).
-  const restReset = css.match(
-    /\.machine__side \.controls #btn-spin:hover:not\(:disabled\):not\(:active\),[\s\S]*?\{\s*transform: none;\s*filter: none;\s*\}/
-  );
-  assert.ok(restReset, 'El reset de reposo debe usar `:not(:active)`');
-  for (const selector of [
-    '#btn-feature:hover:not(:disabled):not(:active)',
-    '#btn-auto:hover:not(:disabled):not(:active)',
-    '#btn-bet-down:hover:not(:disabled):not(:active)',
-    '#btn-bet-up:hover:not(:disabled):not(:active)',
-    '#btn-bet-max:hover:not(:disabled):not(:active)',
-  ]) {
-    assert.ok(restReset[0].includes(selector), `El reset de reposo debe cubrir ${selector}`);
+  for (const id of ['#btn-bet-down', '#btn-bet-up', '#btn-bet-max', '#btn-spin', '#btn-feature', '#btn-auto']) {
+    assert.ok(
+      section.includes(`.machine__side .controls .gbtn${id}`),
+      `La hoja debe declarar la tecla ${id} dentro del modulo`
+    );
   }
+
+  // El candado del motor se sigue leyendo: el `:disabled` apaga el pulsador sin
+  // moverlo, y el toque (`:active`) es lo unico que lo hunde.
+  assert.match(section, /\.gbtn:active:not\(:disabled\) \{\s*transform: scale\(0\.97\)/, 'El toque sigue vivo');
 });
 
-test('el GIRAR del case recupera el acabado candy: cristal y destellos', () => {
+test('el GIRAR del panel lleva su propia capsula y sus destellos', () => {
   const css = read(STYLE_PATH);
 
-  // El reflejo cuelga de `#btn-spin` (solo ese pulsador) y se recorta al domo
-  // del disco: el velo de pulsación de la sección 7 sigue siendo suyo, pero la
-  // caja es la misma, así el `scale(0.94)` de 7bis no deforma el cristal.
-  const glass = css.match(/\.machine__side \.controls #btn-spin::before\s*\{[\s\S]*?\n  \}/);
-  assert.ok(glass, 'El GIRAR debe declarar su reflejo de cristal');
+  // La capsula rosa con aro dorado se pinta en el modulo: degradado propio y dos
+  // anillos exteriores (`box-shadow` en `0 0 0`) que hacen de marco sin mover caja.
+  const spin = css.match(/\.machine__side \.controls \.gbtn#btn-spin \{([^}]*)\}/);
+  assert.ok(spin, 'El GIRAR debe declarar su propia capsula');
   assert.match(
-    glass[0],
-    /linear-gradient\(180deg, rgba\(255, 255, 255, 0\.6\) 0%, rgba\(255, 255, 255, 0\) 60%\)/,
-    'El reflejo usa el degradado de cristal de la mitad superior'
+    spin[1],
+    /background-image: linear-gradient\(180deg, #ff7c96 0%, #e21c46 44%, #a20c28 100%\);/,
+    'La capsula rosa del GIRAR'
   );
-  assert.match(glass[0], /height: 41%;/, 'El reflejo se queda en la mitad superior del disco');
-  assert.match(glass[0], /mask-image: radial-gradient\(closest-side,/, 'El domo se difumina en el aro');
-  assert.match(glass[0], /pointer-events: none;/, 'El reflejo no captura el toque');
+  assert.match(spin[1], /0 0 0 calc\(var\(--mod\) \* 1\) #ffc21a,/, 'El aro dorado exterior');
+  assert.match(spin[1], /border-radius: 999px;/, 'GIRAR es una pastilla');
 
-  // Los tres `.spin-spark` del DOM vuelven a pintarse sobre el case, con el
-  // parpadeo `twinkle` y un ritmo distinto en cada esquina.
-  const sparks = css.match(/\.machine__side \.controls #btn-spin \.spin-spark\s*\{[\s\S]*?\n  \}/);
-  assert.ok(sparks, 'Los destellos del GIRAR deben repintarse');
-  assert.match(sparks[0], /display: block;/, 'El case ya no apaga los destellos');
-  assert.match(sparks[0], /animation: twinkle 2\.6s ease-in-out infinite;/, 'Parpadeo `twinkle` en el GIRAR');
-  assert.doesNotMatch(sparks[0], /display: none;/, 'Los destellos no pueden quedar ocultos');
+  // Los tres destellos del DOM siguen vivos con su parpadeo y su ritmo.
+  const sparks = css.match(/\.machine__side \.controls \.btn--spin \.spin-spark \{([^}]*)\}/);
+  assert.ok(sparks, 'Los destellos del GIRAR siguen declarados');
+  assert.match(sparks[1], /animation: sparkTwinkle 2\.6s ease-in-out infinite;/, 'Parpadeo de los destellos');
+  assert.match(css, /@keyframes sparkTwinkle \{/, 'El parpadeo de los destellos existe');
 
-  for (const [spark, duration, delay] of [['--b', '3.2s', '0.9s'], ['--c', '3.8s', '1.7s']]) {
-    const rule = css.match(
-      new RegExp(`#btn-spin \\.spin-spark${spark}\\s*\\{[\\s\\S]*?\\n  \\}`)
-    );
-    assert.ok(rule, `El destello ${spark} debe tener su esquina`);
-    assert.match(rule[0], new RegExp(`animation-duration: ${duration};`), `${spark} parpadea a su ritmo`);
-    assert.match(rule[0], new RegExp(`animation-delay: ${delay};`), `${spark} entra desfasado`);
-  }
-
+  // El halo que el lienzo movil expandia detras del disco ya no se pinta dentro
+  // del panel: el aro dorado de la capsula es el unico cerco del GIRAR.
   assert.match(
     css,
-    /@keyframes twinkle \{\s*0%, 100% \{ opacity: 0\.3; transform: scale\(0\.8\); \}\s*50% \{ opacity: 1; transform: scale\(1\.2\); \}/,
-    'El parpadeo crece y se enciende hacia la mitad del ciclo'
+    /\.machine__side \.controls \.btn--spin \.btn__spin-icon::before,\s*\n\s*\.machine__side \.controls \.btn--spin \.btn__spin-icon::after \{ display: none; \}/,
+    'El halo del lienzo se apaga dentro del modulo'
   );
 
-  // Con movimiento reducido los destellos siguen visibles pero quietos.
-  assert.match(
-    css,
-    /#btn-spin \.spin-spark \{\s*animation: none;\s*opacity: 0\.8;\s*\}/,
-    'Con `prefers-reduced-motion` los destellos se quedan fijos'
-  );
 });
 
 test('la zona tactil del GIRAR no se recorta con el alto del boton candy', () => {
@@ -2271,13 +2158,14 @@ test('el arte navideño del tema se sirve desde el arbol con su lienzo exacto', 
       master: path.join(ROOT_DIR, 'design', 'console_mobile_santa_reindeer.png'),
       canvas: '1775x879',
       max: 440 * 1024,
-      /* La consola movil se pinta con `contain` sobre una caja que ya tiene la
-         relacion exacta del lienzo: mismo resultado que `100% 100%`. */
-      paint: 'contain'
+      /* El modulo de mandos se pinta con CSS desde el rediseño: el lienzo de
+         discos y capsulas ya no lo pide ninguna regla, pero se sigue publicando
+         (y validando) para poder volver al arte sin reexportar nada. */
+      used: false
     }
   ];
 
-  for (const { name, target, master, canvas, max, paint = '100% 100%' } of pieces) {
+  for (const { name, target, master, canvas, max, used = true } of pieces) {
     assert.ok(fs.existsSync(target), `Falta public/assets/santa-crush/console/${name}.webp`);
     const binary = fs.readFileSync(target);
     assert.equal(binary.toString('ascii', 0, 4), 'RIFF', `${name} debe ser un contenedor RIFF/WebP`);
@@ -2299,12 +2187,22 @@ test('el arte navideño del tema se sirve desde el arbol con su lienzo exacto', 
       `El maestro de ${name} no debe servirse desde public/src`
     );
 
-    // El CSS pinta la pieza a sangre sobre la caja de su lienzo.
+    // El CSS pinta la pieza a sangre sobre la caja de su lienzo. La consola movil
+    // se retiro con el rediseno del modulo: se publica, pero ya no se pinta.
+    if (!used) {
+      assert.doesNotMatch(
+        css,
+        new RegExp(`url\\('\\.\\.\\/\\.\\.\\/assets\\/santa-crush\\/console\\/${name}\\.webp'\\)`),
+        `${name}.webp ya no lo pide ninguna regla: el modulo se pinta con CSS`
+      );
+      continue;
+    }
     assert.match(
       css,
-      new RegExp(`url\\('\\.\\.\\/\\.\\.\\/assets\\/santa-crush\\/console\\/${name}\\.webp'\\) no-repeat center \\/ ${paint}`),
-      `El CSS debe pintar ${name}.webp sin aire (${paint})`
+      new RegExp(`url\\('\\.\\.\\/\\.\\.\\/assets\\/santa-crush\\/console\\/${name}\\.webp'\\) no-repeat center \\/ 100% 100%`),
+      `El CSS debe pintar ${name}.webp sin aire (100% 100%)`
     );
+
   }
 
   // El reparto del alto usa las relaciones de los dos recortes nuevos:

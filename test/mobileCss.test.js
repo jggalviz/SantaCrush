@@ -349,16 +349,6 @@ test('el GIRAR no anima en bucle en movil y solo responde al toque', () => {
   );
   assert.match(
     base,
-    /\.machine__side \.controls #btn-spin \.spin-spark \{[^}]*animation:\s*twinkle 2\.6s ease-in-out infinite;/,
-    'Las estrellas del case movil siguen parpadeando en escritorio'
-  );
-  assert.match(
-    base,
-    /\.machine__side \.controls \.btn--spin \.btn__spin-icon::after \{[^}]*animation:\s*pana-console-halo 2\.6s ease-out infinite;/,
-    'El aro del disco sigue expandiendose en escritorio'
-  );
-  assert.match(
-    base,
     /\.machine__side \.controls \.gbtn \.shine \{[^}]*animation:\s*sweep 3\.4s infinite;/,
     'El barrido de brillo sigue vivo en escritorio'
   );

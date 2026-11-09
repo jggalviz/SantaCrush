@@ -12,9 +12,9 @@ public/assets/santa-crush/
 │   └── bg-mobile.webp         fondo de móvil, vertical (<= 899 px)
 ├── console/
 │   ├── slot-frame.webp        marco de caramelos del tablero (escritorio)
-│   ├── console-desktop.webp   consola de mandos completa (escritorio)
+│   ├── console-desktop.webp   marco y decoración de la consola (escritorio)
 │   ├── slot-frame-mobile.webp marco de campanas doradas del tablero (móvil)
-│   └── console-mobile.webp    panel con Santa y reno (móvil)
+│   └── console-mobile.webp    panel con Santa y reno (archivo: el módulo es CSS)
 ├── tiles/
 │   ├── tile-1.webp            símbolos del tablero (orden = s1..s6 del motor)
 │   ├── …
@@ -36,16 +36,17 @@ los dos pulsadores grandes, 1041 x 1497). Los genera
 `design/frame_desktop_candy.png` y `design/console_desktop_buttons.png`.
 
 La **versión móvil (< 900 px) también sirve el arte navideño** del árbol:
-`bg/bg-mobile.webp` (taller de juguetes vertical, 941 x 1672, q=76),
+`bg/bg-mobile.webp` (taller de juguetes vertical, 941 x 1672, q=76) y
 `console/slot-frame-mobile.webp` (marco de campanas doradas con las tres placas
-del HUD y la ventana del tablero, 1447 x 1076, q=86) y
-`console/console-mobile.webp` (panel con Santa y reno: discos CRUSH · AUTO ·
-GIRAR · − · + y la fila de cápsulas del pie, 1775 x 879, q=86). Los genera el
-mismo `npm run build:theme-art` desde `design/bg_mobile_toy_workshop.png`,
-`design/frame_mobile_gold_bells.png` y
+del HUD y la ventana del tablero, 1447 x 1076, q=86). `console/console-mobile.webp`
+(panel con Santa y reno: discos CRUSH · AUTO · GIRAR · − · + y la fila de cápsulas
+del pie, 1775 x 879, q=86) se sigue publicando y validando, pero **ya no lo pinta
+ninguna regla**: el módulo de mandos se construye con CSS y es el mismo panel de
+cuatro filas que en escritorio. Los genera el mismo `npm run build:theme-art`
+desde `design/bg_mobile_toy_workshop.png`, `design/frame_mobile_gold_bells.png` y
 `design/console_mobile_santa_reindeer.png`.
 
-El CSS pinta las seis piezas a sangre sobre cajas con su relación exacta y ancla
+El CSS pinta las piezas en uso a sangre sobre cajas con su relación exacta y ancla
 las capas en % del recorte medido (bloques *ESCRITORIO (≥900 px) · ARTE NAVIDEÑO
 DEL TEMA* y *MARCO Y CONSOLA · la máquina móvil…* de `public/src/css/style.css`).
 

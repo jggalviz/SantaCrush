@@ -45,10 +45,11 @@ que distinguir dos grupos antes de tocar nada:
 | --- | --- | --- |
 | Boton "Fichas de Prueba", capsula de audio, modal, anillo de foco | CSS | **Si** |
 | Marco interior del tablero (`.board`, `.tile`) | Gradientes CSS | **Si** |
-| Carcasa de controles, placas y botones (escritorio) | Recortes de `console/console-desktop.webp` | No: reexportar arte |
+| Modulo de mandos (`.controls`: saldo, apuesta, GIRAR, FEVER, AUTO e insignia) | CSS (panel de cuatro filas, `--mod`) | **Si** |
+| Aro y carcasa que enmarcan el modulo (escritorio) | `console/console-desktop.webp` | No: reexportar arte |
 | Nube del logo (`.machine__hero`, escritorio) | `console/console-desktop.webp` | No: reexportar arte |
 | Marco del tablero (escritorio) | `console/slot-frame.webp` | No: reexportar arte |
-| Carcasa movil (`.machine__table`, `.controls`) | `console/slot-frame-mobile.webp`, `console/console-mobile.webp` | No: reexportar arte |
+| Marco del tablero (movil) | `console/slot-frame-mobile.webp` | No: reexportar arte |
 | Fondo de escenario y logotipo | `assets/santa-crush/bg/bg-desktop.webp` (escritorio) / `assets/santa-crush/bg/bg-mobile.webp` (movil), `MERIDIANOBET-CRUSH-LOGO.webp` | No: reexportar arte |
 | Simbolos del tablero | `public/src/assets/slot/*.webp` (maestros en `design/symbols/*.png`) | No: reexportar arte |
 
@@ -198,29 +199,43 @@ el propio origen.
    caramelos ni al HUD (33,2 %). En ventanas bajas (`max-height: 660px`) el
    lienzo se queda en ~340 px de ancho y el logo baja al 54 %.
 
-La consola de escritorio mantiene el reparto de Meridianobet: el **GIRAR** rojo
-en la capsula inferior derecha (x 51,68-89,34 % · y 79,96-88,51 %), el
-**AUTOGIRO** en la inferior izquierda (x 10,18-47,74 %) y el **AUTO** azul en la
-banda libre del panel verde (x 24-76 % · y 67,6-77,2 %). El lienzo no dibuja un
-septimo pulsador ni los chips del autogiro: los tres paquetes (`x5`, `x10`,
-`x25`) son **pulsadores propios** dentro de un recuadro hundido que ocupa la mitad
-derecha del caramelo (x 28,70-47,42 %), hermanos del boton y no hijos suyos —un
-boton dentro de otro boton no es marcado valido ni enfocable—. Las dos mitades no
-se pisan por construccion: la caja del rotulo acaba en el 28,10 % (el aire derecho
-de `#btn-feature`) y el selector arranca en el 28,70 %, asi que `AUTOGIRO` se lee
-entero a cualquier ancho, con el cuerpo calculado para que la elipsis no llegue a
-dispararse. El GIRAR lanza la tirada y, con el bucle en marcha, la detiene; el
-amarillo abre la hoja con el coste de cada paquete y el azul juega el elegido. En
-movil el selector no cabe en la placa del pie (~48 px): alli la placa muestra fijo
-el paquete vigente y los tres paquetes se eligen en la hoja del amarillo.
+La consola deja de ser un lienzo con botones pintados: el **modulo de mandos** se
+construye con CSS en cuatro filas, como el estandar de marca —saldo, apuesta,
+GIRAR y FEVER + AUTO— y su seccion vive al final de `style.css` («CONSOLA ·
+MODULO DE MANDOS EN CUATRO FILAS»). Todas sus medidas salen de `--mod`, el 1 %
+del ancho del panel: en escritorio es el 0,856 % de `--side-w` (el panel ocupa el
+hueco verde del lienzo, x 6,9-92,6 % · y 49,1-88,6 %, dentro del aro dorado) y en
+movil el 1 % de `--m-w`, asi que el mismo juego de numeros sirve en los dos
+viewports y el telefono gana un panel de 0,70 veces su ancho en lugar del lienzo
+apaisado de discos.
+
+Las filas: (1) **SALDO · DEMO** con el importe y la moneda sobre un filete
+dorado; (2) la fila **− / APUESTA / + / MAX** con la lectura viva en el centro y
+las teclas en `--mod` (MAX un pelo mas ancha); (3) **GIRAR**, pastilla rosa con
+aro dorado que lanza la tirada y, con el bucle en marcha, la detiene; (4) **FEVER**
+a la izquierda —capsula dorada que compra el bonus (`feature.costMultiplier` = 100x)
+y publica su precio en el subtitulo, `100x · 100,00`— y **AUTO** a la derecha,
+capsula azul con la **insignia del paquete** (`x5` · `x10` · `x25`) apoyada en su
+mitad baja.
+
+La insignia es un pulsador hermano del azul, no hijo (un boton dentro de otro
+boton no es marcado valido ni enfocable): muestra el paquete vigente —o las
+tiradas que quedan con el bucle en marcha— y es el unico mando con
+`aria-haspopup`, porque abre la hoja **Giros Rapidos**, que es donde se elige el
+paquete. Los chips `x5/x10/x25` que vivian en el panel desaparecieron con el
+rediseño: elegir paquete no gira ni gasta saldo, y el FEVER avisa del saldo
+insuficiente apagandose cuando no cubre sus 100 apuestas. El boton azul juega el
+paquete y la hoja publica el coste de cada uno.
 
 Pendiente de arte (ver la tabla de alcance): los simbolos del tablero. El arte
 navideño del tema ya cubre las dos maquetas: el taller de juguetes de fondo
 (`bg-desktop.webp` apaisado y `bg-mobile.webp` vertical), el marco de caramelos
 del escritorio (`slot-frame.webp`), el marco de campanas doradas del movil
-(`slot-frame-mobile.webp`) y las dos consolas (`console-desktop.webp`, que funde
-a Santa y el reno con las tres placas y los mandos, y `console-mobile.webp`, el
-panel con Santa y reno del que cuelgan los cinco discos y la fila de capsulas).
+(`slot-frame-mobile.webp`) y la consola de escritorio (`console-desktop.webp`,
+que funde a Santa y el reno con las tres placas del HUD y el aro que enmarca el
+modulo). `console-mobile.webp` (el panel con Santa y reno del que colgaban los
+cinco discos y la fila de capsulas) ya no lo pinta ninguna regla: se sigue
+publicando y validando para poder volver al arte sin reexportar nada.
 Los simbolos siguen siendo los deportivos originales.
 
 Los simbolos del tablero (once WebP en `public/src/assets/slot/`) se mapean en

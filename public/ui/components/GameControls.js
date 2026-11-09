@@ -36,13 +36,15 @@ export class GameControls {
     });
 
     this.bind(refs.featureBtn, 'click', () => {
-      /* El pulsador amarillo abre la hoja de giros rapidos: no gira ni cobra
-         hasta que el jugador elige un paquete, y elegirlo tampoco gasta. */
-      this.controller.openFeverSheet();
+      /* FEVER compra el bonus completo (100x la apuesta, 10 giros). El precio y
+         la disponibilidad los valida el controlador contra el saldo autoritativo;
+         aqui solo se pide la compra. Corta el automatico si estaba en marcha. */
+      void this.controller.buyFeature();
     });
 
-    /* Selector rapido: los chips x5 x10 x25 eligen paquete sin abrir la hoja. */
-    this.bind(refs.featureOptions, 'click', (event) => this.onQuickSpinsClick(event));
+    /* Insignia del paquete (x5 · x10 · x25) pegada al azul: abre la hoja de
+       giros rapidos, que es donde se elige. Elegir no gira ni gasta saldo. */
+    this.bind(refs.autoPack, 'click', () => this.controller.openFeverSheet());
 
     /* El pulsador azul juega el paquete configurado o detiene el bucle. */
     this.bind(refs.autoBtn, 'click', () => this.controller.toggleAuto());
@@ -77,26 +79,6 @@ export class GameControls {
     this.listeners.push({ target, type, handler });
   }
 
-  /**
-   * Un chip del selector rapido. El paquete viaja en `data-spins`; el
-   * `GameController` valida la cantidad contra el catalogo publicado, cierra la
-   * hoja si estaba abierta y no gasta saldo.
-   *
-   * @param {Event} event clic dentro del grupo `#feature-options`
-   */
-  onQuickSpinsClick(event) {
-    const target = event && event.target;
-    /* El clic puede caer en el texto del chip: se sube al pulsador. */
-    const node = target && typeof target.closest === 'function'
-      ? target.closest('[data-spins]')
-      : null;
-    if (!node || node.disabled) return;
-
-    const spins = Number(node.getAttribute('data-spins'));
-    if (!Number.isFinite(spins)) return;
-    this.controller.pickQuickSpins(spins);
-  }
-
   onKeyDown(event) {
     const target = event.target;
     const isFormField = typeof HTMLElement !== 'undefined'
@@ -104,13 +86,13 @@ export class GameControls {
       && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
     if (isFormField) return;
 
-    /* Los chips del selector ya son botones: su Space/Enter elige paquete y no
+    /* La insignia del paquete ya es un boton: su Space/Enter abre la hoja y no
        debe ademas lanzar una tirada. Se mira el ancestro porque el foco puede
-       estar en el propio chip. */
-    const isQuickChip = Boolean(target)
+       estar en el texto de la insignia. */
+    const isPackBadge = Boolean(target)
       && typeof target.closest === 'function'
-      && target.closest('#feature-options') !== null;
-    if (isQuickChip) return;
+      && target.closest('#btn-auto-pack') !== null;
+    if (isPackBadge) return;
 
     const modal = this.document.getElementById('modal');
     if (modal && !modal.hidden) return;

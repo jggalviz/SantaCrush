@@ -158,7 +158,9 @@ test('con los nodos montados los helpers si escriben', async () => {
     winValue: fakeNode(),
     autoBtn: fakeNode(),
     autoCount: fakeNode(),
-    featureBtn: fakeNode()
+    autoPack: fakeNode(),
+    featureBtn: fakeNode(),
+    featureCost: fakeNode()
   };
 
   ui.setStatus('En espera');
@@ -174,11 +176,24 @@ test('con los nodos montados los helpers si escriben', async () => {
   ui.setWin(2500);
   assert.equal(ui.refs.winValue.textContent, formatCents(2500));
 
-  /* El amarillo anuncia el catalogo y el azul el paquete vigente. */
+  /* La insignia anuncia el catalogo y el azul el paquete vigente. */
   ui.paintQuickSpinsOptions_();
-  assert.match(ui.refs.featureBtn.getAttribute('aria-label'), /paquetes de 5, 10 o 25 tiradas/);
+  assert.match(
+    ui.refs.autoPack.getAttribute('aria-label'),
+    /Pulsa para elegir entre 5, 10 o 25/,
+    'la insignia anuncia el catalogo que abre'
+  );
   assert.match(ui.refs.autoBtn.getAttribute('aria-label'), /10 tiradas automáticas/);
   assert.equal(ui.refs.autoCount.textContent, 'x10');
+
+  /* El FEVER publica lo que cuesta comprar el bonus con la apuesta viva. */
+  ui.paintFeatureCost_();
+  assert.equal(ui.refs.featureCost.textContent, '100x · 100,00');
+  assert.match(
+    ui.refs.featureBtn.getAttribute('aria-label'),
+    /compra el bonus de 10 giros por 100 veces la apuesta/,
+    'el FEVER anuncia la compra, no el paquete de tiradas'
+  );
 });
 
 /* ------------------------------------------------------------- regla estatica */
