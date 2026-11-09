@@ -3127,8 +3127,8 @@ body {
    PANA CRUSH · CAPA DE TARJETAS "CANDY GLASS"
    Los cuatro bloques de la maqueta (logo, indicadores, controles y tablero)
    son tarjetas independientes sobre el fondo ilustrado: se elimina el marco
-   morado unificado y el arte del reino (escritorio) o de la avenida (movil) se
-   ve limpio entre bloque y bloque.
+   morado unificado y el arte del taller de juguetes (escritorio) o del taller
+   vertical (movil) se ve limpio entre bloque y bloque.
    Solo cambia la presentacion: ningun id ni clase que consulte el cliente se
    toca.
    ========================================================================== */
@@ -4866,18 +4866,20 @@ body.is-demo .machine__side .controls .balance::after {
 /* ==========================================================================
    MARCO Y CONSOLA · la máquina móvil se dibuja con dos piezas de arte (≤899px)
    --------------------------------------------------------------------------
-   La vista estrecha usa los maestros `assets/marco_movil.webp` (1392 x 1093) y
-   `assets/consola_movil.webp` (1780 x 883), ambos recortados al bbox de alfa
-   por `npm run build:art`. El marco es UN solo dibujo deportivo —focos,
-   banderines y monedas sobre el estadio— que ya incluye las tres placas del HUD
-   y la ventana del tablero: por eso el logo, el HUD y el tablero comparten la
-   misma celda de la rejilla y se ciñen a su zona con porcentajes medidos sobre
-   el recorte. La consola es la segunda fila y comparte eje X con el marco.
+   La vista estrecha usa el arte navideño de `public/assets/santa-crush/`:
+   `console/slot-frame-mobile.webp` (1447 x 1076) y
+   `console/console-mobile.webp` (1775 x 879), ambos recortados al bbox de alfa
+   por `npm run build:theme-art`. El marco es UN solo dibujo —Santa, reno, casa
+   de jengibre y campanas doradas sobre guirnaldas— que ya incluye las tres
+   placas del HUD y la ventana del tablero: por eso el logo, el HUD y el tablero
+   comparten la misma celda de la rejilla y se ciñen a su zona con porcentajes
+   medidos sobre el recorte. La consola es la segunda fila y comparte eje X con
+   el marco.
 
-   La caja del marco conserva la relación EXACTA del recorte (1392 / 1093): el
+   La caja del marco conserva la relación EXACTA del recorte (1447 / 1076): el
    dibujo se pinta con `100% 100%` y no se deforma ni un punto, de modo que los
-   % medidos sobre el recorte (ventana 7,61-92,53 % · 39,80-92,04 %, placas del
-   HUD 30,03-91,95 % · 22,96-31,90 %) valen tal cual a cualquier escala.
+   % medidos sobre el recorte (ventana 8,29-91,57 % · 42,30-90,45 %, placas del
+   HUD 27,20-90,00 % · 25,40-33,60 %) valen tal cual a cualquier escala.
 
    Todo se resuelve con CSS sobre el DOM existente: no se añade, quita ni
    renombra un solo nodo, id o handler. Los contenedores del Bloque 3
@@ -4886,13 +4888,13 @@ body.is-demo .machine__side .controls .balance::after {
    control cae sobre su zona medida en cualquier ancho de móvil.
 
    Orden visual del arte:
-     marco   · cielo del estadio con focos, banderines y monedas (el logo se
-               pega arriba a la izquierda)  |  SALDO · GANANCIA ·
+     marco   · Santa, reno, casa de jengibre y campanas en la franja alta (el
+               logo se pega sobre las guirnaldas)  |  SALDO · GANANCIA ·
                MULTIPLICADOR  |  ventana del tablero (6 x 5)
      consola · discos CRUSH (…) · AUTO (↻) · [ GIRAR ] · − · +
-               placas del pie: MÁS (1ª) · AUTO (2ª) · GIRAR + estado (3ª) ·
+               capsulas del pie: MÁS (1ª) · AUTO (2ª) · GIRAR + estado (3ª) ·
                APUESTA + MAX (4ª). Las cuatro llegan vacías en el dibujo: los
-               rótulos los pinta el CSS sobre su placa (sección 6).
+               rótulos los pinta el CSS sobre la cápsula (sección 6).
    ========================================================================== */
 
 @media (max-width: 899px) {
@@ -4928,12 +4930,12 @@ body.is-demo .machine__side .controls .balance::after {
     /* El aire lateral ya lo pone `.app`: aqui no se resta ancho al tablero. */
     padding: 0;
     /* Ancho de la máquina: el menor entre el que cabe a lo ancho y el que deja
-       el alto libre. El divisor 1,2813 es la suma de las relaciones alto/ancho
-       de las dos piezas —marco 1093 / 1392 = 0,7852 y consola 883 / 1780 =
-       0,4961—; la separación entre ambas se resta del alto antes de dividir y
-       no forma parte del divisor. `--m-w` es además la unidad de medida de todo
-       lo que se superpone al arte (`calc(var(--m-w) * k)`), de modo que cada
-       capa escala con el dibujo y no con la altura de su celda.
+       el alto libre. El divisor 1,2388 es la suma de las relaciones alto/ancho
+       de las dos piezas móviles —marco 1076 / 1447 = 0,7436 y consola
+       879 / 1775 = 0,4952—; la separación entre ambas se resta del alto antes
+       de dividir y no forma parte del divisor. `--m-w` es además la unidad de
+       medida de todo lo que se superpone al arte (`calc(var(--m-w) * k)`), de
+       modo que cada capa escala con el dibujo y no con la altura de su celda.
 
        Se mide en `cqw`/`cqh` y no en `%`: un `%` dentro de una custom property
        se resuelve contra la propiedad que la consume, así que el mismo token
@@ -4941,12 +4943,12 @@ body.is-demo .machine__side .controls .balance::after {
        quedara 12 px por debajo de sus placas). Con unidades de contenedor
        `--m-w` es una longitud y mide lo mismo en cualquier propiedad. */
     --m-w: 100cqw;
-    --m-w: min(100cqw, calc((100cqh - clamp(4px, 1.2dvh, 10px)) / 1.2813));
-    /* Alto del marco (aspect-ratio 1392 / 1093, la relación exacta del recorte:
+    --m-w: min(100cqw, calc((100cqh - clamp(4px, 1.2dvh, 10px)) / 1.2388));
+    /* Alto del marco (aspect-ratio 1447 / 1076, la relación exacta del recorte:
        el arte no se estira). Los % verticales de las capas superpuestas se
        miden con `--frame-h`, porque el alto no es proporcional a `--m-w` en
        ninguna otra propiedad. */
-    --frame-h: calc(var(--m-w) * 0.7852);
+    --frame-h: calc(var(--m-w) * 0.7436);
     /* Chrome del tablero (padding 4+4 + filo 2+2): lo consulta la regla base
        de escritorio al calcular el ancho con `cqh`. */
     --board-overhead: 12px;
@@ -4961,7 +4963,7 @@ body.is-demo .machine__side .controls .balance::after {
      El cielo del estadio (la franja superior del marco) sostiene el logo
      centrado y las tres placas doradas del HUD sostienen las tres lecturas. Ambas
      capas se superponen a la celda `frame` y se ciñen a su zona con % del recorte
-     de 1392 x 1093 convertidos a `calc(var(--m-w) * k)`: así no dependen de la
+     de 1447 x 1076 convertidos a `calc(var(--m-w) * k)`: así no dependen de la
      altura de la celda ni de que la fila conserve la relación del dibujo.
      ------------------------------------------------------------------------ */
   .machine__side .machine__hero {
@@ -4974,17 +4976,17 @@ body.is-demo .machine__side .controls .balance::after {
     /* Aire real que queda por encima del ancla del logo, en px: la mitad del
        sobrante vertical de la maquina (la rejilla esta centrada, asi que reparte
        a partes iguales entre arriba y abajo) mas lo que sube el propio marco
-       desde su base hasta la base del logo (19,87 % de su alto, ver `bottom`
+       desde su base hasta la base del logo (22,50 % de su alto, ver `bottom`
        mas abajo).
 
-       La consola se descuenta con su relacion propia (1780 / 883 = 0,4961) y no
-       con el 1,2813 de `--m-w`: ese token suma marco y consola pero deja fuera
+       La consola se descuenta con su relacion propia (879 / 1775 = 0,4952) y no
+       con el 1,2388 de `--m-w`: ese token suma marco y consola pero deja fuera
        la separacion, y aqui hace falta el alto real de la fila para saber
        cuanto sobra. `100cqh` es el alto del escenario, que es exactamente el de
        `.machine` (la maquina lo llena y no tiene padding). */
     --logo-sky: calc(
-      (100cqh - (var(--frame-h) + var(--row-gap) + var(--m-w) * 0.4961)) / 2
-      + var(--frame-h) * 0.1987
+      (100cqh - (var(--frame-h) + var(--row-gap) + var(--m-w) * 0.4952)) / 2
+      + var(--frame-h) * 0.2250
     );
     /* El arte es un lockup horizontal 2:1 (900 x 450, sin aire en el PNG), asi
        que la caja toma su misma proporcion: el ancho manda y el alto es su
@@ -5025,11 +5027,11 @@ body.is-demo .machine__side .controls .balance::after {
        `left` se mide contra el padding box de `.machine`) y el segundo centra el
        logo dentro del marco. */
     left: calc((100% - var(--m-w)) / 2 + (var(--m-w) - var(--logo-w)) / 2);
-    /* Anclado por abajo y 4 % mas bajo que el borde superior de las placas del
-       HUD (0,8013 = 1 - 0,1987): la base del logo se monta sobre la franja de
-       banderines y monedas decorativas del marco, que es donde tiene que
-       integrarse, y lo que crezca va hacia arriba. */
-    bottom: calc(var(--frame-h) * 0.8013);
+    /* Anclado por abajo a 22,50 % del alto del marco (0,7750 = 1 - 0,2250): la
+       base del logo se apoya justo sobre la franja de las tres placas del marco
+       de campanas (25,40 %), que es donde tiene que integrarse, y lo que crezca
+       va hacia arriba. */
+    bottom: calc(var(--frame-h) * 0.7750);
     margin: 0;
     padding: 0;
     overflow: visible;
@@ -5096,17 +5098,18 @@ body.is-demo .machine__side .controls .balance::after {
     position: relative;
     z-index: 3;
     display: block;
-    /* Franja exacta de las tres placas del HUD: x 30,03-91,95 % · y
-       22,96-31,90 % del recorte (medido sobre `marco_movil.webp`). El logo ocupa
-       el cielo de la izquierda, así que la franja arranca donde termina.
+    /* Franja exacta de las tres placas del HUD: x 27,20-90,00 % · y
+       25,40-33,60 % del recorte (medido sobre `slot-frame-mobile.webp` con las
+       tres placas carmesi del arte). El logo ocupa el cielo de la izquierda, así
+       que la franja arranca donde termina.
        El alto y el margen se miden con `--frame-h` porque son % del ALTO del
        marco: usando `--m-w` la franja caía por debajo de su placa. */
-    width: calc(var(--m-w) * 0.6192);
-    height: calc(var(--frame-h) * 0.0894);
+    width: calc(var(--m-w) * 0.6280);
+    height: calc(var(--frame-h) * 0.0820);
     justify-self: start;
     align-self: start;
-    margin-left: calc((100% - var(--m-w)) / 2 + var(--m-w) * 0.3003);
-    margin-top: calc(var(--frame-h) * 0.2296);
+    margin-left: calc((100% - var(--m-w)) / 2 + var(--m-w) * 0.2720);
+    margin-top: calc(var(--frame-h) * 0.2540);
     min-height: 0;
     padding: 0;
     border: 0;
@@ -5138,9 +5141,9 @@ body.is-demo .machine__side .controls .balance::after {
     overflow: hidden;
   }
 
-  .machine__side .hud__cell:nth-child(1) { left: 0; width: 30.28%; }
-  .machine__side .hud__cell:nth-child(2) { left: 30.75%; width: 32.01%; }
-  .machine__side .hud__cell:nth-child(3) { left: 63.23%; width: 36.77%; }
+  .machine__side .hud__cell:nth-child(1) { left: 1.67%; width: 27.80%; }
+  .machine__side .hud__cell:nth-child(2) { left: 32.56%; width: 29.11%; }
+  .machine__side .hud__cell:nth-child(3) { left: 65.19%; width: 33.54%; }
 
   /* La primera placa del HUD pasa a mostrar el SALDO dinámico (sección 5), así
      que el rótulo y el dato de la apuesta que trae el HUD se retiran de la placa:
@@ -5153,24 +5156,26 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .hud__label {
     flex: 0 0 auto;
     /* Tipografia atada a `--m-w` y no a `vw`: en horizontal el viewport es ancho
-       pero la maquina es pequena, y con `vw` el rotulo crecia mas que su placa. */
-    font-size: clamp(4.8px, calc(var(--m-w) * 0.016), 7.2px);
+       pero la maquina es pequena, y con `vw` el rotulo crecia mas que su placa.
+       0,0142 del ancho (~5,5 px a 390 px): las placas del marco de campanas son
+       mas bajas que las del arte anterior. */
+    font-size: clamp(4.6px, calc(var(--m-w) * 0.0142), 6.6px);
     line-height: 1;
     letter-spacing: 0.04em;
     color: #ffd977;
     text-shadow: 0 1px 1px rgba(30, 0, 20, 0.85);
   }
 
-  /* Los dos renglones tienen que caber en 8,94 % del alto del marco (~24 px a
-     390 px de ancho): 6,2 px de rótulo + 13,3 px de dato dejan 4,5 px de aire
-     sobre las placas nuevas del HUD. */
+  /* Los dos renglones tienen que caber en el interior carmesi de las placas
+     (5,94 % del alto del marco, ~17 px a 390 px de ancho): 5,5 px de rótulo +
+     11,4 px de dato (line-height 1,1) dejan ~0,5 px de aire. */
   .machine__side .hud__value,
   .machine__side .hud__cell--win .hud__value {
     flex: 0 0 auto;
     margin: 0;
-    /* 0,031 del ancho del marco: el peor caso real («10.000,00») cabe en el
+    /* 0,028 del ancho del marco: el peor caso real («10.000,00») cabe en el
        interior de la placa de GANANCIA desde 320 px de ancho. */
-    font-size: clamp(8px, calc(var(--m-w) * 0.031), 13px);
+    font-size: clamp(7.2px, calc(var(--m-w) * 0.028), 11.6px);
     /* 1,1 y no 1: la caja de línea tiene que contener el hombro del glifo; con
        `line-height: 1` el navegador recortaba un píxel por abajo. */
     line-height: 1.1;
@@ -5180,8 +5185,8 @@ body.is-demo .machine__side .controls .balance::after {
   /* ------------------------------------------------------------------------
      3) Tablero dentro de la ventana del marco
      `.machine__table` pinta el dibujo del marco y `.board` tapa su hueco
-     transparente (x 7,69-92,53 %, y 39,80-92,04 % del recorte). Se usa el hueco
-     medido con un pelo de aire por fuera (7,20 % / 39,40 % / 85,70 % / 53,00 %)
+     transparente (x 8,29-91,57 %, y 42,30-90,45 % del recorte). Se usa el hueco
+     medido con un pelo de aire por fuera (7,80 % / 41,85 % / 84,26 % / 49,05 %)
      para que el filo del tablero se meta bajo el aro dorado del marco y no
      quede ni una linea de fondo asomando por la ventana. Al ser % de la propia
      caja del marco, la ventana se respeta a cualquier escala y la cuadricula
@@ -5193,16 +5198,16 @@ body.is-demo .machine__side .controls .balance::after {
     z-index: 1;
     display: block;
     width: var(--m-w);
-    /* Relación exacta del recorte (1392 x 1093): el arte no se estira, así que
-       los banderines y las monedas conservan su forma y los % de la ventana caen
-       donde se midieron. */
-    aspect-ratio: 1392 / 1093;
+    /* Relación exacta del recorte (1447 x 1076): el arte no se estira, así que
+       las campanas y las guirnaldas conservan su forma y los % de la ventana
+       caen donde se midieron. */
+    aspect-ratio: 1447 / 1076;
     justify-self: center;
     align-self: start;
     min-height: 0;
     padding: 0;
     border: 0;
-    background: url('../assets/marco_movil.webp') no-repeat center / 100% 100%;
+    background: url('../../assets/santa-crush/console/slot-frame-mobile.webp') no-repeat center / 100% 100%;
     box-shadow: none;
     container-type: normal;
     overflow: visible;
@@ -5210,17 +5215,17 @@ body.is-demo .machine__side .controls .balance::after {
 
   .machine__table .board {
     position: absolute;
-    left: 7.20%;
-    top: 39.40%;
-    width: 85.70%;
-    height: 53.00%;
+    left: 7.80%;
+    top: 41.85%;
+    width: 84.26%;
+    height: 49.05%;
     margin: 0;
     /* El aire del tablero se recorta al mínimo: cada píxel que se lleva el
        padding es alto que pierden las cinco filas. Medidas atadas a `--m-w`
        para que el aire acompañe al arte en cualquier orientación. */
     padding: clamp(2px, calc(var(--m-w) * 0.006), 4px);
     border: 0;
-    /* Mismo radio que las esquinas del hueco del arte (31 px de 1392 = 2,2 %):
+    /* Mismo radio que las esquinas del hueco del arte (34 px de 1447 = 2,3 %):
        con un radio mayor el tablero se retiraba de la esquina y asomaba el fondo
        del escenario por el claro entre el cristal y el marco. */
     border-radius: clamp(4px, calc(var(--m-w) * 0.022), 14px);
@@ -5298,19 +5303,18 @@ body.is-demo .machine__side .controls .balance::after {
    iguales arriba y abajo; la mitad de arriba entra en `--logo-sky` y la chapa
    crece con ella. Con el 8 % del alto del escenario (78 px como maximo):
 
-     · 768 x 1024 · 953 px de escenario → 76 px de aire → maquina 678 px (−8 %),
-       logo 247 x 124 px = 36,5 % del marco;
-     · 899 x 1200 · 1129 px → 78 px → maquina 812 px (−7 %), logo 289 x 145 px =
-       35,6 % del marco.
+     · 768 x 1024 · 953 px de escenario → 76 px de aire → maquina 705 px (−8 %),
+       logo 274 x 137 px = 38,9 % del marco;
+     · 899 x 1200 · 1129 px → 78 px → maquina 845 px (−7 %), logo 321 x 160 px =
+       38,0 % del marco.
 
-   Es decir, la chapa se queda entre el 35 y el 37 % del marco en todo el tramo
-   (lo mismo que ya lucia en 600 x 900, 37,6 %, donde manda el ancho) y a la
-   altura del logo del telefono alto y del escritorio. Donde el ancho manda
-   (600 x 900, 640 x 960, cualquier telefono) el `min()` se queda con `100cqw` y
-   no cambia nada; en las tablets muy altas (768 x 1366) el sobrante real ya
-   supera al aire reservado y el logo pasa del 60 % del marco sin tocar el tope.
-   La base del logo no se mueve (`0.8013` del marco): la holgura sobre las
-   placas del HUD y bajo la barra superior se mantiene igual.
+   Es decir, la chapa se queda por encima del 38 % del marco en todo el tramo
+   y a la altura del logo del telefono alto y del escritorio. Donde el ancho
+   manda (600 x 900, 640 x 960, cualquier telefono) el `min()` se queda con
+   `100cqw` y no cambia nada; en las tablets muy altas (768 x 1366) el sobrante
+   real ya supera al aire reservado y el logo pasa del 60 % del marco sin tocar
+   el tope. La base del logo no se mueve (`0.7750` del marco): la holgura sobre
+   las placas del HUD y bajo la barra superior se mantiene igual.
 
    Queda fuera el horizontal bajo (`min-height: 521px`): ahi manda la regla de
    `max-height: 520px`, que comprime la cabecera justo para devolverle alto al
@@ -5327,7 +5331,7 @@ body.is-demo .machine__side .controls .balance::after {
     --logo-air: clamp(0px, calc(100cqh * 0.08), 78px);
     --m-w: min(
       100cqw,
-      calc((100cqh - var(--row-gap) - var(--logo-air)) / 1.2813)
+      calc((100cqh - var(--row-gap) - var(--logo-air)) / 1.2388)
     );
   }
 }
@@ -5335,22 +5339,23 @@ body.is-demo .machine__side .controls .balance::after {
 /* --------------------------------------------------------------------------
    4) La consola · carcasa grafica + controles superpuestos
    --------------------------------------------------------------------------
-   El case lo dibuja `assets/consola_movil.webp` (1780 x 883, relacion 2,016:1);
-   el DOM y los ids no cambian. Cada control real se coloca encima con
-   porcentajes medidos sobre el recorte via `npm run build:art`, asi que la
-   alineacion se mantiene en cualquier ancho de movil.
+   El case lo dibuja `public/assets/santa-crush/console/console-mobile.webp`
+   (1775 x 879, relacion 2,019:1); el DOM y los ids no cambian. Cada control
+   real se coloca encima con porcentajes medidos sobre el recorte via
+   `npm run build:theme-art`, asi que la alineacion se mantiene en cualquier
+   ancho de movil.
    La caja de la consola mide exactamente lo mismo que el marco (`--m-w`): las
    dos filas comparten eje X y el dibujo entra en su caja sin aire (`contain`
    sobre una caja con la relacion del lienzo = `100% 100%`).
 
    Orden visual de la carcasa (medido en % del recorte):
-     discos  · CRUSH 3,3-18,3 · AUTO 19,1-33,9 · GIRAR 36,6-62,4 ·
-               − 65,0-80,1 · + 81,0-96,0   (y 41,0-70,4 % de alto; el GIRAR,
-               21,6-70,4 %, lleva la corona dorada encima)
-     placas  · MÁS 5,9-18,9 · AUTO 20,5-33,5 · GIRAR 36,6-62,4 ·
-               APUESTA 75,9-93,2           (y 72,4-84,4 % de alto; la tercera
-               es la mas alta: 70,2-85,2 %)
-   Las placas llegan VACIAS en el arte: el pie lo escriben el DOM y el estado
+     discos   · CRUSH 3,4-18,5 · AUTO 18,9-34,3 · GIRAR 37,6-64,3 ·
+                − 65,3-80,4 · + 81,1-96,2   (y 40,8-70,6 % de alto; el GIRAR,
+                21,4-69,2 %, lleva las campanas y la corona encima)
+     capsulas · MÁS 6,3-18,7 · AUTO 21,4-33,6 · GIRAR 37,0-63,0 ·
+                APUESTA 76,5-93,5           (y 74,4-81,7 % de alto; la tercera
+                es la mas alta: 72,2-82,7 %)
+   Las capsulas llegan VACIAS en el arte: el pie lo escriben el DOM y el estado
    del motor (ver secciones 5 y 6). Los rotulos impresos de la version anterior
    ya no existen, asi que solo se ocultan los textos que no aportan
    (`SANTA CRUSH`, `AUTO`, `MAX`, `GIRAR`), que siguen siendo el nombre
@@ -5368,10 +5373,10 @@ body.is-demo .machine__side .controls .balance::after {
     z-index: 2;
     display: block;
     /* El arte manda: mismo ancho que el marco y la relacion exacta del
-       lienzo, de modo que el dibujo llena la caja y los seis pulsadores caen
-       sobre sus discos a cualquier escala. */
+       lienzo, de modo que el dibujo llena la caja y los cinco discos caen
+       sobre sus botones a cualquier escala. */
     width: var(--m-w);
-    aspect-ratio: 1780 / 883;
+    aspect-ratio: 1775 / 879;
     min-height: 0;
     max-width: none;
     /* Mismo eje que el tablero: las dos filas comparten `--m-w`, que ya esta
@@ -5382,7 +5387,7 @@ body.is-demo .machine__side .controls .balance::after {
     padding: 0;
     border: 0;
     border-radius: 0;
-    background: url('../assets/consola_movil.webp') no-repeat center / contain;
+    background: url('../../assets/santa-crush/console/console-mobile.webp') no-repeat center / contain;
     box-shadow: none;
     overflow: visible;
     backdrop-filter: none;
@@ -5496,15 +5501,15 @@ body.is-demo .machine__side .controls .balance::after {
   /* El saldo viaja a la primera placa del HUD: es la lectura que tiene que
      estar siempre a la vista y su placa del pie pasa a ser el pulsador MÁS
      (sección 6). La caja copia la de `.hud__cell:nth-child(1)`
-     (x 30,03-48,78 % · y 22,96-31,90 % del marco) subida por encima de la
-     consola, que es su bloque contenedor: el alto del marco (77,04 % hasta la
+     (x 28,25-45,71 % · y 25,40-33,60 % del marco) subida por encima de la
+     consola, que es su bloque contenedor: el alto del marco (74,60 % hasta la
      franja del HUD) más la separación de la rejilla. */
   .machine__side .controls .balance,
   body.is-demo .machine__side .controls .balance {
-    left: 30.03%;
-    top: calc(-1 * (var(--frame-h) * 0.7704 + var(--row-gap)));
-    width: 18.75%;
-    height: calc(var(--frame-h) * 0.0894);
+    left: 28.25%;
+    top: calc(-1 * (var(--frame-h) * 0.7460 + var(--row-gap)));
+    width: 17.46%;
+    height: calc(var(--frame-h) * 0.0820);
     gap: clamp(1px, calc(var(--m-w) * 0.003), 2px);
     padding: 0 1%;
     /* Sobre el arte del marco (`z-index: 1`) y por debajo de la pegatina del
@@ -5519,7 +5524,7 @@ body.is-demo .machine__side .controls .balance::after {
      que la franja del HUD se lea como una sola línea de datos. */
   .machine__side .controls .balance__label {
     flex: 0 0 auto;
-    font-size: clamp(5.2px, calc(var(--m-w) * 0.018), 8px);
+    font-size: clamp(5px, calc(var(--m-w) * 0.0150), 6.8px);
     line-height: 1;
     letter-spacing: 0.06em;
     text-align: center;
@@ -5530,16 +5535,16 @@ body.is-demo .machine__side .controls .balance::after {
   /* El saldo hereda del escritorio `color: transparent` + degradado recortado a
      la tinta: a 9 px el navegador no pinta nada y la placa parecía vacía. Aquí
      el dato se pinta plano y dorado, como el de la apuesta, con un cuerpo un
-     pelo menor que los otros dos datos del HUD: a 10,1 px caben los doce
+     pelo menor que los otros dos datos del HUD: a 9,9 px caben los doce
      caracteres de un saldo de siete cifras («1.000.000,00») dentro del hueco
-     interior de la placa (18,75 % del marco) sin tocar el aro, incluso a 320 px
+     interior de la placa (17,46 % del marco) sin tocar el aro, incluso a 320 px
      de ancho. */
   .machine__side .controls .balance__value {
     flex: 0 0 auto;
     min-width: 0;
     max-width: 100%;
     margin: 0;
-    font-size: clamp(7.4px, calc(var(--m-w) * 0.026), 12px);
+    font-size: clamp(7px, calc(var(--m-w) * 0.0255), 10.6px);
     /* 1,2 y no 1: la caja de linea tiene que contener el hombro y el descendente
        de las cifras para que el recorte de la placa no roce el dato. */
     line-height: 1.2;
@@ -5559,18 +5564,18 @@ body.is-demo .machine__side .controls .balance::after {
     display: none;
   }
 
-  /* Placa 4 del pie (x 75,84-93,31 % · y 73,0-83,1 %): la apuesta se queda en la
-     mitad izquierda y el extremo derecho es el pulsador MAX (seccion 6). La
-     placa mide 17,47 % del ancho, asi que el dato se ciñe al interior del aro y
-     el rotulo baja de cuerpo. El centro vertical de la placa cae en 78,05 %: la
-     caja se ancla en 73,0 % con el mismo alto de antes, de modo que su contenido
-     (rotulo + dato) queda dentro del hueco interior del aro. */
+  /* Capsula 4 del pie (x 76,52-93,45 % · y 74,43-81,74 %): la apuesta se queda
+     en la mitad izquierda y el extremo derecho es el pulsador MAX (seccion 6).
+     La capsula mide 16,93 % del ancho, asi que el dato se ciñe al interior del
+     aro y el rotulo baja de cuerpo. El centro vertical de la capsula cae en
+     78,09 %: la caja se ancla en 74,4 % con el alto interior del aro, de modo
+     que su contenido (rotulo + dato) queda dentro del hueco. */
   .machine__side .controls .bet-readout,
   .machine__side .controls__bet .bet-readout {
-    left: 76.9%;
-    top: 73.0%;
-    width: 8.4%;
-    height: 9.8%;
+    left: 77.0%;
+    top: 74.4%;
+    width: 8.8%;
+    height: 7.3%;
     padding: 0 0.3%;
   }
 
@@ -5594,20 +5599,21 @@ body.is-demo .machine__side .controls .balance::after {
     text-shadow: 0 1px 0 rgba(80, 30, 0, 0.65), 0 0 8px rgba(255, 214, 90, 0.5);
   }
 
-  /* Placa 3 del pie (x 36,40-62,58 % · y 68,9-84,1 %): la mitad alta es el
+  /* Capsula 3 del pie (x 37,02-62,98 % · y 72,15-82,65 %): la mitad alta es el
      rotulo GIRAR que pinta la seccion 6 y la baja, el estado del motor, en tinta
-     clara porque la placa del arte es dorada. Al compartir la placa con el
+     clara porque la capsula del arte es verde. Al compartir la capsula con el
      rotulo el aviso dispone de un solo renglon, asi que el texto largo se
      recorta con puntos suspensivos en vez de envolver. */
   .machine__side .controls .statusbar {
     position: absolute;
-    /* Todo el hueco interior de la placa (x 37,3-61,6 % · y 71,7-81,9 %): la
-       franja ocupa la mitad baja, de modo que el aviso dispone de 23 % de ancho
-       y el recorte con puntos suspensivos llega lo mas tarde posible. */
-    left: 37.8%;
-    top: 77.0%;
-    width: 23.0%;
-    height: 4.8%;
+    /* Toda la mitad baja del hueco interior de la capsula (x 37,6-62,6 % ·
+       y 78,2-82,4 %): la franja ocupa ese tramo, de modo que el aviso dispone de
+       25 % de ancho y el recorte con puntos suspensivos llega lo mas tarde
+       posible. */
+    left: 37.6%;
+    top: 78.2%;
+    width: 25.0%;
+    height: 4.2%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -5649,11 +5655,11 @@ body.is-demo .machine__side .controls .balance::after {
    -------------------------------------------------------------------------- */
 
 @media (max-width: 899px) {
-  /* --- CRUSH: disco x 3,26-18,37 % · y 40,77-70,60 % ---------------------- */
+  /* --- CRUSH: disco x 3,30-18,30 % · y 40,77-70,60 % ---------------------- */
   .machine__side .controls #btn-feature.gbtn {
-    left: 3.26%;
+    left: 3.30%;
     top: 40.77%;
-    width: 15.11%;
+    width: 15.00%;
     height: 29.83%;
     background: none;
     box-shadow: none;
@@ -5662,11 +5668,11 @@ body.is-demo .machine__side .controls .balance::after {
   /* El coste no cabe en la placa: el estado `disabled` ya avisa del saldo. */
   .machine__side .controls #btn-feature .pill { display: none; }
 
-  /* --- AUTO: disco x 19,04-34,04 % · y 40,77-70,60 % --------------------- */
+  /* --- AUTO: disco x 18,90-34,30 % · y 40,77-70,60 % --------------------- */
   .machine__side .controls #btn-auto.gbtn {
-    left: 19.04%;
+    left: 18.90%;
     top: 40.77%;
-    width: 15.0%;
+    width: 15.40%;
     height: 29.83%;
     background: none;
     box-shadow: none;
@@ -5691,10 +5697,10 @@ body.is-demo .machine__side .controls .balance::after {
     text-shadow: none;
   }
 
-  /* --- Fichas − y + : discos x 65,00-80,11 % · x 80,96-96,07 % (y 40,77-70,60 %) */
+  /* --- Fichas − y + : discos x 65,20-80,20 % · x 80,90-96,10 % (y 40,77-70,60 %) */
   .machine__side .controls__bet #btn-bet-down,
   .machine__side .controls__bet #btn-bet-up {
-    width: 15.11%;
+    width: 15.00%;
     height: 29.83%;
     aspect-ratio: auto;
     border-radius: 50%;
@@ -5702,18 +5708,18 @@ body.is-demo .machine__side .controls .balance::after {
     box-shadow: none;
   }
 
-  .machine__side .controls__bet #btn-bet-down { left: 65.00%; top: 40.77%; }
-  .machine__side .controls__bet #btn-bet-up { left: 80.96%; top: 40.77%; }
+  .machine__side .controls__bet #btn-bet-down { left: 65.20%; top: 40.77%; }
+  .machine__side .controls__bet #btn-bet-up { left: 80.90%; top: 40.77%; width: 15.20%; }
 
-  /* --- MAX: extremo derecho de la placa APUESTA --------------------------
+  /* --- MAX: extremo derecho de la capsula APUESTA ------------------------
      El arte no trae icono para MAX, asi que la caja tactil es el tramo derecho
-     del hueco interior de la placa (x 85,6-92,0 % · y 74,9-81,3 %, justo dentro
-     del aro) y su unico rotulo lo pinta la pastilla decorada de abajo. */
+     del hueco interior de la capsula (x 86,0-92,4 % · y 75,5-80,7 %, justo
+     dentro del aro) y su unico rotulo lo pinta la pastilla decorada de abajo. */
   .machine__side .controls__bet #btn-bet-max {
-    left: 85.6%;
-    top: 74.9%;
+    left: 86.0%;
+    top: 75.5%;
     width: 6.4%;
-    height: 6.4%;
+    height: 5.2%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5753,12 +5759,12 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* --- Rotulos del pie: AUTOGIRO (chips) · AUTO · GIRAR -------------------- */
-  /* `consola_movil.webp` llega con las cuatro placas del pie vacias, asi que el
-     nombre de cada pulsador se pinta aqui sobre su placa, en el mismo dorado y
+  /* `console-mobile.webp` llega con las cuatro capsulas del pie vacias, asi que
+     el nombre de cada pulsador se pinta aqui sobre la suya, en el mismo dorado y
      con la misma sombra que los datos de la apuesta y el saldo. Es decorativo
      (`pointer-events: none`) y el nombre accesible sigue en el DOM, recortado a
-     1x1 unas lineas mas abajo. La placa 1 no lleva rotulo fijo: rota el catalogo
-     de paquetes del boton amarillo (`.btn__opts`, mas abajo). */
+     1x1 unas lineas mas abajo. La capsula 1 no lleva rotulo fijo: rota el
+     catalogo de paquetes del boton amarillo (`.btn__opts`, mas abajo). */
   .machine__side .controls #btn-auto::after,
   .machine__side .controls #btn-spin::after {
     position: absolute;
@@ -5777,20 +5783,21 @@ body.is-demo .machine__side .controls .balance::after {
     pointer-events: none;
   }
 
-  /* Placa 1 (x 5,84-18,93 % · y 73,0-83,1 %): su centro cae 1,57 % a la derecha
-     del eje del disco, y su fila queda 7,4 % del alto del recorte por debajo del
-     borde inferior de la caja tactil del disco (70,60 %). La ventana se ancla al
-     pulsador, no a `.btn__main`: ese envoltorio vuelve a `static` para que el
-     `top: 100%` mida la caja que sigue el disco y no el centro del boton. */
+  /* Capsula 1 (x 6,32-18,74 % · y 74,43-81,74 %): su centro cae 1,73 % a la
+     derecha del eje del disco CRUSH (10,80 %), y su fila queda 7,4 % del alto del
+     recorte por debajo del borde inferior de la caja tactil del disco (70,60 %).
+     La ventana se ancla al pulsador, no a `.btn__main`: ese envoltorio vuelve a
+     `static` para que el `top: 100%` mida la caja que sigue el disco y no el
+     centro del boton. */
   .machine__side .controls #btn-feature .btn__main {
     position: static;
   }
 
   .machine__side .controls #btn-feature .btn__opts {
     position: absolute;
-    left: calc(50% + var(--m-w) * 0.0157);
+    left: calc(50% + var(--m-w) * 0.0173);
     top: calc(100% + var(--m-w) * 0.0367);
-    width: calc(var(--m-w) * 0.1309);
+    width: calc(var(--m-w) * 0.1220);
     height: calc(var(--m-w) * 0.0506);
     display: flex;
     align-items: center;
@@ -5850,26 +5857,26 @@ body.is-demo .machine__side .controls .balance::after {
     33.01%, 100% { opacity: 0; transform: translateY(64%); }
   }
 
-  /* Placa 2 (x 20,39-33,54 %): misma fila, y su centro cae 0,43 % a la derecha
-     del eje del disco AUTO (26,54 %), no a la izquierda como en el arte anterior. */
+  /* Capsula 2 (x 21,44-33,63 %): misma fila, y su centro cae 0,94 % a la derecha
+     del eje del disco AUTO (26,60 %), no a la izquierda como en el arte anterior. */
   .machine__side .controls #btn-auto::after {
     content: "AUTO";
-    left: calc(50% + var(--m-w) * 0.0043);
+    left: calc(50% + var(--m-w) * 0.0094);
     top: calc(100% + var(--m-w) * 0.0367);
-    width: calc(var(--m-w) * 0.1321);
+    width: calc(var(--m-w) * 0.1200);
     height: calc(var(--m-w) * 0.0506);
     font-size: clamp(6px, calc(var(--m-w) * 0.0245), 9.8px);
   }
 
-  /* Placa 3 (x 36,40-62,58 % · y 68,9-84,1 %, el doble de alta que las otras
-     dos): su mitad alta lleva el rotulo y la baja, el estado del motor. El hueco
-     interior va de 71,7 % a 81,9 %, asi que el rotulo se centra en 74,6 %, a
-     5,4 % del alto del recorte por debajo del borde de la caja tactil (69,2 %). */
+  /* Capsula 3 (x 37,02-62,98 % · y 72,15-82,65 %, mas alta que las otras
+     tres): su mitad alta lleva el rotulo y la baja, el estado del motor. El hueco
+     interior arranca en 72,2 %, asi que el rotulo se centra en 74,5 %, justo por
+     debajo del borde de la caja tactil (69,2 %). */
   .machine__side .controls #btn-spin::after {
     content: "GIRAR";
     left: 50%;
     top: calc(100% + var(--m-w) * 0.0268);
-    width: calc(var(--m-w) * 0.2618);
+    width: calc(var(--m-w) * 0.2520);
     height: calc(var(--m-w) * 0.0338);
     font-size: clamp(6px, calc(var(--m-w) * 0.028), 11.2px);
   }
@@ -5992,13 +5999,13 @@ body.is-demo .machine__side .controls .balance::after {
 @media (max-width: 899px) {
   .machine__side .controls .btn--spin,
   .machine__side .controls .btn--spin.gbtn {
-    /* Capsula del disco coronado: el aro dorado del GIRAR mide 27,65 % del ancho
-       (x 35,8-63,4 % · y 20,4-76,2 %), pero su mitad inferior queda por detras de
-       la placa GIRAR (y 69,2-84,5 %). La caja tactil se queda con el cuadrado que
-       cabe entero sobre el disco y encima de la placa: x 37,7-61,4 % · y
-       21,4-69,2 %, que en px es un cuadrado perfecto (422 px de los dos lados),
+    /* Capsula del disco coronado: el aro dorado del GIRAR mide 28,9 % del ancho
+       (x 35,3-64,2 % · y 30,0-67,0 %), pero su mitad inferior se apoya sobre la
+       capsula GIRAR (y 72,2-82,7 %). La caja tactil se queda con el cuadrado que
+       cabe entero sobre el disco y encima de la capsula: x 37,9-61,6 % · y
+       21,4-69,2 %, que en px es un cuadrado perfecto (421 px de los dos lados),
        asi el aro de pulso y el velo circulares no se deforman. */
-    left: 37.7%;
+    left: 37.9%;
     top: 21.4%;
     width: 23.7%;
     height: 47.8%;
@@ -6179,7 +6186,7 @@ body.is-demo .machine__side .controls .balance::after {
    7ter) Acabado prémium del GIRAR · reflejo de cristal y destellos
    --------------------------------------------------------------------------
    El disco dorado, su corona y la placa GIRAR los sigue dibujando
-   `consola_movil.webp`; esta capa solo le devuelve el acabado que los botones
+   `console-mobile.webp`; esta capa solo le devuelve el acabado que los botones
    candy tienen en escritorio, sin tocar arte, DOM, ids ni la zona táctil:
 
      1. REFLEJO  · `::before`, el mismo lenguaje de cristal que `.gbtn::before`
@@ -6207,7 +6214,7 @@ body.is-demo .machine__side .controls .balance::after {
     position: absolute;
     /* La caja del velo de 7bis, recortada al domo del disco: 6 % de aire a
        cada lado (el aro), arranque donde termina el bisel superior del disco
-       (16 % de la caja, medido sobre `consola_movil.webp`) y el 41 % de su
+       (16 % de la caja, medido sobre `console-mobile.webp`) y el 41 % de su
        alto. Así el cristal nunca cae sobre los paneles oscuros del case ni
        sobre la corona, que va por detrás del aro y por encima del disco. */
     inset: var(--disc);
@@ -6278,30 +6285,32 @@ body.is-demo .machine__side .controls .balance::after {
 
 
 /* --------------------------------------------------------------------------
-   7quater) Fondo del case · el estadio vertical en vez del reino de caramelo
+   7quater) Fondo del case · el taller de juguetes vertical
    --------------------------------------------------------------------------
-   Por debajo de 900 px el fondo general pasa a la ilustracion vertical
-   `avenida_fantastica_reino_caramelos.webp` (941x1671, ~320 KB, generada con
-   `npm run build:bg`): el case de `consola_movil.webp` y el tablero se recortan
-   sobre el mismo arte, sin el estadio apaisado de escritorio detras. El
-   maestro `design/avenida_fantastica_reino_caramelos.png` ya es el estadio 3D
-   del tema; el nombre del archivo se conserva para no tocar el mapeo del CSS.
+   Por debajo de 900 px el fondo general pasa a la ilustracion vertical del tema
+   `public/assets/santa-crush/bg/bg-mobile.webp` (941 x 1672, calidad 76,
+   ~309 KB, generada con `npm run build:theme-art` desde el maestro
+   `design/bg_mobile_toy_workshop.png`): el case de `console-mobile.webp` y el
+   tablero se recortan sobre el taller de juguetes navideño, sin el arte
+   apaisado de escritorio detras. El fondo anterior (la avenida del reino)
+   queda archivado en `design/`.
 
-     - `center center / cover` comparte el encuadre con el escritorio, asi el
-       eje horizontal sigue centrado y ni el case ni el tablero se desplazan;
+     - `center center / cover` mantiene el encuadre centrado, asi el eje
+       horizontal no se desplaza respecto al tablero ni a la consola y el arte
+       cubre cualquier relacion de retrato sin bandas ni deformacion;
      - sin `background-attachment: fixed`: en iOS el fondo fijo se repinta mal
        al girar el telefono y aqui no hace falta, porque `html, body` miden
        `height: 100%` con `overflow: hidden` y el `.app` mide `100dvh` (nada
        que arrastrar);
-     - el color de respaldo sigue en `html`, que pinta su degradado de estadio
-       nocturno si el WebP no llega.
+     - el color de respaldo sigue en `html`, que pinta su degradado nocturno si
+       el WebP no llega.
 
    El resto de la piel movil (7, 7bis, 7ter, 8 y 9) no cambia.
    -------------------------------------------------------------------------- */
 
 @media (max-width: 899px) {
   body {
-    background: url('../assets/avenida_fantastica_reino_caramelos.webp') no-repeat center center / cover;
+    background: url('../../assets/santa-crush/bg/bg-mobile.webp') no-repeat center center / cover;
   }
 }
 
@@ -8822,7 +8831,7 @@ html.is-low-graphics .toast {
    La regla es CONDICIONAL: todo vive dentro de este `@media (max-width:
    1023.98px)`, asi que a partir de 1024 px (escritorio) el diseno queda intacto,
    sombra por sombra. El corte coincide con el del material grafico: hasta 899 px
-   manda `marco_movil.webp` y de ahi arriba el marco de escritorio, asi que no hay
+   manda `slot-frame-mobile.webp` y de ahi arriba el marco de escritorio, asi que no hay
    ninguna franja donde un telefono ancho reciba el acabado completo.
 
    Por que `!important`: `theme.css` se carga DESPUES de esta hoja y repinta las
@@ -8912,7 +8921,7 @@ html.is-low-graphics .toast {
 
   /* Los controles del juego, la capsula de audio y las pastillas de la interfaz
      cambian sus tres o cuatro sombras por un filo interior sin blur. Su volumen
-     no se pierde: viene del arte recortado (`d2.webp`, `consola_movil.webp`) y
+     no se pierde: viene del arte recortado (`d2.webp`, `console-mobile.webp`) y
      del degradado de borde de cada pastilla. */
   .machine__side .controls .gbtn,
   .machine__side .controls__bet .chip,

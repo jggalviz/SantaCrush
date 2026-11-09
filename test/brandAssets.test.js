@@ -51,6 +51,7 @@ test('el arte de la marca se declara una sola vez en GAME_CONFIG.assets', () => 
     assets.bg.desktop,
     assets.bg.mobile,
     assets.console.mobileFrame,
+    assets.console.mobileConsole,
     assets.console.desktopFrame,
     assets.console.desktopConsole,
     assets.tiles.dir,
@@ -110,8 +111,11 @@ test('public/assets/santa-crush existe con las cuatro carpetas del tema', () => 
   // CDN con cache inmutable, ver `docs/ASSETS.md`).
   for (const relative of [
     'assets/santa-crush/bg/bg-desktop.webp',
+    'assets/santa-crush/bg/bg-mobile.webp',
     'assets/santa-crush/console/slot-frame.webp',
-    'assets/santa-crush/console/console-desktop.webp'
+    'assets/santa-crush/console/console-desktop.webp',
+    'assets/santa-crush/console/slot-frame-mobile.webp',
+    'assets/santa-crush/console/console-mobile.webp'
   ]) {
     assert.ok(themeFiles.includes(relative), `planCopy debe publicar ${relative}`);
   }

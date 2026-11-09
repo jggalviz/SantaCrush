@@ -178,7 +178,7 @@ test('el paquete de integracion (dist/) omite fuentes y previews', () => {
   // El arte navideño de escritorio (`assets/santa-crush/bg` y `/console`) suma
   // ~870 KB y entra en este paquete: el tope sube con el, no lo esconde.
   assert.ok(
-    total < 4.5 * MB,
-    `dist/ pesa ${mb(total)}: el paquete de integracion debe bajar de 4,5 MB (arte + audio)`
+    total < 5.6 * MB,
+    `dist/ pesa ${mb(total)}: el paquete de integracion debe bajar de 5,6 MB (arte + audio)`
   );
 });

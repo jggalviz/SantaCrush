@@ -48,8 +48,8 @@ que distinguir dos grupos antes de tocar nada:
 | Carcasa de controles, placas y botones (escritorio) | Recortes de `console/console-desktop.webp` | No: reexportar arte |
 | Nube del logo (`.machine__hero`, escritorio) | `console/console-desktop.webp` | No: reexportar arte |
 | Marco del tablero (escritorio) | `console/slot-frame.webp` | No: reexportar arte |
-| Carcasa movil (`.machine__table`, `.controls`) | `marco_movil.webp`, `consola_movil.webp` | No: reexportar arte |
-| Fondo de escenario y logotipo | `assets/santa-crush/bg/bg-desktop.webp` (escritorio) / `avenida_fantastica_reino_caramelos.webp` (movil), `MERIDIANOBET-CRUSH-LOGO.webp` | No: reexportar arte |
+| Carcasa movil (`.machine__table`, `.controls`) | `console/slot-frame-mobile.webp`, `console/console-mobile.webp` | No: reexportar arte |
+| Fondo de escenario y logotipo | `assets/santa-crush/bg/bg-desktop.webp` (escritorio) / `assets/santa-crush/bg/bg-mobile.webp` (movil), `MERIDIANOBET-CRUSH-LOGO.webp` | No: reexportar arte |
 | Simbolos del tablero | `public/src/assets/slot/*.webp` (maestros en `design/symbols/*.png`) | No: reexportar arte |
 
 Las 30 casillas se pintan con el **azul de la consola**: `theme.css` define
@@ -171,23 +171,23 @@ el propio origen.
    devolvera el aire dentro de la caja.
    La caja movil apunta al **78 % del ancho del marco** con un tope por el cielo
    real (`--logo-sky`): en telefonos altos manda el 78 % y el logo se apoya sobre
-   la franja de monedas y banderines del marco, justo encima del HUD; en 320 px
-   manda el tope y la pegatina se queda con el aire justo, sin tocar la barra
-   superior ni generar scroll horizontal.
+   la franja alta del marco (Santa, reno y campanas), justo encima del HUD; en
+   320 px manda el tope y la pegatina se queda con el aire justo, sin tocar la
+   barra superior ni generar scroll horizontal.
    La caja va **centrada en el marco**: `left` reparte el sobrante con el ancho
    real del logo (`--logo-w`), asi que la separacion a los dos filos es la misma
    en cualquier telefono, tambien cuando manda el tope por alto y la caja es mas
    corta que el 78 %.
    Entre **600 y 899 px** (tablets verticales y escritorios pequenos con alto de
    sobra, `min-height: 521px`) el marco se estira hasta la barra superior y su
-   unico cielo es ese 19,87 % del arte, asi que la chapa se quedaba en el 27 % del
-   marco. Ese tramo reserva un aire vertical propio (`--logo-air`: 8 % del alto
-   del escenario, 78 px de techo) que se descuenta del alto libre de la maquina
-   via `--m-w`; la mitad de arriba entra en `--logo-sky` y el logo sube al 36 %
-   del marco (247 px a 768 x 1024, 289 px a 899 x 1200) manteniendo su base, la
-   holgura sobre el HUD y el aire bajo la barra superior. El tablero pierde como
-   mucho un 8 % de ancho en ese tramo; por debajo de 600 px y por encima de
-   900 px no cambia nada.
+   unico cielo es ese 22,50 % del arte, asi que la chapa se quedaba corta. Ese
+   tramo reserva un aire vertical propio (`--logo-air`: 8 % del alto del
+   escenario, 78 px de techo) que se descuenta del alto libre de la maquina via
+   `--m-w`; la mitad de arriba entra en `--logo-sky` y el logo sube por encima
+   del 38 % del marco (274 px a 768 x 1024, 321 px a 899 x 1200) manteniendo su
+   base, la holgura sobre el HUD y el aire bajo la barra superior. El tablero
+   pierde como mucho un 8 % de ancho en ese tramo; por debajo de 600 px y por
+   encima de 900 px no cambia nada.
    La barra del navegador movil usa la meta `theme-color`, ya en rojo de marca:
    `<meta name="theme-color" content="#c8102e" />`.
 
@@ -198,14 +198,14 @@ el propio origen.
    caramelos ni al HUD (33,2 %). En ventanas bajas (`max-height: 660px`) el
    lienzo se queda en ~340 px de ancho y el logo baja al 54 %.
 
-Pendiente de arte (ver la tabla de alcance): las carcasas moviles
-(`marco_movil.webp`, `consola_movil.webp`) y los simbolos del tablero. El arte de
-escritorio ya es el navideño del tema: el taller de juguetes de fondo, el marco
-de caramelos (`slot-frame.webp`) y la columna lateral entera
-(`console-desktop.webp`, que funde a Santa y el reno, las tres placas y la
-consola en una pieza).
-Mientras el movil siga con el arte original, esa vista se lee como "interfaz de
-marca dentro del marco candy".
+Pendiente de arte (ver la tabla de alcance): los simbolos del tablero. El arte
+navideño del tema ya cubre las dos maquetas: el taller de juguetes de fondo
+(`bg-desktop.webp` apaisado y `bg-mobile.webp` vertical), el marco de caramelos
+del escritorio (`slot-frame.webp`), el marco de campanas doradas del movil
+(`slot-frame-mobile.webp`) y las dos consolas (`console-desktop.webp`, que funde
+a Santa y el reno con las tres placas y los mandos, y `console-mobile.webp`, el
+panel con Santa y reno del que cuelgan los cinco discos y la fila de capsulas).
+Los simbolos siguen siendo los deportivos originales.
 
 Los simbolos del tablero (once WebP en `public/src/assets/slot/`) se mapean en
 `ui/lib/format.js` (`SYMBOL_IMAGE_PATH`). `s1.webp` .. `s9.webp` son los nueve

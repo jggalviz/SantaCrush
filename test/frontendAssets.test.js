@@ -1066,59 +1066,11 @@ test('el escalado del tablero y las casillas se adapta al alto disponible', () =
 test('cada dispositivo pinta su propio fondo ilustrado en WebP optimizado y sin reescalar', () => {
   const css = read(STYLE_PATH);
 
-  // Un maestro por dispositivo, archivado en `design/`: todo lo que hay en
-  // `public/**` se publica en el CDN y cada PNG pesa ~2 MB. El fondo de
-  // escritorio ya vive en el arbol tematico (`assets/santa-crush/bg/**`, ver el
-  // bloque de abajo); el movil sigue en `public/src/assets/**`.
-  const fondos = [
-    ['avenida_fantastica_reino_caramelos.png', 'avenida_fantastica_reino_caramelos.webp'],
-  ];
-
-  for (const [master, served] of fondos) {
-    const file = path.join(PUBLIC_DIR, 'src', 'assets', served);
-    assert.ok(fs.existsSync(file), `Falta public/src/assets/${served}`);
-
-    const binary = fs.readFileSync(file);
-    assert.equal(binary.toString('ascii', 0, 4), 'RIFF', `${served} debe ser un contenedor RIFF/WebP`);
-    assert.equal(binary.toString('ascii', 8, 12), 'WEBP', `${served} debe ser un WebP real`);
-
-    // Sin reescalar ni recortar: el fondo se pinta con `cover` + `center` sobre
-    // el mismo eje que el tablero y la consola, asi que el lienzo tiene que
-    // medir exactamente lo que el maestro. Se comprueba contra el IHDR del PNG
-    // y contra las dimensiones codificadas en el bloque VP8 del WebP.
-    const masterFile = path.join(ROOT_DIR, 'design', master);
-    assert.ok(fs.existsSync(masterFile), `Falta el maestro design/${master}`);
-    const png = fs.readFileSync(masterFile);
-    assert.equal(png.toString('ascii', 1, 4), 'PNG', `design/${master} debe ser el PNG maestro`);
-
-    const lossy = webpChunks(binary).find((chunk) => chunk.fourCC === 'VP8 ');
-    assert.ok(lossy, `${served} debe ser un WebP lossy (bloque VP8), sin alfa que nadie pinta`);
-    assert.equal(
-      binary.readUInt16LE(lossy.offset + 14) & 0x3fff,
-      png.readUInt32BE(16),
-      `${served} debe conservar el ancho del maestro`
-    );
-    assert.equal(
-      binary.readUInt16LE(lossy.offset + 16) & 0x3fff,
-      png.readUInt32BE(20),
-      `${served} debe conservar el alto del maestro`
-    );
-
-    // Peso: el estadio de escritorio se queda en q=86 (~376 KB, con mucha mas
-    // textura que la avenida a q=90) y el movil en ~320 KB. El tope de 400 KB
-    // cubre a los dos y evita que una subida de calidad cuele un PNG disfrazado
-    // de WebP.
-    assert.ok(
-      binary.length < 400 * 1024,
-      `${served} pesa ${(binary.length / 1024).toFixed(1)} KB (objetivo < 400 KB)`
-    );
-
-    // Y el maestro no viaja al CDN.
-    assert.ok(
-      !fs.existsSync(path.join(PUBLIC_DIR, 'src', master)),
-      `${master} no debe servirse desde public/src`
-    );
-  }
+  // Los dos fondos ilustrados viven ya en el arbol tematico
+  // (`public/assets/santa-crush/bg/**`), uno por dispositivo: el escritorio en
+  // `bg-desktop.webp` y el movil en `bg-mobile.webp`. Los dos se publican sin
+  // recortar y sin alfa porque se pintan con `cover`, y su maestro sigue
+  // archivado en `design/` para no viajar al CDN.
 
   // Escritorio: el taller de juguetes vive en el arbol tematico y `body` lo
   // pinta centrado, escalado con `cover` y anclado al viewport.
@@ -1169,11 +1121,49 @@ test('cada dispositivo pinta su propio fondo ilustrado en WebP optimizado y sin 
     'El respaldo de `html` debe ser el azul marino del estadio'
   );
 
-  // Movil: el case se recorta sobre la avenida, con el mismo encuadre.
+  // Movil: el taller de juguetes en vertical, con el mismo encuadre pero sin
+  // `fixed` (en iOS el fondo fijo se repinta mal al girar el telefono).
+  const mobWebp = path.join(PUBLIC_DIR, 'assets', 'santa-crush', 'bg', 'bg-mobile.webp');
+  assert.ok(fs.existsSync(mobWebp), 'Falta public/assets/santa-crush/bg/bg-mobile.webp');
+  const mobBinary = fs.readFileSync(mobWebp);
+  assert.equal(mobBinary.toString('ascii', 0, 4), 'RIFF', 'bg-mobile.webp debe ser un contenedor RIFF/WebP');
+  assert.equal(mobBinary.toString('ascii', 8, 12), 'WEBP', 'bg-mobile.webp debe ser un WebP real');
+
+  const mobMaster = path.join(ROOT_DIR, 'design', 'bg_mobile_toy_workshop.png');
+  assert.ok(fs.existsSync(mobMaster), 'Falta el maestro design/bg_mobile_toy_workshop.png');
+  const mobPng = fs.readFileSync(mobMaster);
+  assert.equal(mobPng.toString('ascii', 1, 4), 'PNG', 'design/bg_mobile_toy_workshop.png debe ser el PNG maestro');
+
+  const mobLossy = webpChunks(mobBinary).find((chunk) => chunk.fourCC === 'VP8 ');
+  assert.ok(mobLossy, 'bg-mobile.webp debe ser un WebP lossy (bloque VP8), sin alfa que nadie pinta');
+  assert.equal(
+    mobBinary.readUInt16LE(mobLossy.offset + 14) & 0x3fff,
+    mobPng.readUInt32BE(16),
+    'bg-mobile.webp debe conservar el ancho del maestro'
+  );
+  assert.equal(
+    mobBinary.readUInt16LE(mobLossy.offset + 16) & 0x3fff,
+    mobPng.readUInt32BE(20),
+    'bg-mobile.webp debe conservar el alto del maestro'
+  );
+  assert.ok(
+    mobBinary.length < 340 * 1024,
+    `bg-mobile.webp pesa ${(mobBinary.length / 1024).toFixed(1)} KB (objetivo < 340 KB)`
+  );
+  assert.ok(
+    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'bg_mobile_toy_workshop.png')),
+    'El maestro del taller vertical no debe servirse desde public/src'
+  );
+
   assert.match(
     css,
-    /@media \(max-width: 899px\) \{\s*body \{\s*background:\s*url\('\.\.\/assets\/avenida_fantastica_reino_caramelos\.webp'\)\s*no-repeat\s*center\s*center\s*\/\s*cover;\s*\}\s*\}/,
-    'Por debajo de 900 px el fondo debe pasar a la avenida fantastica'
+    /@media \(max-width: 899px\) \{\s*body \{\s*background: url\('\.\.\/\.\.\/assets\/santa-crush\/bg\/bg-mobile\.webp'\) no-repeat center center \/ cover;\s*\}\s*\}/,
+    'Por debajo de 900 px el fondo debe ser el taller de juguetes vertical, centrado y con `cover`'
+  );
+  assert.doesNotMatch(
+    css,
+    /avenida_fantastica_reino_caramelos/,
+    'El CSS no debe referenciar el fondo movil retirado'
   );
 
   // El fondo anterior (248 KB de WebP + 7,4 MB de SVG) se archiva en `design/`:
@@ -1275,8 +1265,8 @@ test('las fuentes candy se sirven como WOFF2 propios y sin bloquear el render', 
 test('los rotulos del case no se repintan: el DOM solo guarda nombre accesible y estado', () => {
   const css = read(STYLE_PATH);
 
-  // Las placas de la fila inferior (AUTOGIRO · AUTO · GIRAR · APUESTA) vienen
-  // vacias en `consola_movil.webp`: los rotulos visibles los pone la hoja de
+  // Las capsulas de la fila inferior (AUTOGIRO · AUTO · GIRAR · APUESTA) vienen
+  // vacias en `console-mobile.webp`: los rotulos visibles los pone la hoja de
   // estilo (los `::after` de la seccion 6, la ventana de chips del autogiro y
   // `.bet-readout`). Lo que ninguna regla puede volver a pintar es el texto del
   // DOM, que solo guarda el nombre accesible: se recorta a 1x1 en una sola
@@ -1316,8 +1306,8 @@ test('los rotulos del case no se repintan: el DOM solo guarda nombre accesible y
   // El case es la unica capa grafica de la consola movil.
   assert.match(
     css,
-    /\.machine__side \.controls \{[\s\S]*?background: url\('\.\.\/assets\/consola_movil\.webp'\) no-repeat center \/ contain;/,
-    'La carcasa movil debe pintar `consola_movil.webp`, que ya trae los rotulos integrados'
+    /\.machine__side \.controls \{[\s\S]*?background: url\('\.\.\/\.\.\/assets\/santa-crush\/console\/console-mobile\.webp'\) no-repeat center \/ contain;/,
+    'La carcasa movil debe pintar `console-mobile.webp`, que ya trae los discos y las capsulas dibujados'
   );
 
   // Y los textos siguen en el HTML: son el nombre accesible de cada pulsador y
@@ -1360,27 +1350,27 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
     'Sin padding propio: el aire lateral lo pone `.app` y es simetrico'
   );
   // El ancho sale del alto libre menos la separacion, repartido entre la
-  // relacion del marco (1093 / 1392 = 0,7852, la del recorte sin estirar) y la
-  // de la consola (883 / 1780 = 0,4961): 1,2813 en total.
+  // relacion del marco (1076 / 1447 = 0,7436, la del recorte sin estirar) y la
+  // de la consola (879 / 1775 = 0,4952): 1,2388 en total.
   // `cqw`/`cqh` en lugar de `%`: dentro de una custom property un `%` se
   // resuelve contra la propiedad que la usa, y el mismo token medía el ancho en
   // `width` y el alto en `height` (el HUD caía 12 px bajo sus placas).
   assert.match(
     machineGrid[0],
-    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - clamp\(4px, 1\.2dvh, 10px\)\) \/ 1\.2813\)\);/,
+    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - clamp\(4px, 1\.2dvh, 10px\)\) \/ 1\.2388\)\);/,
     'El ancho de la maquina descuenta marco + separacion + consola del alto libre'
   );
 
   // 2) Las dos piezas se miden con esa unidad y con la relacion exacta de su
   //    lienzo (`contain` sobre una caja con esa relacion llena el 100%).
-  const frameRule = css.match(/\.machine__table\s*\{[^}]*aspect-ratio:\s*1392 \/ 1093;[^}]*\}/);
-  assert.ok(frameRule, 'El marco debe declarar la relacion exacta de su recorte, 1392/1093');
+  const frameRule = css.match(/\.machine__table\s*\{[^}]*aspect-ratio:\s*1447 \/ 1076;[^}]*\}/);
+  assert.ok(frameRule, 'El marco debe declarar la relacion exacta de su recorte, 1447/1076');
   assert.match(frameRule[0], /width:\s*var\(--m-w\);/, 'El marco se mide con `--m-w`');
 
   const caseRule = css.match(
-    /\.machine__side \.controls\s*\{[^}]*aspect-ratio:\s*1780 \/ 883;[^}]*\}/
+    /\.machine__side \.controls\s*\{[^}]*aspect-ratio:\s*1775 \/ 879;[^}]*\}/
   );
-  assert.ok(caseRule, 'La consola debe declarar su relacion 1780/883');
+  assert.ok(caseRule, 'La consola debe declarar su relacion 1775/879');
   const rule = caseRule[0];
   assert.match(rule, /grid-area:\s*console;/, 'La consola vive en la fila `console`');
   assert.match(rule, /width:\s*var\(--m-w\);/, 'La consola comparte el ancho exacto del marco');
@@ -1390,40 +1380,40 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   assert.match(rule, /align-self:\s*center;/, 'La fila no estira el case');
   assert.match(
     rule,
-    /background:\s*url\('\.\.\/assets\/consola_movil\.webp'\)\s*no-repeat\s*center\s*\/\s*contain;/,
+    /background:\s*url\('\.\.\/\.\.\/assets\/santa-crush\/console\/console-mobile\.webp'\)\s*no-repeat\s*center\s*\/\s*contain;/,
     'El dibujo se pinta centrado en su propia caja'
   );
 
   // 3) El tablero tapa la ventana transparente del marco con % del recorte
-  //    (medido: x 7,69-92,53 %, y 39,80-92,04 %), con un pelo de aire por fuera
+  //    (medido: x 8,29-91,57 %, y 42,30-90,45 %), con un pelo de aire por fuera
   //    para que su filo se meta bajo el aro dorado y no asome el fondo.
   assert.match(
     css,
-    /\.machine__table \.board\s*\{[^}]*position:\s*absolute;[^}]*left:\s*7\.20%;[^}]*top:\s*39\.40%;[^}]*width:\s*85\.70%;[^}]*height:\s*53\.00%;[^}]*\}/,
+    /\.machine__table \.board\s*\{[^}]*position:\s*absolute;[^}]*left:\s*7\.80%;[^}]*top:\s*41\.85%;[^}]*width:\s*84\.26%;[^}]*height:\s*49\.05%;[^}]*\}/,
     'El tablero se coloca en la ventana del marco, no en el flujo de la fila'
   );
 
-  // 4) La marca y el HUD caen sobre sus huecos del arte nuevo: el cielo del
-  //    estadio sostiene el logo centrado en el marco y la franja de las tres
-  //    placas doradas va de 30,03 a 91,95 % del ancho y de 22,96 a 31,90 % del
-  //    alto del recorte.
+  // 4) La marca y el HUD caen sobre sus huecos del arte nuevo: el cielo alto
+  //    sostiene el logo centrado en el marco y la franja de las tres placas
+  //    doradas va de 27,20 a 90,00 % del ancho y de 25,40 a 33,60 % del alto del
+  //    recorte.
   const hudRule = css.match(
-    /\.machine__side \.hud\s*\{[^}]*width:\s*calc\(var\(--m-w\) \* 0\.6192\);[^}]*\}/
+    /\.machine__side \.hud\s*\{[^}]*width:\s*calc\(var\(--m-w\) \* 0\.6280\);[^}]*\}/
   );
   assert.ok(hudRule, 'El HUD debe medir la franja exacta de las tres placas');
   assert.match(
     hudRule[0],
-    /height:\s*calc\(var\(--frame-h\) \* 0\.0894\);/,
+    /height:\s*calc\(var\(--frame-h\) \* 0\.0820\);/,
     'La franja mide el alto interior de las placas del HUD'
   );
   assert.match(
     hudRule[0],
-    /margin-left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ var\(--m-w\) \* 0\.3003\);/,
-    'La franja arranca en la primera placa del HUD (30,03 % del marco)'
+    /margin-left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ var\(--m-w\) \* 0\.2720\);/,
+    'La franja arranca en la primera placa del HUD (27,20 % del marco)'
   );
   assert.match(
     hudRule[0],
-    /margin-top:\s*calc\(var\(--frame-h\) \* 0\.2296\);/,
+    /margin-top:\s*calc\(var\(--frame-h\) \* 0\.2540\);/,
     'La franja cae sobre sus placas y no sobre la ventana'
   );
 
@@ -1436,22 +1426,22 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   );
   assert.match(
     heroRule[0],
-    /bottom:\s*calc\(var\(--frame-h\) \* 0\.8013\);/,
-    'La base del logo se apoya sobre la franja de banderines, por encima del HUD'
+    /bottom:\s*calc\(var\(--frame-h\) \* 0\.7750\);/,
+    'La base del logo se apoya sobre la franja de las placas del HUD'
   );
 
   // 5) La chapa del logo: 78 % del ancho del marco y la caja con la proporcion
   //    real del arte (2:1). `--logo-sky` es lo que hay entre el filo superior de
   //    `.machine` y la base del logo: la mitad del sobrante vertical de la
   //    rejilla (alto del escenario menos marco, separacion y consola) mas el
-  //    19,87 % del marco que queda por encima de la base. De ahi se descuentan
+  //    22,50 % del marco que queda por encima de la base. De ahi se descuentan
   //    14 px (10 del balanceo + 4 de colchon), el resto se divide por 1,05 —lo
   //    que trepa la esquina alta del PNG al girar -3° y crecer un 3 %— y se
   //    duplica porque el ancho es el doble del alto. Sin ese tope el 78 % se
   //    corta contra el filo en tablet vertical y en 320 px.
   assert.match(
     heroRule[0],
-    /--logo-sky:\s*calc\(\s*\(100cqh - \(var\(--frame-h\) \+ var\(--row-gap\) \+ var\(--m-w\) \* 0\.4961\)\) \/ 2\s*\+ var\(--frame-h\) \* 0\.1987\s*\);/,
+    /--logo-sky:\s*calc\(\s*\(100cqh - \(var\(--frame-h\) \+ var\(--row-gap\) \+ var\(--m-w\) \* 0\.4952\)\) \/ 2\s*\+ var\(--frame-h\) \* 0\.2250\s*\);/,
     'El aire del logo se mide con el hueco real, no con un porcentaje fijo'
   );
   assert.match(
@@ -1476,7 +1466,7 @@ test('el logo recupera presencia en tablets con aire reservado y sin mover su ba
   const css = read(STYLE_PATH);
 
   // En tablet vertical (600-899 px, alto de sobra) el marco se estira hasta la
-  // barra superior, asi que el unico cielo del logo es el 19,87 % del arte que
+  // barra superior, asi que el unico cielo del logo es el 22,50 % del arte que
   // queda sobre las placas del HUD: a 768 x 1024 la chapa medía 192 px, el 27,5 %
   // del marco, menos que en un telefono de 390 px. Ese tramo reserva un aire
   // vertical propio que `--m-w` descuenta del alto libre; como la rejilla esta
@@ -1502,7 +1492,7 @@ test('el logo recupera presencia en tablets con aire reservado y sin mover su ba
 
   assert.match(
     midBlock,
-    /--m-w:\s*min\(\s*100cqw,\s*calc\(\(100cqh - var\(--row-gap\) - var\(--logo-air\)\) \/ 1\.2813\)\s*\);/,
+    /--m-w:\s*min\(\s*100cqw,\s*calc\(\(100cqh - var\(--row-gap\) - var\(--logo-air\)\) \/ 1\.2388\)\s*\);/,
     'El aire se descuenta del alto libre y el ancho del viewport sigue siendo el tope'
   );
   assert.match(
@@ -1532,7 +1522,9 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   // caja con la relacion de su lienzo; si el WebP cambia de medidas, `contain`
   // lo centra con aire y los controles se salen del arte.
   //
-  // Movil (`build-mobile-art.js`): marco y consola recortados al alfa.
+  // Movil (`build-mobile-art.js`): las corazas del tema anterior siguen
+  // publicadas en `public/src/assets/**` (el CSS ya pinta el arte navideño del
+  // arbol tematico, ver el test de `build:theme-art`).
   // Escritorio (`build-desktop-art.js`): d1 (marco del tablero) y d2 (columna
   // lateral entera: nube del logo + placas + consola), a q=90 y con el mismo
   // contrato de lienzo.
@@ -1800,20 +1792,20 @@ test('el pulsador se hunde en 80 ms al tocarlo y vuelve con la misma curva', () 
 test('la caja tactil de cada pulsador es su bbox del arte y el velo se recorta con --disc', () => {
   const css = read(STYLE_PATH);
 
-  // Medido sobre `consola_movil.webp` (1780 x 883) con el analisis de alfa y
-  // color: discos x 3,26-18,37 / 19,04-34,04 / 65,00-80,11 / 80,96-96,07 % · y
-  // 40,77-70,60 %, aro del GIRAR x 35,8-63,4 % · y 20,4-76,2 % (la caja tactil se
-  // queda con el cuadrado que cabe entero sobre el disco y encima de la placa
-  // GIRAR: x 37,7-61,4 % · y 21,4-69,2 %) y el tramo MAX de la placa APUESTA
-  // x 85,6-92,0 % · y 74,9-81,3 %. La caja tactil es exactamente ese recuadro,
+  // Medido sobre `console-mobile.webp` (1775 x 879) con el analisis de alfa y
+  // color: discos x 3,3-18,3 / 18,9-34,3 / 65,2-80,2 / 80,9-96,1 % · y
+  // 40,77-70,60 %, aro del GIRAR x 35,3-64,2 % (la caja tactil se queda con el
+  // cuadrado que cabe entero sobre el disco y encima de la capsula GIRAR:
+  // x 37,9-61,6 % · y 21,4-69,2 %) y el tramo MAX de la capsula APUESTA
+  // x 86,0-92,4 % · y 75,5-80,7 %. La caja tactil es exactamente ese recuadro,
   // asi que el dedo siempre cae sobre el dibujo.
   const boxes = [
-    [/\.machine__side \.controls #btn-feature\.gbtn \{([^}]*)\}/, ['left: 3.26%;', 'top: 40.77%;', 'width: 15.11%;', 'height: 29.83%;']],
-    [/\.machine__side \.controls #btn-auto\.gbtn \{([^}]*)\}/, ['left: 19.04%;', 'top: 40.77%;', 'width: 15.0%;', 'height: 29.83%;']],
-    [/\.machine__side \.controls \.btn--spin\.gbtn \{([^}]*)\}/, ['left: 37.7%;', 'top: 21.4%;', 'width: 23.7%;', 'height: 47.8%;']],
-    [/\.machine__side \.controls__bet #btn-bet-down \{([^}]*)\}/, ['left: 65.00%;', 'top: 40.77%;']],
-    [/\.machine__side \.controls__bet #btn-bet-up \{([^}]*)\}/, ['left: 80.96%;', 'top: 40.77%;']],
-    [/\.machine__side \.controls__bet #btn-bet-max \{([^}]*)\}/, ['left: 85.6%;', 'top: 74.9%;', 'width: 6.4%;', 'height: 6.4%;']]
+    [/\.machine__side \.controls #btn-feature\.gbtn \{([^}]*)\}/, ['left: 3.30%;', 'top: 40.77%;', 'width: 15.00%;', 'height: 29.83%;']],
+    [/\.machine__side \.controls #btn-auto\.gbtn \{([^}]*)\}/, ['left: 18.90%;', 'top: 40.77%;', 'width: 15.40%;', 'height: 29.83%;']],
+    [/\.machine__side \.controls \.btn--spin\.gbtn \{([^}]*)\}/, ['left: 37.9%;', 'top: 21.4%;', 'width: 23.7%;', 'height: 47.8%;']],
+    [/\.machine__side \.controls__bet #btn-bet-down \{([^}]*)\}/, ['left: 65.20%;', 'top: 40.77%;']],
+    [/\.machine__side \.controls__bet #btn-bet-up \{([^}]*)\}/, ['left: 80.90%;', 'top: 40.77%;']],
+    [/\.machine__side \.controls__bet #btn-bet-max \{([^}]*)\}/, ['left: 86.0%;', 'top: 75.5%;', 'width: 6.4%;', 'height: 5.2%;']]
   ];
   for (const [pattern, declarations] of boxes) {
     // Las reglas de `--disc` no llevan geometria: se busca la que la declare
@@ -1831,7 +1823,7 @@ test('la caja tactil de cada pulsador es su bbox del arte y el velo se recorta c
     /\.machine__side \.controls__bet #btn-bet-down,\s*\n\s*\.machine__side \.controls__bet #btn-bet-up \{([^}]*)\}/
   );
   assert.ok(discPair, 'Los discos − y + comparten su regla base');
-  assert.ok(discPair[1].includes('width: 15.11%;'), 'Los dos discos minus/plus miden 15,11 % de ancho');
+  assert.ok(discPair[1].includes('width: 15.00%;'), 'Los dos discos minus/plus miden 15,00 % de ancho');
   assert.ok(discPair[1].includes('height: 29.83%;'), 'Los dos discos minus/plus miden 29,83 % de alto');
 
   // `--disc` (top right bottom left, en % de la caja tactil) recorta el velo del
@@ -2241,14 +2233,16 @@ test('la pastilla del multiplicador se pinta como una cuenta de rubi con volumen
 
 
 /* --------------------------------------------------------------------------
-   Arte navideño de ESCRITORIO (`public/assets/santa-crush/**`)
+   Arte navideño del TEMA (`public/assets/santa-crush/**`)
    -------------------------------------------------------------------------- */
-test('el arte navideño de escritorio se sirve desde el arbol del tema con su lienzo exacto', () => {
+test('el arte navideño del tema se sirve desde el arbol con su lienzo exacto', () => {
   const css = read(STYLE_PATH);
   const themeDir = path.join(PUBLIC_DIR, 'assets', 'santa-crush');
 
   // Cada pieza se publica recortada al bbox de su alfa con `build:theme-art`;
   // el CSS la pinta `100% 100%` sobre una caja con la relacion del recorte.
+  // Escritorio: marco de caramelos y consola de mandos. Movil: marco de campanas
+  // doradas y panel con Santa y reno.
   const pieces = [
     {
       name: 'slot-frame',
@@ -2263,10 +2257,27 @@ test('el arte navideño de escritorio se sirve desde el arbol del tema con su li
       master: path.join(ROOT_DIR, 'design', 'console_desktop_buttons.png'),
       canvas: '1041x1497',
       max: 620 * 1024
+    },
+    {
+      name: 'slot-frame-mobile',
+      target: path.join(themeDir, 'console', 'slot-frame-mobile.webp'),
+      master: path.join(ROOT_DIR, 'design', 'frame_mobile_gold_bells.png'),
+      canvas: '1447x1076',
+      max: 340 * 1024
+    },
+    {
+      name: 'console-mobile',
+      target: path.join(themeDir, 'console', 'console-mobile.webp'),
+      master: path.join(ROOT_DIR, 'design', 'console_mobile_santa_reindeer.png'),
+      canvas: '1775x879',
+      max: 440 * 1024,
+      /* La consola movil se pinta con `contain` sobre una caja que ya tiene la
+         relacion exacta del lienzo: mismo resultado que `100% 100%`. */
+      paint: 'contain'
     }
   ];
 
-  for (const { name, target, master, canvas, max } of pieces) {
+  for (const { name, target, master, canvas, max, paint = '100% 100%' } of pieces) {
     assert.ok(fs.existsSync(target), `Falta public/assets/santa-crush/console/${name}.webp`);
     const binary = fs.readFileSync(target);
     assert.equal(binary.toString('ascii', 0, 4), 'RIFF', `${name} debe ser un contenedor RIFF/WebP`);
@@ -2291,8 +2302,8 @@ test('el arte navideño de escritorio se sirve desde el arbol del tema con su li
     // El CSS pinta la pieza a sangre sobre la caja de su lienzo.
     assert.match(
       css,
-      new RegExp(`url\\('\\.\\.\\/\\.\\.\\/assets\\/santa-crush\\/console\\/${name}\\.webp'\\) no-repeat center \\/ 100% 100%`),
-      `El CSS debe pintar ${name}.webp sin aire (100% 100%)`
+      new RegExp(`url\\('\\.\\.\\/\\.\\.\\/assets\\/santa-crush\\/console\\/${name}\\.webp'\\) no-repeat center \\/ ${paint}`),
+      `El CSS debe pintar ${name}.webp sin aire (${paint})`
     );
   }
 

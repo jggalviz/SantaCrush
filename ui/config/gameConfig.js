@@ -161,7 +161,8 @@ export const GAME_CONFIG = deepFreeze({
       "mobile": "/assets/santa-crush/bg/bg-mobile.webp"
     },
     "console": {
-      "mobileFrame": "/assets/santa-crush/console/mobile-frame.webp",
+      "mobileFrame": "/assets/santa-crush/console/slot-frame-mobile.webp",
+      "mobileConsole": "/assets/santa-crush/console/console-mobile.webp",
       "desktopFrame": "/assets/santa-crush/console/slot-frame.webp",
       "desktopConsole": "/assets/santa-crush/console/console-desktop.webp"
     },

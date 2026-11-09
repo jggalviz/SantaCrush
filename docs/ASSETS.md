@@ -9,11 +9,12 @@ cadena `/assets/santa-crush/`.
 public/assets/santa-crush/
 ├── bg/
 │   ├── bg-desktop.webp        fondo de escritorio (body, >= 900 px)
-│   └── bg-mobile.webp         fondo de móvil (<= 899 px)
+│   └── bg-mobile.webp         fondo de móvil, vertical (<= 899 px)
 ├── console/
-│   ├── mobile-frame.webp      marco de la consola móvil
 │   ├── slot-frame.webp        marco de caramelos del tablero (escritorio)
-│   └── console-desktop.webp   consola de mandos completa (escritorio)
+│   ├── console-desktop.webp   consola de mandos completa (escritorio)
+│   ├── slot-frame-mobile.webp marco de campanas doradas del tablero (móvil)
+│   └── console-mobile.webp    panel con Santa y reno (móvil)
 ├── tiles/
 │   ├── tile-1.webp            símbolos del tablero (orden = s1..s6 del motor)
 │   ├── …
@@ -32,15 +33,27 @@ La **versión de escritorio ya sirve el arte navideño** de este árbol:
 (consola de mandos: Santa y el reno, tres placas del HUD, fila −/lectura/+/MAX y
 los dos pulsadores grandes, 1041 x 1497). Los genera
 `npm run build:theme-art` desde los maestros `design/bg_desktop_toy_workshop.png`,
-`design/frame_desktop_candy.png` y `design/console_desktop_buttons.png`; el CSS
-los pinta a sangre sobre cajas con su relación exacta y ancla las capas en % del
-recorte medido (ver el bloque *ESCRITORIO (≥900 px) · ARTE NAVIDEÑO DEL TEMA* de
-`public/src/css/style.css`).
+`design/frame_desktop_candy.png` y `design/console_desktop_buttons.png`.
+
+La **versión móvil (< 900 px) también sirve el arte navideño** del árbol:
+`bg/bg-mobile.webp` (taller de juguetes vertical, 941 x 1672, q=76),
+`console/slot-frame-mobile.webp` (marco de campanas doradas con las tres placas
+del HUD y la ventana del tablero, 1447 x 1076, q=86) y
+`console/console-mobile.webp` (panel con Santa y reno: discos CRUSH · AUTO ·
+GIRAR · − · + y la fila de cápsulas del pie, 1775 x 879, q=86). Los genera el
+mismo `npm run build:theme-art` desde `design/bg_mobile_toy_workshop.png`,
+`design/frame_mobile_gold_bells.png` y
+`design/console_mobile_santa_reindeer.png`.
+
+El CSS pinta las seis piezas a sangre sobre cajas con su relación exacta y ancla
+las capas en % del recorte medido (bloques *ESCRITORIO (≥900 px) · ARTE NAVIDEÑO
+DEL TEMA* y *MARCO Y CONSOLA · la máquina móvil…* de `public/src/css/style.css`).
 
 El resto de piezas siguen siendo las de `public/src/assets/**`
-(`avenida_fantastica_reino_caramelos.webp` para móvil, `consola_movil.webp`,
-`marco_movil.webp`, `MERIDIANOBET-CRUSH-LOGO.webp`, `slot/s1..s11.webp` y los
-MP3) hasta que se reexporten a este árbol.
+(`MERIDIANOBET-CRUSH-LOGO.webp`, `slot/s1..s11.webp` y los MP3); las corazas
+anteriores del móvil (`marco_movil.webp`, `consola_movil.webp` y
+`avenida_fantastica_reino_caramelos.webp`) ya no las pinta ninguna regla y sus
+maestros quedan archivados en `design/`.
 
 ## Cómo cambiar el arte
 

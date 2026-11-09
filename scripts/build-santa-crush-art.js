@@ -24,6 +24,17 @@
  *       Santa y el reno (hero), las tres placas del HUD, la fila - / lectura /
  *       + / MAX y los dos pulsadores grandes (AUTOGIRO y GIRAR).
  *
+ * Movil (retrato, `movil/`):
+ *   design/bg_mobile_toy_workshop.png   -> bg/bg-mobile.webp
+ *       941 x 1672, opaco. El taller de juguetes en vertical: `body` lo pinta
+ *       con `cover` + `center` por debajo de 900 px, sin recortar.
+ *   design/frame_mobile_gold_bells.png  -> console/slot-frame-mobile.webp
+ *       1447 x 1076, recortado al bbox de alfa. Marco de campanas doradas con
+ *       las tres placas del HUD arriba y la ventana del tablero debajo.
+ *   design/console_mobile_santa_reindeer.png -> console/console-mobile.webp
+ *       1775 x 879, recortado al bbox de alfa. Panel con Santa y reno: los
+ *       cinco discos (CRUSH, AUTO, GIRAR, - y +) y la fila de capsulas del pie.
+ *
  * Cada pieza:
  *   1. mide el bbox de los pixeles con alfa visible (las opacas, el lienzo);
  *   2. comprueba que el recorte respeta la relacion declarada, que es la que
@@ -70,6 +81,38 @@ const PIECES = [
     canvas: { width: 1041, height: 1497 },
     quality: 88,
     maxBytes: 620 * 1024
+  },
+  /* --- Movil (retrato) ---------------------------------------------------
+     Mismo contrato que el escritorio, con los maestros de `movil/` copiados a
+     `design/`. El marco y la consola se recortan al bbox de su alfa y se
+     publican al lienzo que declara el CSS; el fondo vertical es opaco. */
+  {
+    name: 'bg-mobile',
+    label: 'fondo vertical del taller de juguetes',
+    source: path.join(ROOT, 'design', 'bg_mobile_toy_workshop.png'),
+    target: path.join(THEME_DIR, 'bg', 'bg-mobile.webp'),
+    canvas: { width: 941, height: 1672 },
+    opaque: true,
+    quality: 76,
+    maxBytes: 340 * 1024
+  },
+  {
+    name: 'slot-frame-mobile',
+    label: 'marco de campanas doradas del tablero',
+    source: path.join(ROOT, 'design', 'frame_mobile_gold_bells.png'),
+    target: path.join(THEME_DIR, 'console', 'slot-frame-mobile.webp'),
+    canvas: { width: 1447, height: 1076 },
+    quality: 86,
+    maxBytes: 340 * 1024
+  },
+  {
+    name: 'console-mobile',
+    label: 'consola movil (Santa y reno + discos + capsulas)',
+    source: path.join(ROOT, 'design', 'console_mobile_santa_reindeer.png'),
+    target: path.join(THEME_DIR, 'console', 'console-mobile.webp'),
+    canvas: { width: 1775, height: 879 },
+    quality: 86,
+    maxBytes: 440 * 1024
   }
 ];
 
