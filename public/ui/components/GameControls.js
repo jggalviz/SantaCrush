@@ -26,7 +26,12 @@ export class GameControls {
 
     const refs = this.ui.refs;
     this.bind(refs.spinBtn, 'click', () => {
-      if (this.controller.autoRunning) return;
+      /* Con el bucle en marcha el GIRAR es la parada rapida: el mismo gesto que el
+         azul, sin tener que buscar el otro pulsador. Con el motor quieto gira. */
+      if (this.controller.autoRunning) {
+        this.controller.stopAuto('Automático detenido');
+        return;
+      }
       void this.controller.spin();
     });
 
@@ -35,6 +40,9 @@ export class GameControls {
          hasta que el jugador elige un paquete, y elegirlo tampoco gasta. */
       this.controller.openFeverSheet();
     });
+
+    /* Selector rapido: los chips x5 x10 x25 eligen paquete sin abrir la hoja. */
+    this.bind(refs.featureOptions, 'click', (event) => this.onQuickSpinsClick(event));
 
     /* El pulsador azul juega el paquete configurado o detiene el bucle. */
     this.bind(refs.autoBtn, 'click', () => this.controller.toggleAuto());
@@ -69,12 +77,40 @@ export class GameControls {
     this.listeners.push({ target, type, handler });
   }
 
+  /**
+   * Un chip del selector rapido. El paquete viaja en `data-spins`; el
+   * `GameController` valida la cantidad contra el catalogo publicado, cierra la
+   * hoja si estaba abierta y no gasta saldo.
+   *
+   * @param {Event} event clic dentro del grupo `#feature-options`
+   */
+  onQuickSpinsClick(event) {
+    const target = event && event.target;
+    /* El clic puede caer en el texto del chip: se sube al pulsador. */
+    const node = target && typeof target.closest === 'function'
+      ? target.closest('[data-spins]')
+      : null;
+    if (!node || node.disabled) return;
+
+    const spins = Number(node.getAttribute('data-spins'));
+    if (!Number.isFinite(spins)) return;
+    this.controller.pickQuickSpins(spins);
+  }
+
   onKeyDown(event) {
     const target = event.target;
     const isFormField = typeof HTMLElement !== 'undefined'
       && target instanceof HTMLElement
       && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
     if (isFormField) return;
+
+    /* Los chips del selector ya son botones: su Space/Enter elige paquete y no
+       debe ademas lanzar una tirada. Se mira el ancestro porque el foco puede
+       estar en el propio chip. */
+    const isQuickChip = Boolean(target)
+      && typeof target.closest === 'function'
+      && target.closest('#feature-options') !== null;
+    if (isQuickChip) return;
 
     const modal = this.document.getElementById('modal');
     if (modal && !modal.hidden) return;

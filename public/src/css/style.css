@@ -695,13 +695,16 @@ button:disabled { cursor: not-allowed; }
 .btn--auto[aria-pressed="true"] .btn__title { color: var(--mint); }
 
 /* --------------------------------------------------------------------------
-   Paquetes del autogiro dentro del boton amarillo (`AUTOGIRO x5 x10 x25`)
+   Selector rapido de paquetes del autogiro (`x5 x10 x25`)
    --------------------------------------------------------------------------
-   El boton amarillo configura el paquete y el azul lo juega: el catalogo vive
-   en el propio cuerpo del boton, con el vigente resaltado, asi que no hace
-   falta una capsula con un solo valor. `GameView.paintQuickSpinsOptions_` mueve
-   `is-active`; el texto es decorativo (`aria-hidden`) porque el nombre accesible
-   del boton ya enumera los paquetes.
+   El amarillo abre la hoja con el coste de cada paquete y el azul juega el
+   paquete elegido; estos tres pulsadores son el atajo: eligen sin abrir nada y
+   sin gastar saldo. Van PEGADOS al amarillo pero son hermanos suyos, no hijos:
+   un boton dentro de otro boton no es marcado valido ni enfocable.
+
+   `GameView.paintQuickSpinsOptions_` mueve el resaltado (`is-active` +
+   `aria-pressed`) y el estado `disabled`; la fuente de verdad del paquete es una
+   sola para los chips, la pildora del azul y la hoja.
    -------------------------------------------------------------------------- */
 
 .btn__opts {
@@ -713,8 +716,13 @@ button:disabled { cursor: not-allowed; }
 }
 
 .btn__opt {
+  /* Reset del control nativo: sin esto el chip traeria marco, fondo y tipografia
+     del navegador en vez de la capsula de caramelo. */
+  margin: 0;
   padding: 0.1em 0.36em;
+  border: 0;
   border-radius: 999px;
+  font: inherit;
   font-size: 0.62em;
   font-weight: 800;
   line-height: 1.2;
@@ -724,6 +732,23 @@ button:disabled { cursor: not-allowed; }
   color: rgba(94, 44, 0, 0.78);
   background: rgba(255, 255, 255, 0.26);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+
+.btn__opt:hover:not(:disabled) { filter: brightness(1.12); }
+.btn__opt:active:not(:disabled) { transform: translateY(1px); }
+
+/* Con una ronda en curso o el bucle en marcha el paquete no se cambia: los tres
+   chips se apagan a la vez que el amarillo. */
+.btn__opt:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn__opt:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.92);
+  outline-offset: 1px;
 }
 
 /* El paquete vigente: capsula clara con tinta tostada, el mismo contraste que el
@@ -5783,39 +5808,26 @@ body.is-demo .machine__side .controls .balance::after {
     pointer-events: none;
   }
 
-  /* Capsula 1 (x 6,32-18,74 % · y 74,43-81,74 %): su centro cae 1,73 % a la
-     derecha del eje del disco CRUSH (10,80 %), y su fila queda 7,4 % del alto del
-     recorte por debajo del borde inferior de la caja tactil del disco (70,60 %).
-     La ventana se ancla al pulsador, no a `.btn__main`: ese envoltorio vuelve a
-     `static` para que el `top: 100%` mida la caja que sigue el disco y no el
-     centro del boton. */
-  .machine__side .controls #btn-feature .btn__main {
-    position: static;
-  }
-
-  .machine__side .controls #btn-feature .btn__opts {
+  /* Capsula 1 del pie (x 6,32-18,74 % · y 74,43-81,74 % del lienzo): la placa
+     bajo el disco CRUSH lleva escrito el paquete vigente, fijo. Antes rotaban
+     los tres chips; tres blancos de ~15 px no son tocables y el turno escondia
+     justo el dato que se quiere leer. En movil el paquete se elige en la hoja
+     del amarillo, que publica el coste de cada uno. */
+  .machine__side .controls .btn__opts {
     position: absolute;
-    left: calc(50% + var(--m-w) * 0.0173);
-    top: calc(100% + var(--m-w) * 0.0367);
-    width: calc(var(--m-w) * 0.1220);
-    height: calc(var(--m-w) * 0.0506);
+    left: 6.32%;
+    top: 74.43%;
+    width: 12.42%;
+    height: 7.31%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transform: translate(-50%, -50%);
-    overflow: hidden;
+    /* La placa es una lectura: el toque lo sigue recogiendo el disco. */
     pointer-events: none;
   }
 
-  /* Cada chip ocupa la ventana entera y entra por abajo mientras el anterior ya
-     esta saliendo por arriba. El turno dura un tercio del ciclo (1,2 s) y el
-     visible cubre casi todo el turno (4 %-29 % de entrada y salida, 0,14 s cada
-     una), asi que el relevo no deja la placa vacia: entre el final de un chip y
-     el arranque del siguiente solo queda el fotograma del cruce. */
-  .machine__side .controls #btn-feature .btn__opt {
-    position: absolute;
-    inset: 0;
-    display: flex;
+  .machine__side .controls .btn__opt {
+    display: none;
     align-items: center;
     justify-content: center;
     width: 100%;
@@ -5825,36 +5837,24 @@ body.is-demo .machine__side .controls .balance::after {
     border-radius: 0;
     background: none;
     box-shadow: none;
+    /* La placa solo informa: no se apaga con el motor ocupado ni con el bucle en
+       marcha, que es justo cuando mas se mira. */
+    opacity: 1;
     font-size: clamp(7px, calc(var(--m-w) * 0.0340), 14px);
     font-weight: 900;
     letter-spacing: 0;
     line-height: 1;
     color: #ffd977;
     text-shadow: 0 1px 1px rgba(30, 0, 20, 0.85), 0 0 6px rgba(255, 214, 90, 0.32);
-    opacity: 0;
-    transform: translateY(64%);
-    animation: featurePlateRoll 3.6s linear infinite;
   }
 
-  .machine__side .controls #btn-feature .btn__opt:nth-child(1) { animation-delay: 0s; }
-  .machine__side .controls #btn-feature .btn__opt:nth-child(2) { animation-delay: 1.2s; }
-  .machine__side .controls #btn-feature .btn__opt:nth-child(3) { animation-delay: 2.4s; }
-
-  /* En la placa no hay capsula: el paquete vigente se distingue por el turno, no
-     por el fondo, asi que el resaltado del escritorio se queda sin pintura y los
-     tres chips se leen igual. */
-  .machine__side .controls #btn-feature .btn__opt.is-active {
+  /* Solo se ve el vigente: la placa no ofrece tres blancos donde no caben. */
+  .machine__side .controls .btn__opt.is-active {
+    display: flex;
+    opacity: 1;
     color: #ffd977;
     background: none;
     box-shadow: none;
-  }
-
-  @keyframes featurePlateRoll {
-    0% { opacity: 0; transform: translateY(64%); }
-    2% { opacity: 1; transform: translateY(0); }
-    31.5% { opacity: 1; transform: translateY(0); }
-    33% { opacity: 0; transform: translateY(-64%); }
-    33.01%, 100% { opacity: 0; transform: translateY(64%); }
   }
 
   /* Capsula 2 (x 21,44-33,63 %): misma fila, y su centro cae 0,94 % a la derecha
@@ -6422,13 +6422,6 @@ body.is-demo .machine__side .controls .balance::after {
     animation: none;
     opacity: 0.8;
   }
-  /* La placa del autogiro no rota: se queda con el paquete vigente a la vista. */
-  .machine__side .controls #btn-feature .btn__opt {
-    animation: none;
-    opacity: 0;
-    transform: none;
-  }
-  .machine__side .controls #btn-feature .btn__opt.is-active { opacity: 1; }
 }
 
 
@@ -7518,7 +7511,9 @@ body.is-demo .machine__side .controls .balance::after {
     border-radius: 12px;
   }
 
-  /* AUTOGIRO · boton amarillo grande x 10,18-47,74 % · y 80,09-88,44 % */
+  /* AUTOGIRO · boton amarillo grande x 10,18-47,74 % · y 80,09-88,44 %
+     El aire derecho (20,4 %) reserva la mitad de la capsula al selector: el
+     rotulo se queda centrado en el tramo izquierdo y no pisa los pulsadores. */
   .machine__side .controls #btn-feature {
     --art-x: 10.18;
     --art-y: 80.09;
@@ -7528,9 +7523,56 @@ body.is-demo .machine__side .controls .balance::after {
     top: 80.09%;
     width: 37.56%;
     height: 8.35%;
-    padding: 0 2%;
+    padding: 0 20.4% 0 2%;
     border-radius: 999px;
   }
+
+  /* Selector rapido de paquete · tres chips tactiles en la mitad derecha de la
+     capsula amarilla (x 27,60-47,30 % · y 80,09-88,44 %). Son hermanos del
+     amarillo, no hijos, y se anclan al lienzo de la consola para caer siempre
+     sobre el caramelo. La fila deja pasar el clic; solo los chips lo recogen. */
+  .machine__side .controls .btn__opts {
+    position: absolute;
+    left: 27.60%;
+    top: 80.09%;
+    width: 19.70%;
+    height: 8.35%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.2em;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .machine__side .controls .btn__opt {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    /* 62 % del alto del caramelo: el chip se lee como una tecla y no como una
+       etiqueta de 13 px. */
+    height: 62%;
+    padding: 0 0.34em;
+    font-size: clamp(8px, calc(var(--cons-scale) * 0.036), 16px);
+    font-weight: 900;
+    color: #7a3200;
+    background: rgba(255, 255, 255, 0.34);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  }
+
+  .machine__side .controls .btn__opt.is-active {
+    color: #6b2a00;
+    background: #fff3bd;
+    box-shadow: inset 0 1px 0 #fffdf0, 0 0 0 1px rgba(120, 60, 0, 0.45);
+  }
+
+  .machine__side .controls .btn__opt:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.95);
+    outline-offset: 1px;
+  }
+
 
   /* GIRAR · boton rojo grande x 51,68-89,34 % · y 79,96-88,51 % */
   .machine__side .controls .btn--spin {

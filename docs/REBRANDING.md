@@ -198,6 +198,19 @@ el propio origen.
    caramelos ni al HUD (33,2 %). En ventanas bajas (`max-height: 660px`) el
    lienzo se queda en ~340 px de ancho y el logo baja al 54 %.
 
+La consola de escritorio mantiene el reparto de Meridianobet: el **GIRAR** rojo
+en la capsula inferior derecha (x 51,68-89,34 % · y 79,96-88,51 %), el
+**AUTOGIRO** en la inferior izquierda (x 10,18-47,74 %) y el **AUTO** azul en la
+banda libre del panel verde (x 24-76 % · y 67,6-77,2 %). El lienzo no dibuja un
+septimo pulsador ni los chips del autogiro: los tres paquetes (`x5`, `x10`,
+`x25`) son **pulsadores propios** anclados a la mitad derecha de la capsula
+amarilla (x 27,60-47,30 %), hermanos del boton y no hijos suyos —un boton dentro
+de otro boton no es marcado valido ni enfocable—. El GIRAR lanza la tirada y,
+con el bucle en marcha, la detiene; el amarillo abre la hoja con el coste de cada
+paquete y el azul juega el elegido. En movil el selector no cabe en la placa del
+pie (~48 px): alli la placa muestra fijo el paquete vigente y los tres paquetes
+se eligen en la hoja del amarillo.
+
 Pendiente de arte (ver la tabla de alcance): los simbolos del tablero. El arte
 navideño del tema ya cubre las dos maquetas: el taller de juguetes de fondo
 (`bg-desktop.webp` apaisado y `bg-mobile.webp` vertical), el marco de caramelos

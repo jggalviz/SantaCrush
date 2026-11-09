@@ -552,12 +552,16 @@ export class Ui {
     const box = this.ref_('featureOptions');
 
     /* El marcado ya trae los tres paquetes: aqui solo se marca el vigente, sin
-       reescribir texto ni crear nodos. */
-    if (box) {
+       reescribir texto ni crear nodos. `aria-pressed` viaja con el resaltado para
+       que el estado no viva solo en el color. */
+    if (box && box.children) {
       for (const chip of box.children) {
-        chip.classList.toggle('is-active', Number(chip.dataset.spins) === pick);
+        const active = Number(chip.dataset.spins) === pick;
+        chip.classList.toggle('is-active', active);
+        chip.setAttribute('aria-pressed', active ? 'true' : 'false');
       }
     }
+    this.refreshQuickSpinsAvailability_();
 
     /* El azul si repite el numero en su pildora, pero con el bucle en marcha
        manda el progreso que pinta `setAuto`: no se pisa. */
@@ -570,13 +574,14 @@ export class Ui {
     const featureBtn = this.ref_('featureBtn');
     if (!featureBtn) return;
 
-    /* El rotulo visible del amarillo es decorativo (los chips del marcado, que en
-       movil rotan en la placa del pie); lo que se mueve con el paquete es el chip
-       resaltado, el nombre accesible y el tooltip. */
+    /* El rotulo visible del amarillo ya no lleva los chips dentro: el selector
+       rapido es el grupo hermano `#feature-options`. Lo que se mueve con el
+       paquete es el chip resaltado, la pildora azul, el nombre accesible y el
+       tooltip. */
     featureBtn.setAttribute(
       'aria-label',
       `${FEATURE_BUTTON_LABEL} · paquetes de ${this.quickSpinsPhrase_()} tiradas ` +
-        'automáticas. Pulsa para elegir paquete.'
+        'automáticas. Pulsa para ver el coste de cada paquete.'
     );
     featureBtn.title =
       `${FEATURE_BUTTON_LABEL} · paquete de ${formatPlain(pick)} tiradas automáticas`;
@@ -1396,8 +1401,24 @@ export class Ui {
    */
   refreshFeatureAvailability_() {
     const button = this.ref_('featureBtn');
-    if (!button) return;
-    button.disabled = Boolean(this.busy || this.autoActive);
+    if (button) button.disabled = Boolean(this.busy || this.autoActive);
+    /* Los chips del selector viajan con el amarillo: mismo candado, mismo momento. */
+    this.refreshQuickSpinsAvailability_();
+  }
+
+  /**
+   * Apaga los tres chips del selector rapido mientras el motor resuelve una
+   * ronda o el bucle corre. A mitad de tanda el paquete esta comprometido:
+   * cambiarlo dejaria la pildora del azul contradiciendo las tiradas que quedan.
+   */
+  refreshQuickSpinsAvailability_() {
+    const box = this.ref_('featureOptions');
+    if (!box || !box.children) return;
+
+    const locked = Boolean(this.busy || this.autoActive);
+    for (const chip of box.children) {
+      if (chip && 'disabled' in chip) chip.disabled = locked;
+    }
   }
 
   setBet(credits) {

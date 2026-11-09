@@ -728,6 +728,112 @@ test('GameControls: el amarillo abre la hoja, el azul ejecuta y el teclado no gi
   );
 });
 
+test('GameControls: los chips eligen paquete y el GIRAR detiene el autogiro en marcha', async () => {
+  const { GameControls } = await loadUiModule('components/GameControls.js');
+
+  const calls = [];
+  const controller = {
+    autoRunning: false,
+    openFeverSheet: () => calls.push('feature'),
+    toggleAuto: () => calls.push('auto'),
+    pickQuickSpins: (spins) => calls.push(`pick${spins}`),
+    spin: () => calls.push('spin'),
+    stopAuto: (message) => calls.push(`stop:${message}`),
+    changeBet: () => calls.push('bet'),
+    setMaxBet: () => calls.push('max'),
+    startDemoMode: () => calls.push('demo')
+  };
+
+  /** Chip del selector: se anuncia por `data-spins` y es su propio ancestro. */
+  const chip = (spins) => {
+    const node = fakeNode({ attrs: { 'data-spins': String(spins) } });
+    node.dataset = { spins: String(spins) };
+    node.closest = () => node;
+    return node;
+  };
+  const chips = [chip(5), chip(10), chip(25)];
+
+  const refs = {
+    spinBtn: fakeNode(),
+    featureBtn: fakeNode(),
+    featureOptions: fakeNode(),
+    autoBtn: fakeNode(),
+    betUp: fakeNode(),
+    betDown: fakeNode(),
+    betMax: fakeNode(),
+    demoBtn: fakeNode()
+  };
+
+  const sheet = fakeNode({ hidden: true });
+  let keydown = null;
+  const documentRef = {
+    addEventListener: (type, handler) => {
+      if (type === 'keydown') keydown = handler;
+    },
+    getElementById: () => sheet
+  };
+
+  new GameControls({ ui: { refs, busy: false, handlers: {} }, controller, documentRef }).mount();
+
+  /* El grupo no es un boton: el clic llega con el chip como `target`. */
+  for (const listener of refs.featureOptions.listeners) {
+    if (listener.type === 'click') listener.handler({ target: chips[2] });
+  }
+  assert.deepEqual(calls, ['pick25'], 'elegir paquete no gira ni abre la hoja');
+
+  /* Con el bucle en marcha el pulsador rojo es la parada rapida. */
+  controller.autoRunning = true;
+  refs.spinBtn.click();
+  assert.deepEqual(
+    calls,
+    ['pick25', 'stop:Automático detenido'],
+    'el GIRAR detiene la tanda automatica en curso'
+  );
+
+  controller.autoRunning = false;
+  refs.spinBtn.click();
+  assert.deepEqual(
+    calls,
+    ['pick25', 'stop:Automático detenido', 'spin'],
+    'con el bucle parado el GIRAR vuelve a girar'
+  );
+
+  /* Space sobre un chip no lanza tirada: el boton ya hace su trabajo. */
+  keydown({ code: 'Space', key: ' ', target: chips[0], preventDefault() {} });
+  assert.deepEqual(calls.at(-1), 'spin', 'la barra espaciadora no gira desde un chip');
+});
+
+test('el selector rapido refleja el paquete y se apaga con el motor ocupado', async () => {
+  const ui = await createView();
+  const chips = ui.refs.featureOptions.children;
+
+  assert.equal(ui.setQuickSpins(10), true);
+  assert.deepEqual(
+    chips.map((chip) => chip.getAttribute('aria-pressed')),
+    ['false', 'true', 'false'],
+    'el estado del chip viaja en `aria-pressed`, no solo en el color'
+  );
+  assert.deepEqual(chips.map((chip) => chip.disabled), [false, false, false], 'en reposo se cambia de paquete');
+
+  ui.setBusy(true);
+  assert.deepEqual(
+    chips.map((chip) => chip.disabled),
+    [true, true, true],
+    'con una ronda en curso el paquete esta comprometido'
+  );
+
+  ui.setBusy(false);
+  ui.setAuto(true, 10);
+  assert.deepEqual(
+    chips.map((chip) => chip.disabled),
+    [true, true, true],
+    'con el bucle en marcha tampoco se reconfigura'
+  );
+
+  ui.setAuto(false, 0);
+  assert.deepEqual(chips.map((chip) => chip.disabled), [false, false, false], 'al parar vuelven a estar vivos');
+});
+
 /* ------------------------------------------------------- marcado y estilos */
 
 test('el marcado trae el boton AUTOGIRO con los tres chips y la hoja GIROS RAPIDOS', () => {
@@ -741,14 +847,19 @@ test('el marcado trae el boton AUTOGIRO con los tres chips y la hoja GIROS RAPID
   assert.match(html, /<span class="btn__title">AUTOGIRO<\/span>/, 'rotulo principal del pulsador');
   assert.match(
     html,
-    /<span class="btn__opts" id="feature-options" aria-hidden="true">/,
-    'los paquetes viven dentro del cuerpo del boton'
+    /<div class="btn__opts" id="feature-options" role="group"\s+aria-label="Paquete de tiradas automáticas">/,
+    'los paquetes son un grupo de pulsadores junto al amarillo'
+  );
+  assert.doesNotMatch(
+    html,
+    /<span class="btn__opts"/,
+    'los chips ya no viven dentro del boton: un boton dentro de otro no es marcado valido'
   );
   for (const spins of [5, 10, 25]) {
     assert.match(
       html,
-      new RegExp(`<span class="btn__opt" data-spins="${spins}">x${spins}</span>`),
-      `el chip x${spins} esta en el marcado`
+      new RegExp(`<button class="btn__opt" type="button" data-spins="${spins}" aria-pressed="false">x${spins}</button>`),
+      `el chip x${spins} es un pulsador real, no texto decorativo`
     );
   }
   assert.match(
@@ -774,19 +885,28 @@ test('los estilos de la hoja y de los chips estan en la fuente y en el minificad
     'las tres tarjetas se reparten en una fila'
   );
   assert.match(css, /\.fever__flame\s*\{/, 'la estrella de la cabecera tiene estilo propio');
-  assert.match(css, /\.btn__opts\s*\{[^}]*display:\s*flex;/, 'los chips van en fila dentro del boton');
+  assert.match(css, /\.btn__opts\s*\{[^}]*display:\s*flex;/, 'los chips van en fila junto al boton');
+  assert.match(css, /\.btn__opt\s*\{[^}]*cursor:\s*pointer;/, 'cada chip es un pulsador, no una etiqueta');
+  assert.match(css, /\.btn__opt:focus-visible\s*\{/, 'el chip tiene anillo de foco propio');
+  assert.match(css, /\.btn__opt:disabled\s*\{/, 'el chip se apaga con el motor ocupado');
   assert.match(css, /\.btn__opt\.is-active\s*\{/, 'el paquete vigente se resalta');
   assert.match(
     css,
-    /#btn-feature \.btn__opts\s*\{[^}]*position:\s*absolute;/,
-    'en movil el catalogo rota sobre la placa del pie'
+    /\.machine__side \.controls \.btn__opts\s*\{[^}]*left:\s*6\.32%;[^}]*top:\s*74\.43%;/,
+    'en movil el paquete vigente se lee fijo sobre la capsula del pie'
   );
-  assert.match(css, /@keyframes featurePlateRoll/, 'el turno de chips es animado');
+  assert.match(
+    css,
+    /\.machine__side \.controls \.btn__opts\s*\{[^}]*left:\s*27\.60%;[^}]*width:\s*19\.70%;/,
+    'en escritorio los tres chips caen sobre la mitad derecha de la capsula amarilla'
+  );
+  assert.doesNotMatch(css, /featurePlateRoll/, 'los chips ya no rotan: el dato se lee fijo');
 
   const min = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.min.css'), 'utf8');
   assert.ok(min.includes('.fever__flame'), 'el minificado conserva la estrella de la hoja');
   assert.ok(min.includes('.btn__opt.is-active'), 'el minificado conserva el chip vigente');
-  assert.ok(min.includes('featurePlateRoll'), 'el minificado conserva la rotacion de la placa');
+  assert.ok(min.includes('.btn__opt:focus-visible'), 'el minificado conserva el foco del chip');
+  assert.ok(min.includes('.btn__opts'), 'el minificado conserva el selector rapido');
 });
 
 

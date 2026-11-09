@@ -170,29 +170,32 @@
             </div>
 
             <div class="controls__actions">
-              <!-- El amarillo configura y el azul ejecuta: este pulsador abre la
-                   hoja de giros rapidos y anuncia el catalogo (x5 x10 x25) en su
-                   propio cuerpo. `GameView.paintQuickSpinsOptions_` resalta el
-                   paquete vigente. -->
+              <!-- El amarillo abre la hoja de giros rapidos, que es la que
+                   publica el coste total de cada paquete. -->
               <button class="btn btn--feature gbtn gbtn--gold" id="btn-feature" type="button"
                       aria-haspopup="dialog" aria-controls="fever-sheet" aria-expanded="false"
-                      aria-label="Autogiro · paquetes de 5, 10 o 25 tiradas automáticas. Pulsa para elegir paquete.">
+                      aria-label="Autogiro · paquetes de 5, 10 o 25 tiradas automáticas. Pulsa para ver el coste de cada paquete.">
                 <span class="btn__main">
                   <svg class="btn__glyph" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
                     <path d="M9 1.4l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L1.8 6.7l5-.7z" />
                   </svg>
                   <span class="btn__title">AUTOGIRO</span>
-                  <!-- Los tres paquetes del selector, de un vistazo. Es texto
-                       decorativo: el nombre accesible del boton ya los enumera y
-                       en movil rotan sobre la placa del pie. -->
-                  <span class="btn__opts" id="feature-options" aria-hidden="true">
-                    <span class="btn__opt" data-spins="5">x5</span>
-                    <span class="btn__opt" data-spins="10">x10</span>
-                    <span class="btn__opt" data-spins="25">x25</span>
-                  </span>
                 </span>
                 <i class="shine" aria-hidden="true"></i>
               </button>
+
+              <!-- Selector rapido de paquete: tres pulsadores de verdad sobre la
+                   capsula amarilla (hermanos del anterior, no hijos: un boton
+                   dentro de otro boton no es marcado valido). Elegir aqui no gira
+                   ni gasta saldo; el azul AUTO juega el paquete elegido y el
+                   GIRAR detiene la tanda. `GameView.paintQuickSpinsOptions_`
+                   resalta el vigente y los apaga con el motor ocupado. -->
+              <div class="btn__opts" id="feature-options" role="group"
+                   aria-label="Paquete de tiradas automáticas">
+                <button class="btn__opt" type="button" data-spins="5" aria-pressed="false">x5</button>
+                <button class="btn__opt" type="button" data-spins="10" aria-pressed="false">x10</button>
+                <button class="btn__opt" type="button" data-spins="25" aria-pressed="false">x25</button>
+              </div>
 
               <button class="btn btn--spin gbtn gbtn--pink" id="btn-spin" type="button">
                 <span class="btn__spin-icon" aria-hidden="true">
