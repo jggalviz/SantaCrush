@@ -1,0 +1,608 @@
+/**
+ * Orquestador del cliente.
+ *
+ * Responsabilidades:
+ *   - Pedir SIEMPRE el resultado al servidor via `ApiClient` (nunca calcularlo).
+ *   - Gestionar apuesta, automatico y refresco de sesion.
+ *   - Delegar el dibujado en `renderers/RoundAnimator` y `GameView`.
+ *
+ * La clave de idempotencia (`roundRef`) se genera una vez por tirada y se
+ * reutiliza en el reintento: si la red falla despues de que el servidor ya
+ * guardo la ronda, el reintento devuelve la misma ronda y no vuelve a cobrar.
+ */
+
+import { ApiError } from '../services/ApiClient.js';
+import { BETS, FEATURE } from '../config/gameConfig.js';
+import { sleep } from '../lib/timing.js';
+import {
+  formatCredits,
+  makeClientSeed,
+  makeRoundRef
+} from '../lib/format.js';
+import { RoundAnimator } from '../renderers/RoundAnimator.js';
+
+const RETRY_DELAY_MS = 320;
+
+const ERROR_TEXT = {
+  INSUFFICIENT_FUNDS: 'Saldo insuficiente para esta apuesta.',
+  RATE_LIMITED: 'Demasiadas peticiones seguidas. Espera un instante.',
+  INVALID_BET: 'La apuesta no es válida.',
+  INVALID_ROUND_REF: 'Referencia de ronda inválida. Recarga la página.',
+  PLAYER_BLOCKED: 'La cuenta está suspendida.',
+  TOKEN_MISSING: 'Sesión no válida. Vuelve a iniciar sesión.',
+  TOKEN_INVALID: 'Sesión no válida o expirada.',
+  TOKEN_EXPIRED: 'Sesión expirada. Vuelve a iniciar sesión.',
+  SESSION_REQUIRED: 'Necesitas un token de sesión válido.',
+  DEMO_DISABLED: 'El modo Fichas de Prueba está desactivado en este servidor.',
+  DEMO_MODE_CONFLICT: 'No puedes usar fichas de prueba con una sesión real activa.',
+  DEMO_TOKEN_NOT_ALLOWED: 'Ese token es de prueba y no permite jugar con saldo real.',
+  NETWORK_ERROR: 'Sin conexión con el servidor.',
+  TIMEOUT: 'El servidor no respondió a tiempo.',
+  INTERNAL_ERROR: 'Error interno del servidor. Inténtalo más tarde.'
+};
+
+/**
+ * El servidor rechaza cualquier sesion (no es un fallo transitorio): solo en ese
+ * caso tiene sentido pedir un token a mano.
+ */
+function isSessionBlocked(error) {
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === 403) return true;
+  return error.code === 'SESSION_REQUIRED' || error.code === 'DEMO_DISABLED';
+}
+
+export class GameController {
+  constructor({ api, ui, sfx, session }) {
+    this.api = api;
+    this.ui = ui;
+    this.sfx = sfx;
+    this.session = session;
+
+    this.gameInfo = null;
+    this.betLadder = BETS.ladderCredits.slice();
+    this.betIndex = BETS.defaultIndex;
+    this.balanceCents = 0;
+    this.isDemo = false;
+    this.busy = false;
+    this.autoRunning = false;
+    this.autoRemaining = 0;
+    /* Evita intentos paralelos de recuperacion con fichas de prueba. */
+    this.demoFallbackRunning = false;
+    /* Ultimo fallo al abrir fichas de prueba: decide si se pide token o no. */
+    this.lastDemoError = null;
+
+    this.ui.handlers.onSound = () => this.toggleSound();
+    /* Cada rodillo suena al aterrizar: da el "clack" escalonado del frenado. */
+    this.ui.handlers.onReelLand = (col) => this.sfx.drop(col);
+    /* La hoja de giros rapidos no gira por su cuenta: sus opciones avisan aqui y
+       el paquete queda configurado. Lo juega el pulsador azul. */
+    this.ui.handlers.onAutoSpins = (spins) => this.pickQuickSpins(spins);
+
+    /* Paquetes de autogiro publicados (`bets.quickSpins`) y el vigente. La lista
+       es configuracion: nunca se pide al jugador un numero libre de tiradas. */
+    this.quickSpins = Array.isArray(BETS.quickSpins) && BETS.quickSpins.length > 0
+      ? BETS.quickSpins.slice()
+      : [BETS.autoSpins];
+    this.quickSpinsPick = this.quickSpins.includes(BETS.autoSpins)
+      ? BETS.autoSpins
+      : this.quickSpins[0];
+    this.ui.setQuickSpins(this.quickSpinsPick);
+
+    /* La animacion no conoce apuestas: recibe la ronda ya resuelta. */
+    this.animator = new RoundAnimator({ ui: this.ui, sfx: this.sfx });
+  }
+
+  /* ------------------------------------------------------------- arranque */
+
+  async boot() {
+    this.ui.setStatus('Cargando juego…');
+    const gamePayload = await this.api.gameInfo();
+    this.gameInfo = gamePayload.game;
+    this.ui.setGameInfo(this.gameInfo);
+
+    if (Array.isArray(this.gameInfo.betLadder) && this.gameInfo.betLadder.length > 0) {
+      this.betLadder = this.gameInfo.betLadder.slice();
+    }
+    const preferred = this.betLadder.indexOf(BETS.defaultCredits);
+    this.betIndex = preferred >= 0 ? preferred : 0;
+    this.ui.setBet(this.betCredits);
+
+    await this.connect();
+  }
+
+  async connect() {
+    const resolved = await this.session.resolve();
+    this.ui.setStatus(
+      resolved.source === 'dev' || resolved.source === 'demo'
+        ? 'Sesión de demostración'
+        : 'Sincronizando sesión…'
+    );
+
+    try {
+      await this.loadPlayer();
+    } catch (error) {
+      if (!(error instanceof ApiError) || !error.isAuth) throw error;
+      this.session.invalidate();
+      await this.session.resolve();
+      await this.loadPlayer();
+    }
+  }
+
+  async loadPlayer() {
+    const payload = await this.api.player();
+    this.balanceCents = payload.balance.cents;
+    this.isDemo = payload.demo === true;
+
+    this.ui.setCurrency(payload.balance.currency);
+    this.ui.setBalance(payload.balance.credits);
+    this.ui.setDemoMode(this.isDemo);
+    this.ui.setRoundInfo({ state: this.isDemo ? 'Modo prueba' : 'Lista' });
+    this.ui.setStatus(
+      this.isDemo
+        ? `Fichas de Prueba · ${formatCredits(payload.balance.credits)} ${payload.balance.currency}`
+        : `Jugador ${payload.player.displayName}`
+    );
+    this.ui.updateAffordability(this.balanceCents, this.betCents);
+    return payload;
+  }
+
+  /* ------------------------------------------------------- fichas de prueba */
+
+  /**
+   * Abre una sesion de invitado con saldo virtual ("Fichas de Prueba").
+   *
+   * El backend emite un token con el claim `demo: true` y una cartera virtual de
+   * 1.000,00 VES. El cliente NO fija ni calcula el saldo: solo pinta el que
+   * devuelve el servidor en cada ronda.
+   *
+   * `silent` se usa en el arranque automatico: sin sonido ni aviso, porque el
+   * estado ya se refleja en la barra de estado y en el boton "Fichas de Prueba".
+   *
+   * @param {{ silent?: boolean }} [options]
+   */
+  async startDemoMode({ silent = false } = {}) {
+    if (this.busy) return null;
+    if (this.autoRunning) this.stopAuto('Automático detenido');
+
+    if (!silent) {
+      this.sfx.unlock();
+      this.sfx.click();
+    }
+    this.ui.setStatus('Cargando fichas de prueba…');
+
+    try {
+      const payload = await this.session.startDemoSession();
+      this.lastDemoError = null;
+      this.isDemo = true;
+      this.balanceCents = payload.balance.cents;
+
+      this.ui.setCurrency(payload.balance.currency);
+      this.ui.setBalance(payload.balance.credits);
+      this.ui.setDemoMode(true);
+      this.ui.setWin(0);
+      this.ui.setMultiplier(null);
+      this.ui.setRoundInfo({ state: 'Modo prueba' });
+      this.ui.setStatus(
+        `Fichas de Prueba · ${formatCredits(payload.balance.credits)} ${payload.balance.currency}`
+      );
+      this.ui.updateAffordability(this.balanceCents, this.betCents);
+      if (!silent) {
+        this.ui.toast(
+          `Fichas de prueba listas: ${formatCredits(payload.balance.credits)} ${payload.balance.currency} virtuales.`,
+          { type: 'info', timeout: 5200 }
+        );
+      }
+      return payload;
+    } catch (error) {
+      this.lastDemoError = error;
+      this.handleError(error);
+      return null;
+    }
+  }
+
+  /* ---------------------------------------------------------------- apuesta */
+
+  get betCredits() {
+    return this.betLadder[this.betIndex];
+  }
+
+  get betCents() {
+    return Math.round(this.betCredits * 100);
+  }
+
+  get featureCostMultiplier() {
+    return (this.gameInfo && this.gameInfo.feature && this.gameInfo.feature.costMultiplier) ||
+      FEATURE.costMultiplier;
+  }
+
+  get featureCostCents() {
+    return this.betCents * this.featureCostMultiplier;
+  }
+
+  changeBet(direction) {
+    if (this.busy || this.autoRunning) return;
+    const next = Math.min(this.betLadder.length - 1, Math.max(0, this.betIndex + direction));
+    if (next === this.betIndex) {
+      this.ui.toast(direction > 0 ? 'Apuesta máxima alcanzada.' : 'Apuesta mínima alcanzada.');
+      return;
+    }
+    this.betIndex = next;
+    this.ui.setBet(this.betCredits);
+    this.ui.updateAffordability(this.balanceCents, this.betCents);
+    this.sfx.click();
+  }
+
+  setMaxBet() {
+    if (this.busy || this.autoRunning) return;
+    this.betIndex = this.betLadder.length - 1;
+    this.ui.setBet(this.betCredits);
+    this.ui.updateAffordability(this.balanceCents, this.betCents);
+    this.sfx.click();
+  }
+
+  toggleSound() {
+    const muted = !this.sfx.isMuted();
+    this.sfx.setMuted(muted);
+    /* El icono es un SVG que pinta `style.css` a partir de `aria-pressed`: aqui
+       solo se mueve el estado, sin reescribir el contenido del boton (antes se
+       sustituia el emoji y eso borraria el dibujo). */
+    const button = this.ui.refs.soundBtn;
+    if (button) {
+      button.setAttribute('aria-pressed', muted ? 'false' : 'true');
+      button.title = muted ? 'Activar sonido' : 'Silenciar sonido';
+    }
+    if (!muted) this.sfx.click();
+  }
+
+  /* ---------------------------------------------------------------- tiradas */
+
+  async spin({ buyFeature = false } = {}) {
+    if (this.busy) return null;
+
+    const wagerCents = buyFeature ? this.featureCostCents : this.betCents;
+    if (this.balanceCents < wagerCents) {
+      this.sfx.error();
+      this.ui.toast(
+        buyFeature
+          ? `Saldo insuficiente para ${FEATURE.label}.`
+          : 'Saldo insuficiente para esta apuesta.',
+        { type: 'error' }
+      );
+      return null;
+    }
+
+    this.sfx.unlock();
+    this.busy = true;
+    this.ui.setBusy(true);
+    this.ui.hideBanner();
+    this.ui.setMultiplier(null);
+    this.ui.setWin(0);
+    this.ui.setStatus(buyFeature ? `Comprando ${FEATURE.label}…` : 'Resolviendo tirada…');
+
+    const balanceBefore = this.balanceCents;
+    const roundRef = makeRoundRef();
+    const clientSeed = makeClientSeed();
+
+    try {
+      const round = await this.requestSpin({
+        betCents: this.betCents,
+        buyFeature,
+        roundRef,
+        clientSeed
+      });
+
+      this.balanceCents = round.balance.cents;
+      this.ui.setCurrency(round.balance.currency);
+      this.ui.setBalance(round.balance.credits, { deltaCents: round.balance.cents - balanceBefore });
+
+      /* El backend marca cada ronda demo: la UI lo refleja al instante. */
+      this.isDemo = round.demo === true;
+      this.ui.setDemoMode(this.isDemo);
+
+      await this.present(round);
+
+      this.ui.addHistory({
+        winCents: round.totalWinCents,
+        betCents: round.betCents,
+        mode: round.mode,
+        spins: round.spinsPlayed
+      });
+      this.ui.setRoundInfo({
+        state: round.replayed ? 'Repetida' : 'Completada',
+        roundId: round.roundId,
+        serverSeedHash: round.audit.serverSeedHash,
+        clientSeed: round.audit.clientSeed,
+        rngDraws: round.audit.rngDraws
+      });
+      this.ui.setStatus(
+        `${this.isDemo ? 'Prueba · ' : ''}${round.mode === 'BUY_FEATURE' ? 'Bonus' : 'Base'} · ${round.spinsPlayed} giro(s)`
+      );
+
+      return round;
+    } catch (error) {
+      this.handleError(error);
+      return null;
+    } finally {
+      this.busy = false;
+      this.ui.setBusy(false);
+      this.ui.updateAffordability(this.balanceCents, this.betCents);
+    }
+  }
+
+  /**
+   * Peticion con un maximo de dos reintentos: uno por token caducado y otro por
+   * fallo de red. Ambos reutilizan la MISMA `roundRef`.
+   */
+  async requestSpin(payload) {
+    let retries = 0;
+    for (;;) {
+      try {
+        return await this.api.spin(payload);
+      } catch (error) {
+        const apiError = error instanceof ApiError ? error : null;
+        if (!apiError) throw error;
+
+        if (apiError.isAuth && retries === 0) {
+          retries += 1;
+          /* Si estabamos en demo se renueva la sesion demo: nunca se cae a una
+             sesion real (ni a su saldo) por un token de invitado caducado. */
+          const wasDemo = this.session.isDemo || this.isDemo;
+          this.session.invalidate();
+          if (wasDemo) {
+            await this.session.startDemoSession();
+          } else {
+            await this.session.resolve();
+          }
+          continue;
+        }
+
+        if (apiError.kind === 'network' && retries === 0) {
+          retries += 1;
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------- animacion */
+
+  /* Delegacion explicita: el dibujado vive en `renderers/RoundAnimator.js`. */
+  present(round) {
+    return this.animator.present(round, { presentSpin: this.presentSpin.bind(this) });
+  }
+
+  presentSpin(spin, context) {
+    return this.animator.presentSpin(spin, context);
+  }
+
+  /* -------------------------------------------------------------- hoja FEVER */
+
+  /** Paquetes de autogiro publicados: cantidades cerradas, nunca un numero libre. */
+  get autoSpinsOptions() {
+    return Array.isArray(BETS.quickSpins) && BETS.quickSpins.length > 0
+      ? BETS.quickSpins
+      : [BETS.autoSpins];
+  }
+
+  /**
+   * Abre la hoja de giros rapidos (boton amarillo). No gasta nada: solo pide
+   * cuantas tiradas se quieren. Con una ronda en curso o el automatico en marcha
+   * no se abre: primero termina o se detiene.
+   *
+   * @returns {boolean} true si la hoja quedo abierta
+   */
+  openFeverSheet() {
+    if (this.busy) {
+      this.ui.toast('Espera a que termine la tirada.');
+      return false;
+    }
+    if (this.autoRunning) {
+      this.ui.toast('Detén el automático para cambiar de paquete.');
+      return false;
+    }
+    this.sfx.unlock();
+    this.sfx.click();
+    return this.ui.openFeverSheet() !== false;
+  }
+
+  /**
+   * Configura el paquete de tiradas rapidas y cierra la hoja.
+   *
+   * Elegir no lanza nada: el paquete queda anunciado en el amarillo y en la
+   * pildora del azul, y lo juega `toggleAuto()` cuando el jugador lo pide. Asi
+   * el gesto de configurar nunca gasta saldo por sorpresa.
+   *
+   * @param {number} spins tiradas de un paquete publicado
+   * @returns {boolean} true si el paquete es valido
+   */
+  pickQuickSpins(spins) {
+    const next = Number(spins);
+    if (!Number.isInteger(next) || !this.autoSpinsOptions.includes(next)) return false;
+
+    this.quickSpinsPick = next;
+    this.ui.setQuickSpins(next);
+    this.ui.closeFeverSheet();
+    this.sfx.click();
+    this.ui.setStatus(`Automático · paquete de ${next} tiradas`);
+    return true;
+  }
+
+  /**
+   * Pulsador azul: con el bucle parado juega el paquete configurado; en marcha lo
+   * detiene. El paquete se elige en la hoja del amarillo, nunca aqui.
+   *
+   * @returns {boolean} true si arranco o detuvo el bucle
+   */
+  toggleAuto() {
+    if (this.autoRunning) {
+      this.stopAuto('Automático detenido');
+      return true;
+    }
+    if (this.busy) {
+      this.ui.toast('Espera a que termine la tirada.');
+      return false;
+    }
+    return this.startAuto(this.quickSpinsPick);
+  }
+
+  /**
+   * Arranca el autogiro con el paquete elegido.
+   *
+   * @param {number} [spins] paquete; debe pertenecer a `bets.quickSpins`
+   * @returns {boolean} true si el bucle arranco
+   */
+  startAuto(spins = BETS.autoSpins) {
+    if (this.autoRunning || this.busy) return false;
+
+    const options = this.autoSpinsOptions;
+    const requested = Number(spins);
+    const fallback = options.includes(BETS.autoSpins) ? BETS.autoSpins : options[0];
+    const pack = options.includes(requested) ? requested : fallback;
+
+    if (this.balanceCents < this.betCents) {
+      this.sfx.error();
+      this.ui.toast('Saldo insuficiente para esta apuesta.', { type: 'error' });
+      return false;
+    }
+
+    this.quickSpinsPick = pack;
+    this.ui.closeFeverSheet();
+    this.ui.setQuickSpins(pack);
+    this.sfx.unlock();
+    this.sfx.click();
+    this.autoRunning = true;
+    this.autoRemaining = pack;
+    this.ui.setAuto(true, this.autoRemaining);
+    this.ui.setStatus(`Automático · ${this.autoRemaining} tiradas`);
+    void this.runAuto();
+    return true;
+  }
+
+  /**
+   * Compra el bonus (100x la apuesta) y juega una unica ronda en modo bonus.
+   *
+   * La consola ya no ofrece este gesto —el amarillo configura giros y el azul
+   * los ejecuta—, pero el motor y la API lo siguen soportando: se conserva como
+   * accion de operador y para integraciones que la invoquen por codigo.
+   *
+   * @returns {Promise<object|null>} ronda resuelta, o null si no se pudo
+   */
+  async buyFeature() {
+    if (this.busy) return null;
+    if (this.autoRunning) this.stopAuto('Automático detenido');
+    this.ui.closeFeverSheet();
+    return this.spin({ buyFeature: true });
+  }
+
+  /* ------------------------------------------------------------ automatico */
+
+  async runAuto() {
+    while (this.autoRunning && this.autoRemaining > 0) {
+      const round = await this.spin();
+      if (!round) {
+        this.stopAuto('Automático detenido');
+        return;
+      }
+
+      this.autoRemaining -= 1;
+      this.ui.setAuto(this.autoRemaining > 0, this.autoRemaining);
+
+      if (this.autoRemaining <= 0) break;
+      if (round.maxWinReached) {
+        this.ui.toast('Tope alcanzado: automático detenido.');
+        break;
+      }
+      if (this.balanceCents < this.betCents) {
+        this.ui.toast('Saldo insuficiente: automático detenido.', { type: 'error' });
+        break;
+      }
+      await sleep(420);
+    }
+    this.stopAuto();
+  }
+
+  stopAuto(message) {
+    this.autoRunning = false;
+    this.autoRemaining = 0;
+    this.ui.setAuto(false, 0);
+    this.ui.setStatus(message || 'Lista');
+  }
+
+  /* --------------------------------------------------------------- errores */
+
+  handleError(error) {
+    this.sfx.error();
+    const code = (error && error.code) || 'UNKNOWN';
+    const text = ERROR_TEXT[code] || (error && error.message) || 'Error inesperado.';
+    this.ui.toast(text, { type: 'error', timeout: 5200 });
+    this.ui.setStatus(`Error · ${code}`);
+
+    if (code === 'SESSION_REQUIRED' || (error instanceof ApiError && error.isAuth)) {
+      /* Sin sesion valida se entra en modo prueba, sin abrir el modal. */
+      this.startDemoFallback_();
+    }
+  }
+
+  /**
+   * Recuperacion automatica: reabre una sesion de invitado en vez de mostrar la
+   * puerta de "Sesion requerida".
+   *
+   * @returns {boolean} true si la recuperacion ya esta en curso
+   */
+  startDemoFallback_() {
+    if (this.demoFallbackRunning) return true;
+
+    this.demoFallbackRunning = true;
+    this.ui.setStatus('Activando modo prueba…');
+    this.session.invalidate();
+
+    /* `handleError` de un giro corre antes del `finally` que libera `busy`: sin
+       esto `startDemoMode()` se descartaria y acabaria abriendo el modal. */
+    this.busy = false;
+    this.ui.setBusy(false);
+
+    void this.startDemoMode({ silent: true })
+      .then((payload) => {
+        if (payload) return;
+        if (this.demoIsBlocked_()) {
+          /* El servidor prohibe las fichas de prueba: puerta manual de token. */
+          this.showAuthGate_();
+          return;
+        }
+        /* Fallo transitorio (red, 429, 5xx): se avisa y NO se pide token. */
+        this.ui.setStatus('Modo prueba no disponible · reintenta');
+      })
+      .finally(() => {
+        this.demoFallbackRunning = false;
+      });
+
+    return true;
+  }
+
+  /** true si el ultimo fallo del modo prueba implica que el servidor lo prohibe. */
+  demoIsBlocked_() {
+    return isSessionBlocked(this.lastDemoError);
+  }
+
+  /** Puerta manual de token (solo si el servidor desactiva las fichas de prueba). */
+  showAuthGate_() {
+    this.ui.showAuthGate({
+      onSubmit: (token) => {
+        this.session.setToken(token);
+        this.ui.setStatus('Verificando token…');
+        this.connect().catch((inner) => this.handleError(inner));
+      },
+      /* Alternativa para jugar sin token real: fichas de prueba. */
+      onDemo: () => {
+        void this.startDemoMode();
+      }
+    });
+  }
+}
+
+/* Alias historico: los consumidores previos importaban `GameClient`. */
+export { GameController as GameClient };
+

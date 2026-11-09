@@ -1,0 +1,15 @@
+# Normaliza finales de linea en el indice: el repo se despliega en Linux
+# (Vercel) y los generadores escriben LF. Sin esto, un checkout en Windows
+# reescribe `*.min.css`, `ui/config/gameConfig.js` y `server/generated/*` y
+# aparecen diffs fantasma.
+* text=auto eol=lf
+
+# Binarios: no se tocan.
+*.png binary
+*.jpg binary
+*.webp binary
+*.gif binary
+*.mp3 binary
+*.MP3 binary
+*.woff2 binary
+*.psd binary

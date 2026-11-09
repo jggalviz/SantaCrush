@@ -1,0 +1,59 @@
+{
+  "name": "santa-crush",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Santa Crush - slot 6x5 de pagos por dispersion (motor TROPICAL_GRID_6X5_95_10K) con cascadas y motor matematico autoritativo en servidor (orientado a GLI-19)",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "prestart": "node scripts/build-game-config.js && node scripts/build-ui.js && node scripts/build-minify.js && node scripts/build-index-html.js",
+    "dev": "node --watch server/index.js",
+    "predev": "node scripts/build-game-config.js && node scripts/build-ui.js && node scripts/build-minify.js && node scripts/build-index-html.js",
+    "build:config": "node scripts/build-game-config.js",
+    "build:ui": "node scripts/build-ui.js",
+    "build:css": "node scripts/build-minify.js",
+    "build:index": "node scripts/build-index-html.js",
+    "build:dist": "node scripts/build-dist.js",
+    "build:art": "node scripts/build-mobile-art.js",
+    "build:desktop-art": "node scripts/build-desktop-art.js",
+    "build:bg": "node scripts/build-backgrounds.js",
+    "build:logo": "node scripts/build-logo-asset.js",
+    "build:symbols": "node scripts/build-symbol-assets.js",
+    "build:seals": "node scripts/build-brand-seals.js",
+    "build:win": "node scripts/build-win-art.js",
+    "vercel-build": "node scripts/build-game-config.js && node scripts/build-ui.js && node scripts/build-minify.js && node scripts/build-index-html.js",
+    "simulate": "node scripts/simulate.js",
+    "simulate:validate": "node scripts/simulate.js --rounds=20000 --mode=base --crypto",
+    "simulate:feature": "node scripts/simulate.js --rounds=20000 --mode=feature",
+    "montecarlo": "node scripts/monteCarlo.js",
+    "montecarlo:1m": "node scripts/monteCarlo.js --rounds=1000000 --mode=base",
+    "montecarlo:feature": "node scripts/monteCarlo.js --rounds=100000 --mode=feature",
+    "test": "node --test \"test/**/*.test.js\"",
+    "seed": "node scripts/seed.js",
+    "token": "node scripts/token.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "compression": "^1.7.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0"
+  },
+  "keywords": [
+    "slot",
+    "grid-pays",
+    "cluster-pays",
+    "gli-19",
+    "cspng",
+    "supabase",
+    "express"
+  ],
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "sharp": "^0.35.5"
+  }
+}

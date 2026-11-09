@@ -1,0 +1,594 @@
+/* ==========================================================================
+   SANTA CRUSH · capa de tema (solo presentacion)
+
+   Se carga DESPUES de `style.css` y no la sustituye: reasigna tokens y repinta
+   las superficies que el CSS dibuja. La maqueta (rejillas, medidas, animaciones)
+   y el arte siguen siendo los de la base.
+
+   Como se activa
+   --------------
+   Todo el tema vive bajo `html[data-theme="santa-crush"]`. Basta con poner el
+   atributo en la etiqueta <html> de `public/index.html`:
+
+     <html lang="es" data-theme="santa-crush">
+
+   Sin ese atributo la hoja queda inerte y el juego se ve igual que antes, asi
+   que sirve para comparar los dos temas con el mismo binario. Se revierte
+   quitando el atributo.
+
+   Que cubre esta hoja
+   -------------------
+   - Paleta de marca: `--brand-*` (rojo y oro) y el azul de la consola
+     (`--brand-blue*`), tomado de los pulsadores azules del case.
+   - Acentos magenta del juego -> rojo. El oro NO se toca: es el color del
+     premio (saldo, bloque del logo, "MAX") y mantiene su lectura. El azul
+     tampoco compite con el premio: viste las superficies de la interfaz (las
+     casillas) y es el unico color de las nueve pelotas, que comparten bloque.
+   - Boton "Fichas de Prueba", modal y anillo de foco. La cabecera no lleva
+     marca ni fondo (solo los controles), asi que arriba no hay nada que
+     repintar. La tarjeta del modal se pinta con el panel marino del tablero
+     (brillo de estadio, reflejo de oro y filo dorado) en vez de una hoja
+     blanca, asi que su tinta tambien se repinta a la del panel
+     (`--brand-panel-*`): la capa base la escribe en crema, para el modal morado.
+   - Botones secundarios y capsulas de valor (audio/ayuda, `100x`, giros de
+     AUTO, cierre del modal): comparten la MISMA pastilla que los pulsadores
+     del juego (cara roja, filo dorado y sombra de contacto) para que la
+     interfaz no hable dos idiomas visuales.
+   - Ventana de juego: marco interior del tablero y las 30 casillas, que si
+     se pintan con gradientes (`.board`, `.tile`) y no con imagen.
+
+   Que NO cubre (requiere reexportar arte, ver `docs/REBRANDING.md`)
+   ----------------------------------------------------------------
+   - Escenario de fondo y logotipo (`fondo_desktop`, `PANA-CRUSH-LOGO`).
+   - Marco del tablero y columna lateral: `d1.webp` (marco de escritorio),
+     `marco_movil.webp`, `consola_movil.webp`, y en escritorio `d2.webp`, que
+     trae en una sola pieza la nube del logo, las tres placas y los siete
+     pulsadores. Los botones de escritorio son RECORTES de `d2.webp` colocados
+     por porcentajes medidos sobre el dibujo: no hay gradiente que repintar ahi.
+   - Los 20 simbolos de las casillas (`assets/sym/*`).
+
+   Reglas de mantenimiento
+   -----------------------
+   - Sin `!important`: los selectores llevan prefijo del tema y ganan por
+     especificidad a las reglas base.
+   - Solo color, fondo, borde, sombra y tipografia: ni medidas ni rejillas
+     (lo comprueba `test/frontendAssets.test.js`).
+   - `public/src/**` se sirve con `Cache-Control: no-cache`, asi que los
+     cambios se ven al recargar.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens de marca (inertes hasta activar el tema)
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Rojos de Santa Crush */
+  --brand-red: #c8102e;
+  --brand-red-dark: #8f0a1f;
+  --brand-red-soft: #e04a5f;
+  --brand-red-tint: #fdeaec;
+
+  /* Oro del logotipo: el "CRUSH" y la ficha del boton de prueba. */
+  --brand-gold: #ffc21a;
+
+  /* Azul de la consola: los mismos tonos que los pulsadores azules del case
+     (`--gbtn-blue-*` en `style.css`). El panel marino y las casillas escriben
+     sus degradados a mano, asi que estos tres tokens quedan como referencia de
+     la gama para futuros repintes de la ventana de juego. */
+  --brand-blue: #5a72f4;
+  --brand-blue-deep: #2e36bc;
+  /* Tinta oscura del azul: sirve de contorno y de base de las sombras. */
+  --brand-blue-ink: #101a4d;
+
+  /* Blancos y grafito */
+  --brand-white: #ffffff;
+  --brand-grey-50: #f7f8fa;
+  --brand-grey-100: #eef0f4;
+  --brand-grey-200: #dcdfe6;
+  --brand-grey-400: #9aa1ad;
+  --brand-grey-700: #4a505b;
+  --brand-grey-800: #2e3238;
+  --brand-grey-900: #23262c;
+  --brand-ink: #1b1e23;
+
+  /* Tinta de la consola marina (modal de reglas y tabla de pagos). El documento
+     no es una tarjeta blanca: se pinta con el mismo panel que el tablero, asi
+     que su texto tambien es claro. Contrastes medidos sobre el tramo mas claro
+     del degradado (#123a86) y sobre el pie (#05102c):
+       --brand-panel-ink  #eef4ff  9,6:1 - 17,0:1
+       --brand-panel-dim  #bfd4f5  7,1:1 - 12,5:1
+       --brand-panel-gold #ffd88a  7,8:1 - 13,8:1
+     Todos pasan de 7:1 (AAA de texto normal) en cualquier punto del panel. */
+  --brand-panel-ink: #eef4ff;
+  --brand-panel-dim: #bfd4f5;
+  --brand-panel-gold: #ffd88a;
+
+  /* Tipografia de marca: mismos stacks locales (Fredoka / Lilita One).
+     Cambiar de familia = editar estas dos variables (los `@font-face` de
+     `style.css` siguen valiendo). */
+  --brand-font: 'Fredoka', 'Lilita One', 'Trebuchet MS', 'Segoe UI', system-ui,
+    -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --brand-font-display: 'Lilita One', 'Fredoka', 'Trebuchet MS', 'Segoe UI',
+    system-ui, sans-serif;
+
+  /* Receta unica de los botones secundarios: la misma pastilla de los pulsadores
+     del juego (cara roja en tres paradas, filo dorado, luz interior arriba y
+     sombra de contacto abajo). Los cuatro controles de la interfaz -capsula de
+     audio, ficha de prueba, capsulas de valor y cierre del modal- la consumen
+     desde estos tokens, asi que un ajuste de acabado se hace en un solo sitio. */
+  --brand-ctl-face: linear-gradient(180deg, #ee5570 0%, var(--brand-red) 46%, #a10b23 100%);
+  --brand-ctl-rim: linear-gradient(
+    180deg,
+    #fff6c9 0%,
+    var(--brand-gold) 44%,
+    #e29a06 74%,
+    #a86f08 100%
+  );
+  --brand-ctl-depth:
+    0 2px 0 #6b0416,
+    0 6px 14px rgba(9, 8, 40, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -6px 10px rgba(96, 4, 16, 0.34);
+  --brand-ctl-ink: #fff6e2;
+}
+
+/* --------------------------------------------------------------------------
+   2. Tema Santa Crush (<html data-theme="santa-crush">)
+   -------------------------------------------------------------------------- */
+
+html[data-theme="santa-crush"] {
+  /* Acentos: el magenta del tema base pasa a rojo corporativo. */
+  --mint: var(--brand-red);
+  --coral: var(--brand-red-dark);
+  --mango: var(--brand-red-soft);
+
+  --shadow: 0 14px 32px rgba(27, 30, 35, 0.14);
+
+  --font: var(--brand-font);
+  --font-display: var(--brand-font-display);
+}
+
+/* --------------------------------------------------------------------------
+   3. Ventana de juego: panel marino del tablero y casillas de vidrio
+   Estas dos piezas SI se pintan con gradientes en `style.css`, asi que el tema
+   puede repintarlas sin tocar el arte del marco (`d1.webp`) ni la rejilla.
+   El arte del tema (marco `d1`, columna `d2` y carcasas moviles) es azul marino
+   con aros dorados, asi que la ventana se pinta con el mismo panel: azul
+   profundo, brillo de estadio arriba y reflejo dorado al pie. Se mantienen las
+   capas del fondo base (brillo, luz, cuerpo y filo) y solo cambian los colores.
+   -------------------------------------------------------------------------- */
+
+html[data-theme="santa-crush"] .board {
+  background:
+    radial-gradient(120% 92% at 50% 0%, rgba(90, 176, 255, 0.42), transparent 62%) padding-box,
+    radial-gradient(circle at 50% 108%, rgba(255, 194, 26, 0.24), transparent 58%) padding-box,
+    linear-gradient(160deg, #123a86 0%, #0a1c4a 56%, #05102c 100%) padding-box,
+    linear-gradient(135deg, var(--brand-gold) 0%, #fff6c9 46%, #b57a00 100%) border-box;
+  box-shadow:
+    inset 0 0 44px rgba(0, 0, 0, 0.42),
+    inset 0 2px 0 rgba(255, 255, 255, 0.22),
+    0 0 30px rgba(255, 194, 26, 0.18),
+    0 18px 44px rgba(2, 10, 32, 0.5);
+}
+
+/* Reticula del fondo: trama azul tinta muy tenue sobre el panel marino. */
+html[data-theme="santa-crush"] .board::after {
+  background:
+    repeating-linear-gradient(90deg, rgba(4, 14, 44, 0.28) 0 1px, transparent 1px 13.5%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 55%);
+  mix-blend-mode: normal;
+  opacity: 0.75;
+}
+
+/* Casillas normales y comodines (`S*`): vidrio claro translucido sobre el panel
+   marino. El alfa deja ver la reticula y el degradado del marco, y el filo
+   blanco translucido mantiene separadas las 30 celdas del fondo oscuro. */
+html[data-theme="santa-crush"] .tile,
+html[data-theme="santa-crush"] .tile[data-sym^="S"] {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: linear-gradient(
+    180deg,
+    rgba(214, 234, 255, 0.42) 0%,
+    rgba(146, 186, 255, 0.28) 58%,
+    rgba(88, 132, 226, 0.30) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -8px 16px rgba(4, 14, 44, 0.30),
+    0 4px 12px rgba(2, 8, 26, 0.38);
+}
+
+/* S9 ya no se distingue por color: todas las pelotas comparten el mismo bloque
+   de vidrio y la rareza la marca el propio balón. La regla desaparecio a
+   proposito; si algun dia vuelve un premio alto con color propio, va aqui. */
+
+/* El bloque del logo: es el UNICO distinto del tablero. Lo comparten el scatter
+   (SC), que cae con el logotipo de Santa Crush, y el multiplicador (MX), que
+   desde el rebranding lleva su propio sello circular con la moneda de dolar.
+   El cuerpo de la medalla —oro macizo, abanico de rayos y barrido de luz— vive en
+   style.css, porque es comun a todos los temas; aqui solo se refuerza el filo de
+   marca y el halo calido del tema, que es lo que distingue a Santa Crush. */
+html[data-theme="santa-crush"] .tile[data-sym="SC"],
+html[data-theme="santa-crush"] .tile[data-sym="MX"] {
+  border-color: rgba(255, 214, 84, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -10px 16px rgba(92, 34, 0, 0.45),
+    0 0 18px rgba(255, 194, 26, 0.85),
+    0 0 48px rgba(200, 16, 46, 0.34);
+}
+
+/* Victoria y dispersion: el filo y el halo tienen que ganar tambien a las
+   casillas comodin, que se pintan con `.tile[data-sym^="S"]` (mas especifica por
+   el atributo). Por eso la regla se ata a `.tile[data-sym].tile--win`, con la
+   misma especificidad y mas abajo en la hoja. */
+html[data-theme="santa-crush"] .tile.tile--win,
+html[data-theme="santa-crush"] .tile[data-sym].tile--win {
+  border-color: rgba(255, 214, 92, 0.95);
+  box-shadow:
+    0 0 26px rgba(255, 199, 61, 0.85),
+    0 0 52px rgba(200, 16, 46, 0.4);
+}
+
+html[data-theme="santa-crush"] .tile.tile--scatter,
+html[data-theme="santa-crush"] .tile[data-sym].tile--scatter {
+  border-color: var(--brand-red);
+}
+
+/* Etiqueta de valor del multiplicador. La geometria, el relieve, el filo de perla
+   y el latido viven en `style.css`; el tema solo cambia la PALETA por el rojo de
+   marca, un paso mas profundo que el rubi base (frambuesa -> rojo Santa Crush ->
+   vino), para que la pieza se lea sobre el oro de la medalla sin perder la
+   identidad del tema. */
+html[data-theme="santa-crush"] .tile__bomb-value {
+  --badge-flare: #ff8aa6;
+  --badge-top: var(--brand-red-soft);
+  --badge-mid: var(--brand-red);
+  --badge-deep: #b30e2b;
+  --badge-base: #60040f;
+  --badge-rim: rgba(255, 238, 208, 0.98);
+  --badge-ring: rgba(86, 4, 16, 0.95);
+  --badge-glow: rgba(200, 16, 46, 0.78);
+  --badge-ink: var(--brand-white);
+}
+
+
+
+/* La cabecera ya no tiene marca ni fondo: es una fila transparente con los
+   controles del juego (ver `.topbar` en `style.css`), asi que aqui no hay nada
+   que repintar. La pastilla de esos controles vive en la seccion siguiente. */
+
+/* --------------------------------------------------------------------------
+   4. Controles secundarios: la misma pastilla que los pulsadores del juego
+   La capsula de audio, la ficha de prueba, las capsulas de valor (`100x` y los
+   giros de AUTO) y el cierre del modal comparten ahora el acabado de los
+   botones principales de la maquina: cara roja de marca, filo dorado, luz
+   interior arriba y sombra de contacto. El borde conserva el grosor que le da
+   `style.css`; aqui solo se pinta (filo en `border-box`, cara en `padding-box`),
+   asi que la maqueta no se mueve ni un pixel.
+   -------------------------------------------------------------------------- */
+
+/* Ficha de prueba: la misma pastilla que la capsula de audio, con su moneda de
+   oro y el saldo virtual debajo. El estado "activo" (`aria-pressed`) solo suma
+   el aro dorado; la cara no cambia para que el boton no se mueva de sitio. */
+html[data-theme="santa-crush"] .topbar .btn--demo {
+  border-color: transparent;
+  background: var(--brand-ctl-face) padding-box, var(--brand-ctl-rim) border-box;
+  box-shadow: var(--brand-ctl-depth);
+}
+
+html[data-theme="santa-crush"] .topbar .btn--demo .btn__title {
+  color: var(--brand-white);
+  /* El trazo negro del caramelo ensucia el texto a 10 px: aqui no hace falta. */
+  -webkit-text-stroke: 0;
+  text-shadow: 0 1px 0 rgba(107, 4, 22, 0.55);
+}
+
+html[data-theme="santa-crush"] .topbar .btn--demo .btn__sub {
+  color: var(--brand-gold);
+  text-shadow: 0 1px 0 rgba(107, 4, 22, 0.45);
+}
+
+html[data-theme="santa-crush"] .topbar .btn--demo:hover:not(:disabled) {
+  border-color: transparent;
+  box-shadow:
+    var(--brand-ctl-depth),
+    0 0 0 2px rgba(255, 194, 26, 0.26);
+}
+
+html[data-theme="santa-crush"] .topbar .btn--demo[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--brand-ctl-face) padding-box, var(--brand-ctl-rim) border-box;
+  box-shadow:
+    var(--brand-ctl-depth),
+    0 0 0 2px rgba(255, 194, 26, 0.42),
+    0 0 18px rgba(255, 194, 26, 0.3);
+}
+
+/* Capsula de audio: la misma pastilla. Los dos iconos van en tinta clara con
+   relieve de contacto, para que el dibujo de linea no se pierda sobre el rojo. */
+html[data-theme="santa-crush"] .topbar__audio {
+  border-color: transparent;
+  background: var(--brand-ctl-face) padding-box, var(--brand-ctl-rim) border-box;
+  box-shadow: var(--brand-ctl-depth);
+}
+
+html[data-theme="santa-crush"] .topbar .topbar__audio .icon-btn {
+  color: var(--brand-ctl-ink);
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 1px 0 rgba(107, 4, 22, 0.55));
+}
+
+html[data-theme="santa-crush"] .topbar .topbar__audio .icon-btn:hover {
+  color: var(--brand-white);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Silenciado: el icono se apaga y el boton baja a un hundido dentro de la
+   capsula; el estado real lo lleva `aria-pressed`, no una clase aparte. */
+html[data-theme="santa-crush"] .topbar .topbar__audio .icon-btn[aria-pressed="false"] {
+  color: rgba(255, 246, 201, 0.55);
+  background: rgba(84, 4, 18, 0.42);
+  box-shadow: inset 0 1px 2px rgba(46, 2, 10, 0.5);
+  filter: none;
+}
+
+/* El hundido gana a `:hover` por especificidad, asi que el silenciado recupera
+   el brillo con su propia regla: sin ella el boton se quedaba sin respuesta al
+   pasar el puntero. */
+html[data-theme="santa-crush"] .topbar .topbar__audio .icon-btn[aria-pressed="false"]:hover {
+  color: rgba(255, 246, 201, 0.82);
+  background: rgba(84, 4, 18, 0.58);
+}
+
+/* Capsulas de valor de los pulsadores (`100x` de CRUSH y los giros de AUTO).
+   Dejan el vidrio oscuro por la pastilla de marca: el filo dorado las separa
+   del caramelo y el texto claro mantiene la lectura a 8-11 px. Los `#btn-*`
+   entran en la lista porque las capas base los repintan con id (ganan a
+   cualquier selector de clases), asi que la receta se repite con la misma
+   especificidad para no dejar una pastilla vieja suelta. */
+html[data-theme="santa-crush"] .machine__side .controls .pill,
+html[data-theme="santa-crush"] .machine__side .controls .btn--feature.gbtn .pill,
+html[data-theme="santa-crush"] .machine__side .controls .btn--auto[aria-pressed="true"].gbtn .pill,
+html[data-theme="santa-crush"] .machine__side .controls #btn-feature .pill,
+html[data-theme="santa-crush"] .machine__side .controls #btn-auto .pill {
+  color: var(--brand-ctl-ink);
+  border-color: transparent;
+  background: var(--brand-ctl-face) padding-box, var(--brand-ctl-rim) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2px 3px rgba(96, 4, 16, 0.45),
+    0 1px 2px rgba(9, 8, 40, 0.42);
+  font-weight: 800;
+  /* Las capas base fijan `-webkit-text-fill-color` por id: se devuelve al color
+     de la regla para que la tinta clara del tema no quede pisada. */
+  -webkit-text-fill-color: currentColor;
+  text-shadow: 0 1px 0 rgba(107, 4, 22, 0.55);
+}
+
+/* Cierre del modal: el unico boton de la tarjeta tambien es un pulsador de
+   marca, no una teja gris que no pertenece a ninguna de las dos capas. */
+html[data-theme="santa-crush"] .modal__head .icon-btn {
+  color: var(--brand-ctl-ink);
+  border-color: transparent;
+  background: var(--brand-ctl-face) padding-box, var(--brand-ctl-rim) border-box;
+  box-shadow:
+    0 2px 0 #6b0416,
+    0 4px 10px rgba(10, 12, 16, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  text-shadow: 0 1px 0 rgba(107, 4, 22, 0.55);
+}
+
+html[data-theme="santa-crush"] .modal__head .icon-btn:hover {
+  color: var(--brand-white);
+  border-color: transparent;
+  background: var(--brand-ctl-face) padding-box, var(--brand-ctl-rim) border-box;
+  box-shadow:
+    0 2px 0 #6b0416,
+    0 6px 14px rgba(10, 12, 16, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* --------------------------------------------------------------------------
+   5. Modal de reglas, tabla de pagos y anillo de foco
+   --------------------------------------------------------------------------
+   La tarjeta no es una hoja blanca: es la CONSOLA del juego. Se pinta con el
+   mismo panel que el tablero (`.board`): azul marino profundo, brillo de estadio
+   arriba, reflejo dorado al pie, reticula de 1 px y filo de oro. Asi el
+   documento se lee como una pestaña de la maquina y no como una ventana pegada
+   encima del arte.
+
+   Consecuencia obligada: la tinta tambien es la del panel. La capa base la
+   escribe en crema al 80-90 % para el modal morado, y esa tinta no vale aqui;
+   se sustituye por los tres tokens `--brand-panel-*`, calculados sobre el tramo
+   MAS CLARO del degradado (#123a86), que es el peor caso:
+
+     parrafos, listas y filas de la tabla  --brand-panel-ink   #eef4ff    9,6:1
+     cabecera de la tabla y etiquetas      --brand-panel-dim   #bfd4f5    7,1:1
+     subtitulos y multiplicadores          --brand-panel-gold  #ffd88a    7,8:1
+
+   El test `frontendAssets.test.js` recalcula esos tres pares con la formula de
+   WCAG y falla si alguien baja del umbral o devuelve la tarjeta blanca.
+   -------------------------------------------------------------------------- */
+
+/* Velo del fondo: marino en vez del morado de la capa base, para que el arte del
+   juego siga leyendose detras del documento. */
+html[data-theme="santa-crush"] .modal__backdrop {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(18, 58, 134, 0.5), transparent 72%),
+    rgba(3, 8, 22, 0.76);
+  backdrop-filter: blur(7px) saturate(1.15);
+}
+
+/* La consola: las mismas cuatro capas del tablero (reticula, brillo, reflejo y
+   cuerpo) mas el filo de oro, que se resuelve con el borde y un aro exterior. */
+html[data-theme="santa-crush"] .modal__card {
+  border-color: rgba(255, 194, 26, 0.66);
+  background:
+    repeating-linear-gradient(90deg, rgba(4, 14, 44, 0.22) 0 1px, transparent 1px 26px) padding-box,
+    radial-gradient(120% 92% at 50% 0%, rgba(90, 176, 255, 0.32), transparent 62%) padding-box,
+    radial-gradient(circle at 50% 108%, rgba(255, 194, 26, 0.18), transparent 58%) padding-box,
+    linear-gradient(160deg, #123a86 0%, #0a1c4a 56%, #05102c 100%) padding-box;
+  box-shadow:
+    0 0 0 1px rgba(255, 194, 26, 0.34),
+    inset 0 0 44px rgba(0, 0, 0, 0.38),
+    inset 0 2px 0 rgba(255, 255, 255, 0.16),
+    0 30px 80px rgba(2, 10, 32, 0.62);
+  /* Tinta heredada por toda la tarjeta: cualquier nodo sin regla propia (un
+     `<strong>` suelto, el texto que genera el JS) ya sale claro. */
+  color: var(--brand-panel-ink);
+}
+
+/* Cabecera: banda de consola mas oscura, con filete de oro y el titulo en blanco
+   puro. El cierre es la pastilla roja, asi que el fondo oscuro la mantiene
+   visible (sobre una banda roja se perderia). */
+html[data-theme="santa-crush"] .modal__head {
+  border-bottom-color: rgba(255, 194, 26, 0.4);
+  background: linear-gradient(180deg, rgba(4, 14, 44, 0.9), rgba(4, 14, 44, 0.34));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+html[data-theme="santa-crush"] .modal__head h2 {
+  color: var(--brand-white);
+  text-shadow: 0 2px 8px rgba(2, 10, 32, 0.7);
+}
+
+/* Cuerpo del documento. El `h3` es el subtitulo ("COMO SE JUEGA", "PAGOS POR
+   DISPERSION (x APUESTA)"): en oro claro, el color del premio del juego. */
+html[data-theme="santa-crush"] .modal__body,
+html[data-theme="santa-crush"] .modal__body p,
+html[data-theme="santa-crush"] .modal__body ul,
+html[data-theme="santa-crush"] .modal__body li {
+  color: var(--brand-panel-ink);
+}
+
+html[data-theme="santa-crush"] .modal__body h3 {
+  color: var(--brand-panel-gold);
+  font-weight: 700;
+  text-shadow: 0 1px 6px rgba(2, 10, 32, 0.55);
+}
+
+html[data-theme="santa-crush"] .modal__body strong {
+  color: var(--brand-panel-gold);
+  font-weight: 800;
+}
+
+/* `code` marca la dispersion (3/4/5/6+): pastilla de oro translucida sobre el
+   panel, con la cifra en el oro claro del texto. */
+html[data-theme="santa-crush"] .modal__body code {
+  background: rgba(255, 194, 26, 0.18);
+  color: var(--brand-panel-gold);
+}
+
+/* Tabla de pagos: cabecera en azul claro, filas en la tinta del panel y los
+   multiplicadores (ultima columna) en oro y negrita, que es el dato que se busca
+   de un vistazo. */
+html[data-theme="santa-crush"] .paytable th,
+html[data-theme="santa-crush"] .paytable td {
+  border-bottom-color: rgba(255, 255, 255, 0.16);
+}
+
+html[data-theme="santa-crush"] .paytable th {
+  color: var(--brand-panel-dim);
+  font-weight: 700;
+}
+
+html[data-theme="santa-crush"] .paytable td {
+  color: var(--brand-panel-ink);
+}
+
+html[data-theme="santa-crush"] .paytable td:last-child {
+  color: var(--brand-panel-gold);
+  font-weight: 800;
+}
+
+html[data-theme="santa-crush"] .paytable__symbol {
+  color: var(--brand-panel-ink);
+  font-weight: 600;
+}
+
+/* Zebra tenue: separa las filas sin ensuciar el contraste del texto. */
+html[data-theme="santa-crush"] .paytable tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* El icono del simbolo se despega del panel con una sombra de tinta azul, no con
+   el cerco morado de la capa base. */
+html[data-theme="santa-crush"] .paytable__icon {
+  filter: drop-shadow(0 2px 3px rgba(2, 10, 32, 0.55));
+}
+
+/* Puerta de sesion: comparte la consola, asi que la etiqueta va en azul claro y
+   el campo se hunde en el panel (vidrio oscuro con tinta clara y filo de oro al
+   enfocar). */
+html[data-theme="santa-crush"] .auth-form__label {
+  color: var(--brand-panel-dim);
+}
+
+html[data-theme="santa-crush"] .auth-form__input {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(4, 14, 44, 0.55);
+  color: var(--brand-panel-ink);
+}
+
+html[data-theme="santa-crush"] .auth-form__input::placeholder {
+  color: var(--brand-panel-dim);
+}
+
+html[data-theme="santa-crush"] .auth-form__input:focus {
+  outline-color: var(--brand-gold);
+}
+
+html[data-theme="santa-crush"] :focus-visible {
+  outline: 2px solid var(--brand-red);
+}
+
+/* Los controles nuevos son rojos: sobre ellos el anillo rojo desaparece, asi
+   que el foco se pinta en oro y se separa un pixel mas del filo. La capsula de
+   audio lo recibe en bloque (`:focus-within`) para que se lea como una pieza
+   sola y no como dos botones sueltos. */
+html[data-theme="santa-crush"] .topbar .btn--demo:focus-visible,
+html[data-theme="santa-crush"] .topbar .topbar__audio .icon-btn:focus-visible,
+html[data-theme="santa-crush"] .topbar__audio:focus-within,
+html[data-theme="santa-crush"] .modal__head .icon-btn:focus-visible {
+  outline-color: var(--brand-gold);
+  outline-offset: 2px;
+}
+
+/* Rotulo del boton de tabla de pagos: la misma tinta clara del pulsador, con
+   relieve de contacto. El filete que lo separa del altavoz ya lo pone
+   `style.css`; aqui solo se tiñe el texto para que no herede el color de la
+   capsula. */
+html[data-theme="santa-crush"] .topbar .icon-btn__label {
+  color: var(--brand-ctl-ink);
+  text-shadow: 0 1px 0 rgba(107, 4, 22, 0.55);
+}
+
+/* Filete de separacion entre el altavoz y el boton de la tabla: encendido con
+   la tinta clara del pulsador, tenue para que no parezca dos piezas. */
+html[data-theme="santa-crush"] .topbar__audio .icon-btn--paytable {
+  border-left-color: rgba(255, 246, 201, 0.28);
+}
+
+/* Fichas de la bomba (2x..250x) sobre la consola marina: pastilla de oro
+   translucida con la cifra en el oro claro del panel, como los multiplicadores
+   de la tabla. */
+html[data-theme="santa-crush"] .paytable__chip {
+  background: rgba(255, 194, 26, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  color: var(--brand-panel-gold);
+}
+
+html[data-theme="santa-crush"] .paytable__foot {
+  color: var(--brand-panel-ink);
+}
+
+/* La primera celda de cada fila es cabecera (`th scope="row"`): comparte la
+   tinta del simbolo y no la azul clara de las cabeceras de columna. */
+html[data-theme="santa-crush"] .paytable tbody th {
+  color: var(--brand-panel-ink);
+}
+
