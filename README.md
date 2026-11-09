@@ -10,6 +10,8 @@ sin Supabase ni motores externos.
 - Las rutas del arte nuevo viven en `config/gameConfig.js` → `ASSETS`; el
   inventario y el procedimiento estan en [`docs/ASSETS.md`](docs/ASSETS.md).
 - El modo autonomo se explica en [`docs/MODO_AUTONOMO.md`](docs/MODO_AUTONOMO.md).
+- **Demo en produccion:** <https://santacrush.vercel.app> (Vercel, sin Supabase:
+  `dbDriver = "memory"` y `operator.mode = "STANDALONE_DEMO"`).
 
 ## Arranque rapido
 

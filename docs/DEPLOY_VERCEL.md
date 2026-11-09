@@ -292,6 +292,10 @@ ls .vercel/output/static                 # index.html + ui/** + src/**
 
 ## 6. Verificación tras el despliegue
 
+Producción actual de Santa Crush: **https://santacrush.vercel.app**
+(proyecto `jggalviz-6791s-projects/santacrush`, dominio servido por el último
+deployment `production` con estado `Ready`).
+
 ```bash
 BASE=https://<proyecto>.vercel.app
 
@@ -362,6 +366,18 @@ pública, el comportamiento actual es aceptable.
 | Tras desplegar sigue saliendo "Sesión requerida" | El navegador conserva el JS viejo. `/ui/**` y `/src/**` se sirven con `Cache-Control: no-cache` (Express y `vercel.json`): fuerza recarga (Ctrl+F5) y comprueba que ejecutaste `npm run build:ui` (`git status` limpio antes del push) |
 | Logs `Compiling "main.js" from ESM to CommonJS...` | La función volvió a trazar `public/`: usa `createApp({ staticDir: null })` en `server.js`, `express.static(staticDir)` y `excludeFiles` con `public` (§5.1) |
 | `.env` dentro de `.vercel/output/functions/…` | Igual: añade `.env` y `.env.*` a `excludeFiles` (§5.1) |
+| `503` con `DB_DRIVER=memory esta prohibido con NODE_ENV=production…` | Quedaron credenciales de Supabase en el entorno (desactivan la demo autónoma: `STANDALONE_DEMO = DEMO_MODE_ENABLED && !supabaseConfigured`) o `DEMO_MODE_ENABLED=false`. Borra `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` y/o pon `DEMO_MODE_ENABLED=true` |
+| `503` con `ALLOW_DEV_SESSION debe ser false en produccion` | Define `ALLOW_DEV_SESSION=false`. La demo autónoma **no** la necesita: emite su propio token con el claim `demo: true` desde `POST /api/demo/session` |
+| Cambio variables y el 503 sigue igual | En Vercel las variables se leen en el build/runtime del deployment: hay que **Redeploy** (`vercel redeploy <dpl_id> --scope <team>` o *Redeploy* en el dashboard) |
+
+Comprobación rápida del estado real de un despliegue (sustituye `<url>`):
+
+```powershell
+curl.exe -sS https://<url>/api/health
+# esperado en demo: "dbDriver":"memory" y "operator":{"mode":"STANDALONE_DEMO",…,"virtualWallet":true}
+curl.exe -sS -o NUL -w "%{http_code}" https://<url>/            # 200
+curl.exe -sS -X POST -H "Content-Type: application/json" --data-binary '{}' https://<url>/api/demo/session
+```
 
 ## 9. Alternativa: servidor propio
 
