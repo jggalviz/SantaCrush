@@ -733,6 +733,10 @@ button:disabled { cursor: not-allowed; }
   background: rgba(255, 255, 255, 0.26);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   cursor: pointer;
+  /* Toque: sin retardo por doble tap ni destello gris del navegador; el relieve
+     del chip ya da la respuesta visual. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: transform 0.1s ease, filter 0.15s ease;
 }
 
@@ -7124,34 +7128,25 @@ body.is-demo .machine__side .controls .balance::after {
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 
-  /* `AUTOGIRO` + los tres paquetes en el mismo caramelo (38,3 % del panel). El
-     rotulo baja un punto para dejar sitio a los chips; la estrella de la
-     izquierda ya viene dibujada en `d2.webp` y el glyph del DOM sigue oculto. */
+  /* `AUTOGIRO` vive en la mitad izquierda del caramelo; los tres paquetes van en
+     un selector propio sobre la derecha (`.btn__opts`, bloque de arte mas
+     abajo). El cuerpo sale del ancho util medido, no del alto del caramelo: a
+     0,049 (15,3 px en 1440) el rotulo pedia 79 px de caja y solo habia 76,5, asi
+     que la elipsis borraba la ultima letra. Con 0,048 el texto mide ~5,04 em y
+     le sobran ~10 px en el tramo izquierdo a cualquier escala. */
   .machine__side .controls #btn-feature .btn__main {
-    gap: 0.3em;
+    width: 100%;
   }
 
   .machine__side .controls #btn-feature .btn__main .btn__title {
-    font-size: clamp(9px, calc(var(--cons-scale) * 0.049), 18px);
-  }
-
-  .machine__side .controls .btn__opts {
-    gap: 0.14em;
-  }
-
-  .machine__side .controls .btn__opt {
-    padding: 0.1em 0.4em;
-    font-size: clamp(7.5px, calc(var(--cons-scale) * 0.028), 12px);
-    letter-spacing: 0;
-    color: rgba(94, 44, 0, 0.82);
-    background: rgba(255, 255, 255, 0.38);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  }
-
-  .machine__side .controls .btn__opt.is-active {
-    color: #6b2a00;
-    background: #fff3bd;
-    box-shadow: inset 0 1px 0 #fffdf0, 0 0 0 1px rgba(120, 60, 0, 0.4);
+    font-size: clamp(9px, calc(var(--cons-scale) * 0.048), 18px);
+    letter-spacing: 0.01em;
+    /* La caja del rotulo ocupa todo el tramo izquierdo (~86 px a 1440) y el texto
+       se centra dentro: asi la elipsis de `.gbtn .btn__title` no puede
+       dispararse aunque el navegador mida la palabra un pelo mas ancha que su
+       caja, que es lo que borraba la ultima letra. */
+    width: 100%;
+    text-align: center;
   }
 
   /* Capsula azul: tinta blanca con contorno marino. */
@@ -7512,8 +7507,11 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* AUTOGIRO · boton amarillo grande x 10,18-47,74 % · y 80,09-88,44 %
-     El aire derecho (20,4 %) reserva la mitad de la capsula al selector: el
-     rotulo se queda centrado en el tramo izquierdo y no pisa los pulsadores. */
+     El caramelo se parte en dos mitades. El aire derecho de la caja es lo que
+     queda entre el margen izquierdo y el borde del selector, de modo que la caja
+     del rotulo termina en 28,10 % y la fila de chips arranca en 28,70 %: el
+     texto no puede meterse bajo los pulsadores ni al reves, se mida como se
+     mida el navegador. */
   .machine__side .controls #btn-feature {
     --art-x: 10.18;
     --art-y: 80.09;
@@ -7523,49 +7521,72 @@ body.is-demo .machine__side .controls .balance::after {
     top: 80.09%;
     width: 37.56%;
     height: 8.35%;
-    padding: 0 20.4% 0 2%;
+    /* 37,56 - 0,8 (margen) - 17,12 (tramo del rotulo) = 19,64 */
+    padding: 0 19.64% 0 0.8%;
     border-radius: 999px;
   }
 
-  /* Selector rapido de paquete · tres chips tactiles en la mitad derecha de la
-     capsula amarilla (x 27,60-47,30 % · y 80,09-88,44 %). Son hermanos del
-     amarillo, no hijos, y se anclan al lienzo de la consola para caer siempre
-     sobre el caramelo. La fila deja pasar el clic; solo los chips lo recogen. */
+  /* Selector rapido de paquete · control segmentado con recuadro propio dentro
+     del caramelo (x 28,70-47,42 % · y 81,55-86,98 %). Es hermano del amarillo,
+     no hijo (un boton dentro de otro boton no es marcado valido) y se ancla al
+     lienzo de la consola para caer siempre sobre el caramelo. La fila deja pasar
+     el clic; solo los chips lo recogen. El hueco hundido y las tres teclas del
+     mismo ancho lo leen como un solo mando, que es lo que se toca. */
   .machine__side .controls .btn__opts {
     position: absolute;
-    left: 27.60%;
-    top: 80.09%;
-    width: 19.70%;
-    height: 8.35%;
+    left: 28.7%;
+    top: 81.55%;
+    width: 18.72%;
+    height: 5.43%;
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.2em;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.16em;
+    /* El cuerpo de letra del chip manda tambien en el aire del recuadro: el
+       hueco y las teclas crecen juntos a cualquier escala. */
+    padding: 0.16em;
+    font-size: clamp(8px, calc(var(--cons-scale) * 0.034), 14px);
+    border-radius: 999px;
+    background: rgba(122, 62, 0, 0.16);
+    box-shadow:
+      inset 0 1px 2px rgba(104, 50, 0, 0.36),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.42);
     z-index: 3;
     pointer-events: none;
   }
 
   .machine__side .controls .btn__opt {
-    pointer-events: auto;
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 0;
-    /* 62 % del alto del caramelo: el chip se lee como una tecla y no como una
-       etiqueta de 13 px. */
-    height: 62%;
-    padding: 0 0.34em;
-    font-size: clamp(8px, calc(var(--cons-scale) * 0.036), 16px);
+    height: auto;
+    padding: 0 0.15em;
+    font-size: 1em;
     font-weight: 900;
-    color: #7a3200;
-    background: rgba(255, 255, 255, 0.34);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    line-height: 1;
+    letter-spacing: 0;
+    border-radius: 999px;
+    color: rgba(90, 40, 0, 0.86);
+    background: transparent;
+    box-shadow: none;
+    pointer-events: auto;
+  }
+
+  .machine__side .controls .btn__opt:hover:not(:disabled) {
+    filter: none;
+    background: rgba(255, 255, 255, 0.32);
+  }
+
+  .machine__side .controls .btn__opt:active:not(:disabled) {
+    transform: none;
   }
 
   .machine__side .controls .btn__opt.is-active {
-    color: #6b2a00;
-    background: #fff3bd;
-    box-shadow: inset 0 1px 0 #fffdf0, 0 0 0 1px rgba(120, 60, 0, 0.45);
+    color: #5f2400;
+    background: linear-gradient(180deg, #fffbe3 0%, #ffe486 58%, #ffc339 100%);
+    box-shadow: 0 1px 2px rgba(110, 52, 0, 0.45), inset 0 1px 0 #fffef6;
   }
 
   .machine__side .controls .btn__opt:focus-visible {

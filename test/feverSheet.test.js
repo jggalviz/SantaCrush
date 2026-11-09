@@ -897,8 +897,28 @@ test('los estilos de la hoja y de los chips estan en la fuente y en el minificad
   );
   assert.match(
     css,
-    /\.machine__side \.controls \.btn__opts\s*\{[^}]*left:\s*27\.60%;[^}]*width:\s*19\.70%;/,
-    'en escritorio los tres chips caen sobre la mitad derecha de la capsula amarilla'
+    /\.machine__side \.controls \.btn__opts\s*\{[^}]*left:\s*28\.7%;[^}]*width:\s*18\.72%;/,
+    'en escritorio el selector ocupa su propio recuadro en la mitad derecha del caramelo'
+  );
+  assert.match(
+    css,
+    /\.machine__side \.controls \.btn__opts\s*\{[^}]*border-radius:\s*999px;[^}]*background:\s*rgba\(122, 62, 0, 0\.16\);/,
+    'el recuadro del selector se lee como un hueco hundido dentro del caramelo'
+  );
+  assert.match(
+    css,
+    /\.machine__side \.controls \.btn__opt\s*\{[^}]*flex:\s*1 1 0;/,
+    'los tres chips se reparten el recuadro por igual (control segmentado)'
+  );
+  assert.match(
+    css,
+    /\.machine__side \.controls #btn-feature\s*\{[^}]*padding:\s*0 19\.64% 0 0\.8%;/,
+    'el aire derecho de la caja aparta el rotulo del selector: no se solapan'
+  );
+  assert.match(
+    css,
+    /#btn-feature \.btn__main \.btn__title\s*\{[^}]*font-size:\s*clamp\(9px, calc\(var\(--cons-scale\) \* 0\.048\), 18px\);[^}]*width:\s*100%;[^}]*text-align:\s*center;/,
+    'el rotulo llena su tramo y se centra: la elipsis no puede comerse la ultima letra'
   );
   assert.doesNotMatch(css, /featurePlateRoll/, 'los chips ya no rotan: el dato se lee fijo');
 
