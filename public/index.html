@@ -135,8 +135,7 @@
             </div>
           </div>
 
-          <!-- Bloque 3 · Panel de control y saldo. Cuatro filas, como el modulo
-               de referencia: saldo · apuesta · GIRAR · FEVER + AUTO. -->
+          <!-- Bloque 3 · Panel de control y saldo -->
           <div class="controls">
             <div class="controls__wallet">
               <div class="balance" aria-live="polite">
@@ -171,9 +170,11 @@
             </div>
 
             <div class="controls__actions">
-              <!-- FEVER compra el bonus entero (`feature.costMultiplier` = 100x
-                   la apuesta, `feature.spins` = 10 giros). El coste total lo
-                   escribe `GameView.paintFeatureCost_` en su subtitulo. -->
+              <!-- FEVER compra el bonus: gasta `costMultiplier` veces la apuesta
+                   (`feature.costMultiplier`, hoy 100x) y juega `feature.spins`
+                   tiradas. El caramelo amarillo del arte es el pulsador y su
+                   capsula lleva el precio vivo: `GameView.paintFeatureCost_`
+                   escribe `100x · <coste>` en `#feature-cost`. -->
               <button class="btn btn--feature gbtn gbtn--gold" id="btn-feature" type="button"
                       aria-label="Fever · compra el bonus por 100 veces la apuesta.">
                 <span class="btn__main">
@@ -182,11 +183,9 @@
                   </svg>
                   <span class="btn__title">FEVER</span>
                 </span>
-                <span class="btn__sub" id="feature-cost">100x · 1,00</span>
+                <span class="pill" id="feature-cost">100x · 1,00</span>
                 <i class="shine" aria-hidden="true"></i>
               </button>
-
-              <!-- GIRAR lanza la tirada y, con el bucle en marcha, lo detiene. -->
 
               <button class="btn btn--spin gbtn gbtn--pink" id="btn-spin" type="button">
                 <span class="btn__spin-icon" aria-hidden="true">
@@ -207,7 +206,6 @@
                 <i class="shine" aria-hidden="true"></i>
               </button>
 
-              <!-- AUTO juega el paquete configurado (o detiene la tanda). -->
               <button class="btn btn--auto gbtn gbtn--blue" id="btn-auto" type="button"
                       aria-pressed="false"
                       aria-label="AUTO · 10 tiradas automáticas. Pulsa para jugarlas seguidas.">
@@ -217,23 +215,15 @@
                 <i class="shine" aria-hidden="true"></i>
               </button>
 
-              <!-- Insignia del paquete: hermano del azul, no hijo (un boton dentro
-                   de otro boton no es marcado valido ni enfocable). Muestra el
-                   paquete vigente —o las tiradas que quedan— y abre la hoja Giros
-                   Rápidos, que es donde se elige. Lo pinta
-                   `GameView.paintQuickSpinsOptions_`. -->
-              <button class="auto-pack" id="btn-auto-pack" type="button"
+              <!-- Paquete de tiradas rapidas: pulsador propio y hermano del azul
+                   (un boton dentro de otro boton no es marcado valido). Muestra
+                   el paquete vigente —y las tiradas que quedan en marcha— y es
+                   el unico mando que abre la hoja GIROS RAPIDOS, donde se elige
+                   entre 5, 10 y 25. `GameView.paintAutoCount_` escribe la cifra
+                   y el nombre accesible; `GameControls` lo enlaza a la hoja. -->
+              <button class="pill" id="btn-auto-pack" type="button"
                       aria-haspopup="dialog" aria-controls="fever-sheet" aria-expanded="false"
-                      aria-label="Paquete de tiradas automáticas · 10. Pulsa para elegir otro.">
-                <span id="auto-count">x10</span>
-              </button>
-            </div>
-
-            <!-- Pie del panel: estado del motor y version. Mismos ids que
-                 consulta el cliente; solo cambia su posicion en el layout. -->
-            <div class="statusbar">
-              <span class="statusbar__item" id="status-text">Conectando…</span>
-              <span class="statusbar__item statusbar__item--right" id="engine-text"></span>
+                      aria-label="Paquete de tiradas automáticas · 10. Pulsa para elegir otro."><span id="auto-count">x10</span></button>
             </div>
           </div>
         </div>
@@ -332,13 +322,12 @@
     </div>
   </div>
 
-  <!-- Hoja de configuracion de autogiros: los paquetes del pulsador azul.
-       La insignia del paquete (`#btn-auto-pack`) la abre (pide cuantas tiradas
-       quiere) y el azul las juega.
-       `GameView.renderFeverSheet_` pinta un boton por paquete publicado en
-       `bets.quickSpins` (marcando el vigente) y
-       `GameView.paintQuickSpinsOptions_` escribe ese mismo paquete en la
-       insignia del azul (o las tiradas que quedan). -->
+  <!-- Hoja de configuracion de autogiros: los paquetes del pulsador rojo.
+       La insignia del paquete (`#btn-auto-pack`, la pastilla dorada del
+       caramelo AUTO) la abre y pide cuantas tiradas se quieren; el AUTO las
+       juega. `GameView.renderFeverSheet_` pinta un boton por paquete publicado
+       en `bets.quickSpins` (marcando el vigente) y `GameView.paintAutoCount_`
+       escribe la cifra en la insignia (o las tiradas que quedan). -->
   <div class="fever" id="fever-sheet" hidden>
     <div class="fever__backdrop" id="fever-backdrop" data-close="1"></div>
     <div class="fever__card" role="dialog" aria-modal="true"

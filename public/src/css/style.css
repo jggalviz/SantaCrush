@@ -4890,9 +4890,9 @@ body.is-demo .machine__side .controls .balance::after {
     /* El aire lateral ya lo pone `.app`: aqui no se resta ancho al tablero. */
     padding: 0;
     /* Ancho de la máquina: el menor entre el que cabe a lo ancho y el que deja
-       el alto libre. El divisor 1,4436 es la suma de las relaciones alto/ancho
-       de las dos piezas móviles —marco 1076 / 1447 = 0,7436 y el panel de mandos
-       0,70 de su ancho—; la separación entre ambas se resta del alto antes
+       el alto libre. El divisor 1,2388 es la suma de las relaciones alto/ancho
+       de las dos piezas móviles —marco 1076 / 1447 = 0,7436 y consola
+       879 / 1775 = 0,4952—; la separación entre ambas se resta del alto antes
        de dividir y no forma parte del divisor. `--m-w` es además la unidad de
        medida de todo lo que se superpone al arte (`calc(var(--m-w) * k)`), de
        modo que cada capa escala con el dibujo y no con la altura de su celda.
@@ -4903,7 +4903,7 @@ body.is-demo .machine__side .controls .balance::after {
        quedara 12 px por debajo de sus placas). Con unidades de contenedor
        `--m-w` es una longitud y mide lo mismo en cualquier propiedad. */
     --m-w: 100cqw;
-    --m-w: min(100cqw, calc((100cqh - clamp(4px, 1.2dvh, 10px)) / 1.4436));
+    --m-w: min(100cqw, calc((100cqh - clamp(4px, 1.2dvh, 10px)) / 1.2388));
     /* Alto del marco (aspect-ratio 1447 / 1076, la relación exacta del recorte:
        el arte no se estira). Los % verticales de las capas superpuestas se
        miden con `--frame-h`, porque el alto no es proporcional a `--m-w` en
@@ -5291,26 +5291,850 @@ body.is-demo .machine__side .controls .balance::after {
     --logo-air: clamp(0px, calc(100cqh * 0.08), 78px);
     --m-w: min(
       100cqw,
-      calc((100cqh - var(--row-gap) - var(--logo-air)) / 1.4436)
+      calc((100cqh - var(--row-gap) - var(--logo-air)) / 1.2388)
     );
   }
 }
 
 /* --------------------------------------------------------------------------
-   4-6) Retirados: la consola movil ya no es un lienzo con discos pintados.
+   4) La consola · carcasa grafica + controles superpuestos
    --------------------------------------------------------------------------
-   El modulo de mandos se pinta con CSS (panel de cuatro filas) y su seccion
-   vive al final de esta hoja: "CONSOLA · MODULO DE MANDOS EN CUATRO FILAS".
-   Aqui estaban la carcasa `console-mobile.webp`, las cinco areas tactiles de
-   sus discos, las cuatro capsulas del pie y los rotulos decorativos que las
-   acompanaban; todo eso lo sustituye el panel, con el saldo de vuelta dentro
-   del modulo (ya no sube a la placa del HUD) y el paquete del autogiro en la
-   insignia del azul.
+   El case lo dibuja `public/assets/santa-crush/console/console-mobile.webp`
+   (1775 x 879, relacion 2,019:1); el DOM y los ids no cambian. Cada control
+   real se coloca encima con porcentajes medidos sobre el recorte via
+   `npm run build:theme-art`, asi que la alineacion se mantiene en cualquier
+   ancho de movil.
+   La caja de la consola mide exactamente lo mismo que el marco (`--m-w`): las
+   dos filas comparten eje X y el dibujo entra en su caja sin aire (`contain`
+   sobre una caja con la relacion del lienzo = `100% 100%`).
+
+   Orden visual de la carcasa (medido en % del recorte):
+     discos   · CRUSH 3,4-18,5 · AUTO 18,9-34,3 · GIRAR 37,6-64,3 ·
+                − 65,3-80,4 · + 81,1-96,2   (y 40,8-70,6 % de alto; el GIRAR,
+                21,4-69,2 %, lleva las campanas y la corona encima)
+     capsulas · MÁS 6,3-18,7 · AUTO 21,4-33,6 · GIRAR 37,0-63,0 ·
+                APUESTA 76,5-93,5           (y 74,4-81,7 % de alto; la tercera
+                es la mas alta: 72,2-82,7 %)
+   Las capsulas llegan VACIAS en el arte: el pie lo escriben el DOM y el estado
+   del motor (ver secciones 5 y 6). Los rotulos impresos de la version anterior
+   ya no existen, asi que solo se ocultan los textos que no aportan
+   (`SANTA CRUSH`, `AUTO`, `MAX`, `GIRAR`), que siguen siendo el nombre
+   accesible de cada pulsador.
    -------------------------------------------------------------------------- */
 
+@media (max-width: 899px) {
+  .machine__side .controls {
+    grid-area: console;
+    position: relative;
+    /* Sobre el arte del marco (`z-index: 1`): el saldo sube hasta su placa del
+       HUD y, al vivir dentro de la consola, sin esto lo tapaba el dibujo del
+       marco. La caja de la consola nunca se solapa con la del marco (las separa
+       el `row-gap`), asi que subir la capa no cambia nada mas. */
+    z-index: 2;
+    display: block;
+    /* El arte manda: mismo ancho que el marco y la relacion exacta del
+       lienzo, de modo que el dibujo llena la caja y los cinco discos caen
+       sobre sus botones a cualquier escala. */
+    width: var(--m-w);
+    aspect-ratio: 1775 / 879;
+    min-height: 0;
+    max-width: none;
+    /* Mismo eje que el tablero: las dos filas comparten `--m-w`, que ya esta
+       centrada en la columna, asi que con centrar el case basta. */
+    justify-self: center;
+    margin: 0;
+    /* Sin borde, aire ni sombra propios: el dibujo ya trae su filo y su brillo. */
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: url('../../assets/santa-crush/console/console-mobile.webp') no-repeat center / contain;
+    box-shadow: none;
+    overflow: visible;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    /* El case mantiene su proporcion aunque la fila del grid crezca: si se
+       estirara, el dibujo (`contain`) se centraria con aire y los controles
+       dejarian de coincidir con sus pastillas. */
+    align-self: center;
+  }
+
+  /* Los tres contenedores del Bloque 3 no pintan caja: sus hijos se colocan
+     directamente contra la carcasa. */
+  .machine__side .controls__wallet,
+  .machine__side .controls__bet,
+  .machine__side .controls__actions { display: contents; }
+
+  /* Capa tactil: los botones dejan de ser piezas pintadas. El color, el relieve
+     y el icono los pone la imagen; el CSS solo responde a pulsacion y estados. */
+  .machine__side .controls .gbtn,
+  .machine__side .controls .chip,
+  .machine__side .controls__bet .chip.gbtn,
+  .machine__side .controls__bet .chip--max.gbtn {
+    position: absolute;
+    display: block;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font-size: inherit;
+    overflow: visible;
+    transform: none;
+    filter: none;
+    /* Respuesta tactil instantanea pero fluida: el hundimiento del `:active`
+       entra en 80 ms y vuelve igual de rapido al soltar. La transicion vive en
+       la capa tactil, no en los estados, para que el retorno tambien anime. */
+    transition: transform 0.08s ease, filter 0.08s ease, box-shadow 0.08s ease;
+    cursor: pointer;
+    -webkit-text-stroke: 0;
+    text-shadow: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* El brillo de cristal, las rayas y el barrido del boton candy sobran: el
+     case ya esta iluminado. */
+  .machine__side .controls .gbtn::before,
+  .machine__side .controls .gbtn::after,
+  .machine__side .controls .gbtn .shine { display: none; }
+
+  /* Los iconos tambien estan dibujados en la carcasa. */
+  .machine__side .controls .chip__icon,
+  .machine__side .controls .btn__glyph,
+  .machine__side .controls .btn__chev,
+  .machine__side .controls .btn--spin .btn__spin-icon svg { display: none; }
+
+  /* Sin desplazamientos ni filtros heredados: la capa tactil es invisible y no
+     debe moverse respecto al dibujo. El estado `:active` queda fuera de esta
+     lista a proposito: es el que hunde el boton (ver seccion 7bis). */
+  .machine__side .controls .gbtn:hover:not(:disabled),
+  .machine__side .controls .gbtn:disabled {
+    transform: none;
+    filter: none;
+  }
+
+  .machine__side .controls .gbtn:disabled { cursor: not-allowed; }
+}
 
 
+/* --------------------------------------------------------------------------
+   5) Marcos de lectura · SALDO (izquierda) y APUESTA (derecha)
+   El cristal ahumado ya viene pintado en la carcasa: aqui solo se centra el
+   dato dentro de cada pantalla, sin fondo ni borde propios.
+   -------------------------------------------------------------------------- */
 
+@media (max-width: 899px) {
+  .machine__side .controls .balance,
+  body.is-demo .machine__side .controls .balance,
+  .machine__side .controls .bet-readout,
+  .machine__side .controls__bet .bet-readout {
+    position: absolute;
+    /* Columna centrada: rótulo arriba, dato abajo, el bloque en el medio de la
+       placa. Antes era una rejilla con `grid-area: label/value` sin áreas
+       declaradas y cada texto caía en una columna implícita distinta. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.5px, calc(var(--m-w) * 0.0012), 1px);
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    /* `%` de padding se resuelve contra el ancho de la consola: 0,6 % es el aire
+       justo para que el dato no toque el aro dorado de la placa y quepan las
+       ocho cifras de un saldo de cinco digitos. */
+    padding: 0 0.6%;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  /* El saldo viaja a la primera placa del HUD: es la lectura que tiene que
+     estar siempre a la vista y su placa del pie pasa a ser el pulsador MÁS
+     (sección 6). La caja copia la de `.hud__cell:nth-child(1)`
+     (x 28,25-45,71 % · y 25,40-33,60 % del marco) subida por encima de la
+     consola, que es su bloque contenedor: el alto del marco (74,60 % hasta la
+     franja del HUD) más la separación de la rejilla. */
+  .machine__side .controls .balance,
+  body.is-demo .machine__side .controls .balance {
+    left: 28.25%;
+    top: calc(-1 * (var(--frame-h) * 0.7460 + var(--row-gap)));
+    width: 17.46%;
+    height: calc(var(--frame-h) * 0.0820);
+    gap: clamp(1px, calc(var(--m-w) * 0.003), 2px);
+    padding: 0 1%;
+    /* Sobre el arte del marco (`z-index: 1`) y por debajo de la pegatina del
+       logo (6), que se superpone al filo de esta placa sin tapar su texto. */
+    z-index: 5;
+  }
+
+  /* El filete dorado del escritorio no hace falta: la pantalla ya tiene marco. */
+  .machine__side .controls .balance::after { display: none; }
+
+  /* El rótulo del HUD no cambia de tamaño: el saldo hereda el mismo cuerpo para
+     que la franja del HUD se lea como una sola línea de datos. */
+  .machine__side .controls .balance__label {
+    flex: 0 0 auto;
+    font-size: clamp(5px, calc(var(--m-w) * 0.0150), 6.8px);
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-align: center;
+    color: #ffd977;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.65);
+  }
+
+  /* El saldo hereda del escritorio `color: transparent` + degradado recortado a
+     la tinta: a 9 px el navegador no pinta nada y la placa parecía vacía. Aquí
+     el dato se pinta plano y dorado, como el de la apuesta, con un cuerpo un
+     pelo menor que los otros dos datos del HUD: a 9,9 px caben los doce
+     caracteres de un saldo de siete cifras («1.000.000,00») dentro del hueco
+     interior de la placa (17,46 % del marco) sin tocar el aro, incluso a 320 px
+     de ancho. */
+  .machine__side .controls .balance__value {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    font-size: clamp(7px, calc(var(--m-w) * 0.0255), 10.6px);
+    /* 1,2 y no 1: la caja de linea tiene que contener el hombro y el descendente
+       de las cifras para que el recorte de la placa no roce el dato. */
+    line-height: 1.2;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+    color: #fff6c9;
+    -webkit-text-fill-color: #fff6c9;
+    background-image: none;
+    -webkit-text-stroke: 0;
+    filter: none;
+    text-shadow: 0 1px 0 rgba(80, 30, 0, 0.65), 0 0 8px rgba(255, 214, 90, 0.45);
+  }
+
+  /* La divisa no cabe junto al saldo en una placa de ~45 px: el dato manda y
+     la moneda ya la declara el boton de fichas de prueba de la cabecera. */
+  .machine__side .controls .balance__currency {
+    display: none;
+  }
+
+  /* Capsula 4 del pie (x 76,52-93,45 % · y 74,43-81,74 %): la apuesta se queda
+     en la mitad izquierda y el extremo derecho es el pulsador MAX (seccion 6).
+     La capsula mide 16,93 % del ancho, asi que el dato se ciñe al interior del
+     aro y el rotulo baja de cuerpo. El centro vertical de la capsula cae en
+     78,09 %: la caja se ancla en 74,4 % con el alto interior del aro, de modo
+     que su contenido (rotulo + dato) queda dentro del hueco. */
+  .machine__side .controls .bet-readout,
+  .machine__side .controls__bet .bet-readout {
+    left: 77.0%;
+    top: 74.4%;
+    width: 8.8%;
+    height: 7.3%;
+    padding: 0 0.3%;
+  }
+
+  .machine__side .controls .bet-readout__label {
+    flex: 0 0 auto;
+    font-size: clamp(4.6px, calc(var(--m-w) * 0.0135), 6.8px);
+    line-height: 1;
+    letter-spacing: 0.03em;
+    color: #ffd977;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.65);
+  }
+
+  .machine__side .controls .bet-readout__value {
+    flex: 0 0 auto;
+    /* 0,019 del ancho del marco (~7,4 px a 390 px): «1.000,00» (el peor caso de
+       la apuesta de demo) cabe en los 8,4 % de la placa sin tocar el aro. */
+    font-size: clamp(6.4px, calc(var(--m-w) * 0.019), 9px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: #fff6c9;
+    text-shadow: 0 1px 0 rgba(80, 30, 0, 0.65), 0 0 8px rgba(255, 214, 90, 0.5);
+  }
+
+  /* La capsula 3 del pie comparte rotulo (mitad alta) y nada mas: el aviso de
+     estado del motor ya no se pinta en el panel (el marcado perdio su barra). */
+}
+
+/* --------------------------------------------------------------------------
+   6) Botones laterales · areas tactiles sobre los discos y las placas
+   CRUSH (izquierda, icono "..."), AUTO (izquierda, icono de refresco),
+   − / + (derecha) y MAX (placa de la derecha).
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 899px) {
+  /* --- CRUSH: disco x 3,30-18,30 % · y 40,77-70,60 % ---------------------- */
+  .machine__side .controls #btn-feature.gbtn {
+    left: 3.30%;
+    top: 40.77%;
+    width: 15.00%;
+    height: 29.83%;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* El coste no cabe en la placa del pie y el estado `disabled` ya avisa del
+     saldo: en movil el precio del FEVER solo se lee en la hoja GIROS RAPIDOS. */
+  .machine__side .controls #btn-feature .pill { display: none; }
+
+  /* --- AUTO: disco x 18,90-34,30 % · y 40,77-70,60 % --------------------- */
+  .machine__side .controls #btn-auto.gbtn {
+    left: 18.90%;
+    top: 40.77%;
+    width: 15.40%;
+    height: 29.83%;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* --- Insignia del paquete de tiradas rapidas ---------------------------
+     La capsula 2 del pie (x 21,44-33,63 % · y 74,43-81,74 %) llega vacia en el
+     arte y es el unico mando que abre la hoja GIROS RAPIDOS. Cabe entera en la
+     placa (12,2 % del ancho), asi que es un blanco tactil comodo y no hay que
+     pintar una pastilla pequeña sobre el disco. */
+  .machine__side .controls #btn-auto-pack {
+    position: absolute;
+    left: 21.44%;
+    top: 74.43%;
+    width: 12.19%;
+    height: 7.31%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font);
+    font-size: clamp(6px, calc(var(--m-w) * 0.0270), 11px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    color: #ffd977;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    text-shadow: 0 1px 1px rgba(30, 0, 20, 0.85), 0 0 6px rgba(255, 214, 90, 0.32);
+    -webkit-text-stroke: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 4;
+  }
+
+  .machine__side .controls #btn-auto-pack:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.95);
+    outline-offset: 1px;
+  }
+
+  .machine__side .controls #btn-auto-pack:disabled { cursor: not-allowed; }
+
+  /* --- Fichas − y + : discos x 65,20-80,20 % · x 80,90-96,10 % (y 40,77-70,60 %) */
+  .machine__side .controls__bet #btn-bet-down,
+  .machine__side .controls__bet #btn-bet-up {
+    width: 15.00%;
+    height: 29.83%;
+    aspect-ratio: auto;
+    border-radius: 50%;
+    background: none;
+    box-shadow: none;
+  }
+
+  .machine__side .controls__bet #btn-bet-down { left: 65.20%; top: 40.77%; }
+  .machine__side .controls__bet #btn-bet-up { left: 80.90%; top: 40.77%; width: 15.20%; }
+
+  /* --- MAX: extremo derecho de la capsula APUESTA ------------------------
+     El arte no trae icono para MAX, asi que la caja tactil es el tramo derecho
+     del hueco interior de la capsula (x 86,0-92,4 % · y 75,5-80,7 %, justo
+     dentro del aro) y su unico rotulo lo pinta la pastilla decorada de abajo. */
+  .machine__side .controls__bet #btn-bet-max {
+    left: 86.0%;
+    top: 75.5%;
+    width: 6.4%;
+    height: 5.2%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    box-shadow: none;
+    color: #ffd977;
+    font-size: clamp(6px, 2vw, 8.5px);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-shadow: 0 1px 1px rgba(40, 4, 0, 0.75);
+    -webkit-text-stroke: 0;
+  }
+
+  /* Pastilla MAX dibujada sobre la placa: es el unico control sin arte propio.
+     El texto es decorativo (`pointer-events: none`) y el nombre accesible sigue
+     en `.chip__label`, recortado a 1x1 mas abajo. */
+  .machine__side .controls__bet #btn-bet-max::after {
+    content: "MAX";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fff6bc, #ffc53d 62%, #e58f12);
+    border: 1px solid #fff3bb;
+    box-shadow: 0 1px 0 rgba(120, 60, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    color: #4a1200;
+    /* La placa APUESTA nueva mide 17,47 % del ancho y el tramo MAX 6,4 %
+       (~23 px a 372 px): la pastilla es pequena y el rotulo tambien. */
+    font-size: clamp(4.8px, calc(var(--m-w) * 0.0132), 6.6px);
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-shadow: none;
+    pointer-events: none;
+  }
+
+  /* --- Rotulo del pie: GIRAR ---------------------------------------------- */
+  /* `console-mobile.webp` llega con las cuatro capsulas del pie vacias. La
+     capsula 2 la ocupa la insignia del paquete (`#btn-auto-pack`, seccion 6) y
+     la 4 la comparten la apuesta y el MAX; la 1 se queda como viene en el arte
+     (el precio del FEVER solo se lee en la hoja). Solo la capsula 3 lleva rotulo
+     pintado: el GIRAR, en el mismo dorado y con la misma sombra que los datos de
+     la apuesta y el saldo. Es decorativo (`pointer-events: none`) y el nombre
+     accesible sigue en el DOM, recortado a 1x1 unas lineas mas abajo. */
+  .machine__side .controls #btn-spin::after {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-align: center;
+    white-space: nowrap;
+    color: #ffd977;
+    text-shadow: 0 1px 1px rgba(30, 0, 20, 0.85), 0 0 6px rgba(255, 214, 90, 0.32);
+    -webkit-text-stroke: 0;
+    pointer-events: none;
+  }
+
+  /* El selector de paquete ya no vive en el pie: los chips `x5 / x10 / x25` se
+     retiraron y el paquete se elige en la hoja GIROS RAPIDOS, que abre la
+     insignia de la capsula 2 (seccion 6). */
+
+  /* Capsula 3 (x 37,02-62,98 % · y 72,15-82,65 %, mas alta que las otras
+     tres): su mitad alta lleva el rotulo y la baja, el estado del motor. El hueco
+     interior arranca en 72,2 %, asi que el rotulo se centra en 74,5 %, justo por
+     debajo del borde de la caja tactil (69,2 %). */
+  .machine__side .controls #btn-spin::after {
+    content: "GIRAR";
+    left: 50%;
+    top: calc(100% + var(--m-w) * 0.0268);
+    width: calc(var(--m-w) * 0.2520);
+    height: calc(var(--m-w) * 0.0338);
+    font-size: clamp(6px, calc(var(--m-w) * 0.028), 11.2px);
+  }
+
+  /* --- Nombres accesibles de los discos -----------------------------------
+     Los rotulos visibles ya los pinta el CSS sobre cada placa, y `MAX` lo pinta
+     su pastilla: el texto que trae el DOM (`AUTOGIRO`, `AUTO`, `MAX` y el
+     `GIRAR` de `#spin-label`) se recorta a 1x1 en una sola regla para que no se
+     duplique sobre el dibujo. Sigue siendo el nombre accesible del pulsador, y
+     `#spin-label` es ademas el texto que el JS cambia a "GIRANDO…": el rotulo
+     de la placa no cambia porque es decorativo y el estado real se lee en el de
+     abajo (seccion 5), que es la parte de la placa que si se actualiza. */
+  .machine__side .controls #btn-feature .btn__title,
+  .machine__side .controls #btn-auto .btn__title,
+  .machine__side .controls__bet #btn-bet-max .chip__label,
+  .machine__side .controls #spin-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* --- Respuesta al toque · hundimiento del disco ------------------------
+     La zona tactil es transparente: el relieve lo dibuja el case, asi que al
+     pulsar no se puede mover el arte. El hundimiento se pinta encima del disco
+     con dos capas y con el encogimiento de la caja tactil (seccion 7bis):
+
+       1. bisel  · negro arriba, luz calida abajo: el disco parece entrar y el
+                   borde inferior recibe la luz de rebote;
+       2. brillo · radial blanco-dorado bajo el centro, donde el dedo empuja.
+
+     `--disc` recorta el velo dentro de la caja tactil (top right bottom left en
+     % de la caja). Ahora la caja tactil de cada pulsador ES el bbox medido del
+     disco en el arte (o de la capsula del GIRAR, o del tramo MAX de la placa),
+     asi que el recorte no necesita aire y vale `0` en los seis: si alguien
+     vuelve a estirar una caja para incluir la placa, aqui es donde se declara
+     el inset que devuelve el velo al disco.
+
+     En los pulsadores circulares el borde del velo no se deja duro: una
+     `mask-image` radial lo difumina en el ultimo 16 %, asi el hundimiento se
+     funde con el bisel del case en vez de dibujar un circulo sobre el aro (ni
+     cruzar la corona, que se apoya sobre el disco del GIRAR). La placa APUESTA
+     conserva el borde nitido porque su aro dorado tambien lo es; por eso anula
+     la mascara. */
+  .machine__side .controls #btn-feature { --disc: 0; }
+  .machine__side .controls #btn-auto { --disc: 0; }
+  .machine__side .controls .btn--spin { --disc: 0; }
+  .machine__side .controls__bet #btn-bet-down { --disc: 0; }
+  .machine__side .controls__bet #btn-bet-up { --disc: 0; }
+  .machine__side .controls__bet #btn-bet-max { --disc: 0; }
+
+  /* Los pulsadores circulares llevan el borde del velo difuminado: asi el
+     hundimiento se funde con el bisel del case y no aparece un circulo pintado
+     cruzando el aro (ni la corona del GIRAR, que se apoya sobre el disco). */
+  .machine__side .controls #btn-feature:active:not(:disabled)::before,
+  .machine__side .controls #btn-auto:active:not(:disabled)::before,
+  .machine__side .controls__bet .chip.gbtn:active:not(:disabled)::before {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: var(--disc);
+    border-radius: 50%;
+    background:
+      linear-gradient(180deg, rgba(18, 5, 0, 0.58) 0%, rgba(18, 5, 0, 0.2) 48%, rgba(255, 240, 190, 0.26) 100%),
+      radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.34), rgba(255, 236, 160, 0.1) 46%, rgba(255, 236, 160, 0) 68%);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+    -webkit-mask-image: radial-gradient(closest-side, #000 84%, rgba(0, 0, 0, 0.7) 93%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 84%, rgba(0, 0, 0, 0.7) 93%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* La placa APUESTA (MAX) es una pildora: bisel y borde nitidos, como el aro
+     dorado que la enmarca, y el hundimiento la sigue. El `z-index` es lo unico
+     que cambia: la pastilla MAX se pinta en el `::after` del boton, y un
+     pseudo-elemento `::before` se dibuja por debajo de el, asi que sin esta
+     capa el velo quedaria tapado y MAX no responderia al toque. */
+  .machine__side .controls__bet #btn-bet-max:active:not(:disabled)::before {
+    content: "";
+    display: block;
+    position: absolute;
+    z-index: 1;
+    inset: var(--disc);
+    border-radius: 999px;
+    background:
+      linear-gradient(180deg, rgba(18, 5, 0, 0.58) 0%, rgba(18, 5, 0, 0.2) 48%, rgba(255, 240, 190, 0.26) 100%),
+      radial-gradient(ellipse at 50% 58%, rgba(255, 255, 255, 0.3), rgba(255, 236, 160, 0.09) 52%, rgba(255, 236, 160, 0) 78%);
+    box-shadow:
+      inset 0 2px 6px rgba(0, 0, 0, 0.45),
+      0 0 0 1.5px rgba(255, 255, 255, 0.26);
+    /* La pildora no hereda el difuminado circular del resto de pulsadores. */
+    -webkit-mask-image: none;
+    mask-image: none;
+    pointer-events: none;
+  }
+
+  /* CRUSH sin saldo suficiente: el disco se apaga bajo un velo. */
+  .machine__side .controls #btn-feature:disabled::before {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: var(--disc);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 42%, rgba(28, 8, 0, 0.5), rgba(28, 8, 0, 0.26));
+    pointer-events: none;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   7) GIRAR · el corazon de la consola
+   El disco coronado y su placa GIRAR los dibuja la carcasa; el boton solo
+   aporta la zona tactil, el aro de pulso y la pastilla con el estado.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 899px) {
+  .machine__side .controls .btn--spin,
+  .machine__side .controls .btn--spin.gbtn {
+    /* Capsula del disco coronado: el aro dorado del GIRAR mide 28,9 % del ancho
+       (x 35,3-64,2 % · y 30,0-67,0 %), pero su mitad inferior se apoya sobre la
+       capsula GIRAR (y 72,2-82,7 %). La caja tactil se queda con el cuadrado que
+       cabe entero sobre el disco y encima de la capsula: x 37,9-61,6 % · y
+       21,4-69,2 %, que en px es un cuadrado perfecto (421 px de los dos lados),
+       asi el aro de pulso y el velo circulares no se deforman. */
+    left: 37.9%;
+    top: 21.4%;
+    width: 23.7%;
+    height: 47.8%;
+    /* El `max-height: 130px` del boton candy recortaba la caja en cuanto el
+       case pasaba de ~550 px de ancho (768, 899): el disco ocupa el 23,7 % del
+       ancho, asi que a 899 son 213 px y la zona tactil se quedaba en 130 sin
+       cubrir el disco. El alto real lo manda el arte, no la regla de escritorio. */
+    max-height: none;
+    border-radius: 50%;
+  }
+
+  /* Cualquier pintura heredada del boton candy (fondo rosa, halos, latido,
+     sombra de pulsacion o velo de `is-busy`) se apaga en TODOS los estados,
+     `:active` incluido: si se dejara viva, el `inset` blanco del boton candy
+     taparia el disco del case con un velo al pulsar. Los ids ganan a cualquier
+     regla de clase, asi que este reset manda.
+     Solo apaga pintura: ni `transform` ni `filter`, que son la respuesta
+     fisica de la seccion 7bis. */
+  .machine__side .controls #btn-spin,
+  .machine__side .controls #btn-spin:hover:not(:disabled),
+  .machine__side .controls #btn-spin:active:not(:disabled),
+  .machine__side .controls #btn-spin.is-busy,
+  .machine__side .controls #btn-spin.gbtn.is-busy,
+  .machine__side .controls #btn-spin:disabled,
+  .machine__side .controls #btn-feature,
+  .machine__side .controls #btn-feature:hover:not(:disabled),
+  .machine__side .controls #btn-feature:active:not(:disabled),
+  .machine__side .controls #btn-feature:disabled,
+  .machine__side .controls #btn-auto,
+  .machine__side .controls #btn-auto:hover:not(:disabled),
+  .machine__side .controls #btn-auto:active:not(:disabled),
+  .machine__side .controls #btn-bet-down,
+  .machine__side .controls #btn-bet-down:hover:not(:disabled),
+  .machine__side .controls #btn-bet-down:active:not(:disabled),
+  .machine__side .controls #btn-bet-up,
+  .machine__side .controls #btn-bet-up:hover:not(:disabled),
+  .machine__side .controls #btn-bet-up:active:not(:disabled),
+  .machine__side .controls #btn-bet-max,
+  .machine__side .controls #btn-bet-max:hover:not(:disabled),
+  .machine__side .controls #btn-bet-max:active:not(:disabled) {
+    background: none;
+    box-shadow: none;
+    border: 0;
+    animation: none;
+  }
+
+  /* En reposo (y con `hover` de raton, que en tactil se queda pegado tras el
+     toque) la capa tactil tampoco se desplaza ni filtra: el disco del case no
+     debe moverse ni un pixel. `:not(:active)` es obligatorio para no cancelar
+     el hundimiento mientras el dedo sigue apoyado. */
+  .machine__side .controls #btn-spin:hover:not(:disabled):not(:active),
+  .machine__side .controls #btn-spin.is-busy,
+  .machine__side .controls #btn-spin.gbtn.is-busy,
+  .machine__side .controls #btn-spin:disabled,
+  .machine__side .controls #btn-feature:hover:not(:disabled):not(:active),
+  .machine__side .controls #btn-feature:disabled,
+  .machine__side .controls #btn-auto:hover:not(:disabled):not(:active),
+  .machine__side .controls #btn-bet-down:hover:not(:disabled):not(:active),
+  .machine__side .controls #btn-bet-up:hover:not(:disabled):not(:active),
+  .machine__side .controls #btn-bet-max:hover:not(:disabled):not(:active) {
+    transform: none;
+    filter: none;
+  }
+
+  /* El span del icono se reutiliza como caja del halo (su SVG ya no se pinta). */
+  .machine__side .controls .btn--spin .btn__spin-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    box-shadow: none;
+    animation: none;
+    pointer-events: none;
+  }
+
+  .machine__side .controls .btn--spin .btn__spin-icon::before { display: none; }
+
+  .machine__side .controls .btn--spin .btn__spin-icon::after {
+    content: "";
+    position: absolute;
+    inset: 1%;
+    border: 2px solid rgba(255, 240, 170, 0.7);
+    border-radius: 50%;
+    opacity: 0;
+    animation: pana-console-halo 2.6s ease-out infinite;
+    pointer-events: none;
+  }
+
+  /* Pulsacion: el disco se hunde y su cara se ilumina.
+     Mismo bisel + brillo que los discos laterales, con el recorte del disco
+     grande y el borde difuminado para que el velo se funda con el aro y con la
+     corona que se apoya sobre el.
+     El reflejo de cristal (7ter) se compone como primera capa: se apaga de
+     0,6 a 0,34 mientras el disco baja, asi la luz no borra el bisel. */
+  .machine__side .controls #btn-spin:active:not(:disabled)::before,
+  .machine__side .controls .btn--spin:active:not(:disabled)::before {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: var(--disc);
+    /* Misma caja que el cristal (7ter): el velo se cierra al domo del disco y
+       el hundimiento no cambia la forma de la capa, solo su pintura. */
+    top: 16%;
+    left: 6%;
+    right: 6%;
+    height: 41%;
+    border-radius: 50% 50% 46% 46% / 100% 100% 44% 44%;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0) 58%),
+      linear-gradient(180deg, rgba(18, 5, 0, 0.6) 0%, rgba(18, 5, 0, 0.16) 52%, rgba(255, 240, 190, 0.18) 100%),
+      radial-gradient(circle at 50% 64%, rgba(255, 255, 255, 0.26), rgba(255, 236, 160, 0.08) 44%, rgba(255, 236, 160, 0) 66%);
+    box-shadow: inset 0 2px 7px rgba(0, 0, 0, 0.46);
+    -webkit-mask-image: radial-gradient(closest-side, #000 78%, rgba(0, 0, 0, 0.6) 92%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 78%, rgba(0, 0, 0, 0.6) 92%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* Giro en curso: el halo se apaga y la pastilla lo cuenta. */
+  .machine__side .controls .btn--spin.is-busy .btn__spin-icon::after { display: none; }
+
+  /* Sin saldo: el disco queda bajo un velo y el cristal se apaga con el. */
+  .machine__side .controls #btn-spin:disabled::before,
+  .machine__side .controls .btn--spin:disabled::before {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: var(--disc);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 40%, rgba(28, 8, 0, 0.46), rgba(28, 8, 0, 0.22));
+    pointer-events: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7bis) Respuesta fisica al toque · el pulsador se hunde hacia su centro
+   --------------------------------------------------------------------------
+   `transform` sobre la capa tactil (6 % menos + 1 px) con el `transform-origin`
+   clavado en el centro del disco: cada caja tactil es el bbox medido de su
+   dibujo, asi que el aro y el bisel del `::before` se cierran hacia el pulsador
+   fisico y no hacia el centro de una caja que incluya la placa. `filter`
+   ilumina la tinta y el halo al contacto. Todo entra y sale en 80 ms (la
+   transicion se declara en la capa tactil), la misma sensacion que un boton de
+   arcade con muelle.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 899px) {
+  /* La caja tactil ya es el bbox del disco (o de la capsula del GIRAR), asi que
+     el centro de la caja ES el centro del dibujo y encoger desde el 50 % no
+     desplaza el bisel: el disco se hunde hacia si mismo. */
+  .machine__side .controls #btn-feature { transform-origin: 50% 50%; }
+  .machine__side .controls #btn-auto { transform-origin: 50% 50%; }
+  .machine__side .controls .btn--spin { transform-origin: 50% 50%; }
+
+  .machine__side .controls #btn-feature:active:not(:disabled),
+  .machine__side .controls #btn-auto:active:not(:disabled),
+  .machine__side .controls .btn--spin:active:not(:disabled),
+  .machine__side .controls__bet #btn-bet-down:active:not(:disabled),
+  .machine__side .controls__bet #btn-bet-up:active:not(:disabled),
+  .machine__side .controls__bet #btn-bet-max:active:not(:disabled) {
+    transform: scale(0.94) translateY(1px);
+    filter: brightness(1.06) saturate(1.04);
+  }
+}
+
+@keyframes pana-console-halo {
+  0% { opacity: 0.85; transform: scale(0.94); }
+  70% { opacity: 0; transform: scale(1.16); }
+  100% { opacity: 0; transform: scale(1.16); }
+}
+
+
+/* --------------------------------------------------------------------------
+   7ter) Acabado prémium del GIRAR · reflejo de cristal y destellos
+   --------------------------------------------------------------------------
+   El disco dorado, su corona y la placa GIRAR los sigue dibujando
+   `console-mobile.webp`; esta capa solo le devuelve el acabado que los botones
+   candy tienen en escritorio, sin tocar arte, DOM, ids ni la zona táctil:
+
+     1. REFLEJO  · `::before`, el mismo lenguaje de cristal que `.gbtn::before`
+                   (domo + máscara radial) con el degradado lineal pedido. Se
+                   recorta al domo del disco (6 % de aire a cada lado, filo al
+                   16 % de la caja y 41 % de alto) y comparte esa caja exacta con
+                   el velo de pulsación de la sección 7, así el hundimiento no
+                   mueve ni deforma el cristal: solo lo apaga (0,6 → 0,34) y el
+                   disco parece bajar BAJO el reflejo, no perderlo;
+     2. DESTELLOS · los tres `.spin-spark` que ya vienen en el DOM vuelven a
+                   pintarse sobre el case: parpadeo `twinkle` con duración y
+                   retardo distintos en cada esquina, y `transform-origin` en la
+                   propia estrella para que crezca desde su centro;
+     3. PULSACIÓN · además del velo de 7bis y del `scale(0.94)` de 7bis, el
+                   cristal baja de intensidad (0,6 → 0,34) y la sombra interior
+                   del bisel entra con la misma transición de 80 ms.
+
+   Todo cuelga de `#btn-spin`: los otros cinco pulsadores del case no cambian.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 899px) {
+  .machine__side .controls #btn-spin::before {
+    content: "";
+    display: block;
+    position: absolute;
+    /* La caja del velo de 7bis, recortada al domo del disco: 6 % de aire a
+       cada lado (el aro), arranque donde termina el bisel superior del disco
+       (16 % de la caja, medido sobre `console-mobile.webp`) y el 41 % de su
+       alto. Así el cristal nunca cae sobre los paneles oscuros del case ni
+       sobre la corona, que va por detrás del aro y por encima del disco. */
+    inset: var(--disc);
+    top: 16%;
+    left: 6%;
+    right: 6%;
+    height: 41%;
+    border-radius: 50% 50% 46% 46% / 100% 100% 44% 44%;
+    background:
+      radial-gradient(50% 40% at 50% 16%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 74%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 60%);
+    /* La máscara radial (la misma que el velo de pulsación) remata el borde del
+       domo: nada de cortes rectos sobre el aro. */
+    -webkit-mask-image: radial-gradient(closest-side, #000 84%, rgba(0, 0, 0, 0.62) 94%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 84%, rgba(0, 0, 0, 0.62) 94%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Destellos: vuelven a pintarse (el case los tenía apagados) con el
+     parpadeo `twinkle` y tres ritmos distintos, para que no respiren a la vez. */
+  .machine__side .controls #btn-spin .spin-spark {
+    display: block;
+    color: #fffdf2;
+    font-size: clamp(9px, 2.4vw, 18px);
+    line-height: 1;
+    transform-origin: 50% 50%;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 228, 140, 0.85);
+    filter: drop-shadow(0 1px 1px rgba(90, 30, 0, 0.75));
+    animation: twinkle 2.6s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .machine__side .controls #btn-spin .spin-spark--a {
+    top: 14%;
+    left: 6%;
+    bottom: auto;
+    right: auto;
+  }
+
+  .machine__side .controls #btn-spin .spin-spark--b {
+    top: 28%;
+    right: 5%;
+    bottom: auto;
+    left: auto;
+    font-size: clamp(7px, 1.9vw, 14px);
+    animation-duration: 3.2s;
+    animation-delay: 0.9s;
+  }
+
+  .machine__side .controls #btn-spin .spin-spark--c {
+    top: auto;
+    bottom: 20%;
+    left: auto;
+    right: 10%;
+    font-size: clamp(6px, 1.5vw, 11px);
+    animation-duration: 3.8s;
+    animation-delay: 1.7s;
+  }
+}
 
 /* Parpadeo de las estrellas: se encienden y crecen hacia la mitad del ciclo. */
 @keyframes twinkle {
@@ -6159,12 +6983,9 @@ body.is-demo .machine__side .controls .balance::after {
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 
-  /* `AUTOGIRO` vive en la mitad izquierda del caramelo; los tres paquetes van en
-     un selector propio sobre la derecha (`.btn__opts`, bloque de arte mas
-     abajo). El cuerpo sale del ancho util medido, no del alto del caramelo: a
-     0,049 (15,3 px en 1440) el rotulo pedia 79 px de caja y solo habia 76,5, asi
-     que la elipsis borraba la ultima letra. Con 0,048 el texto mide ~5,04 em y
-     le sobran ~10 px en el tramo izquierdo a cualquier escala. */
+  /* El rotulo ocupa el ancho del caramelo y se centra dentro: asi la elipsis de
+     `.gbtn .btn__title` no puede dispararse aunque el navegador mida la palabra
+     un pelo mas ancha que su caja, que es lo que borraba la ultima letra. */
   .machine__side .controls #btn-feature .btn__main {
     width: 100%;
   }
@@ -6252,11 +7073,6 @@ body.is-demo .machine__side .controls .balance::after {
     /* Multiplicador y coste en una linea (`100× · 100,00`) sin interletrado. */
     letter-spacing: 0;
   }
-
-  /* El estado del motor vive en la consola movil; en el case de escritorio no
-     hay placa libre y taparia el credito, asi que se retira de la vista. Los
-     ids siguen en el DOM y el cliente los actualiza igual. */
-  .machine__side .controls .statusbar { display: none; }
 
   /* ------------------------------------------------------------------------
      Bloque 4 · Marco del tablero (d1) y su ventana transparente
@@ -6427,15 +7243,18 @@ body.is-demo .machine__side .controls .balance::after {
     background: url('../../assets/santa-crush/console/console-desktop.webp') no-repeat center / 100% 100%;
   }
 
-  /* Los pulsadores son ventanas al lienzo nuevo: misma formula de recorte que
-     usaba `d2.webp`, solo cambia la imagen de fondo. `AUTO` se excluye porque
-     el arte nuevo no le dibuja hueco (se pinta como capsula propia abajo). */
+  /* Los pulsadores que el arte dibuja son ventanas al lienzo: misma formula de
+     recorte que usaba `d2.webp`, solo cambia la imagen de fondo, de modo que en
+     reposo cada tecla coincide pixel a pixel con el dibujo del panel y no hay
+     capsula pintada encima. Son las cinco teclas del arte: − · + · MAX y los
+     dos caramelos grandes del pie (FEVER y AUTO). `GIRAR` no esta dibujado: se
+     pinta aparte (ver mas abajo). */
   .machine__side .controls .gbtn,
   .machine__side .controls #btn-bet-down,
   .machine__side .controls #btn-bet-up,
   .machine__side .controls #btn-bet-max,
-  .machine__side .controls #btn-spin,
-  .machine__side .controls #btn-feature {
+  .machine__side .controls #btn-feature,
+  .machine__side .controls #btn-auto {
     background-image: url('../../assets/santa-crush/console/console-desktop.webp');
   }
 
@@ -6552,14 +7371,84 @@ body.is-demo .machine__side .controls .balance::after {
     top: 80.09%;
     width: 37.56%;
     height: 8.35%;
-    /* 37,56 - 0,8 (margen) - 17,12 (tramo del rotulo) = 19,64 */
-    padding: 0 19.64% 0 0.8%;
+    gap: 0.3em;
+    padding: 0 4%;
     border-radius: 999px;
   }
 
-  /* Selector rapido de paquete · control segmentado con recuadro propio dentro
-  /* GIRAR · boton rojo grande x 51,68-89,34 % · y 79,96-88,51 % */
-  .machine__side .controls .btn--spin {
+  /* El precio (`100x · 100,00`, lo escribe `GameView.paintFeatureCost_`) usa el
+     ancho del caramelo: una linea, sin interletrado, centrada bajo el rotulo. */
+  .machine__side .controls #btn-feature.gbtn .pill {
+    max-width: 92%;
+    padding: 0.08em 0.45em;
+    font-size: clamp(7px, calc(var(--cons-scale) * 0.026), 12px);
+  }
+
+  /* El selector de paquete (los chips `x5 / x10 / x25`) ya no vive aqui: el
+     paquete se elige en la hoja GIROS RAPIDOS, que abre la insignia del caramelo
+     rojo (`#btn-auto-pack`). */
+
+  /* GIRAR · el pulsador grande que el arte no dibuja (x 12-88 % · y 67,4-77,6 %).
+     La banda verde entre la lectura del saldo y la fila de caramelos es el unico
+     hueco libre del lienzo. Como no hay dibujo del que recortar una ventana, la
+     capsula se pinta aqui con el lenguaje del tema (rosa candy, aro dorado y los
+     destellos que ya trae el marcado) para que se lea como el mando principal.
+     Los otros cinco pulsadores son ventanas al arte: no se pinta ninguna capsula
+     encima de ellos. */
+  .machine__side .controls .btn--spin,
+  .machine__side .controls #btn-spin {
+    left: 12%;
+    top: 67.4%;
+    width: 76%;
+    height: 10.2%;
+    min-width: 0;
+    flex-direction: row;
+    gap: 0.45em;
+    padding: 0 4%;
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    background-image: linear-gradient(180deg, #ff7ad0 0%, #ea35a4 46%, #ab0f6a 100%);
+    background-size: auto;
+    background-position: 0 0;
+    box-shadow:
+      0 0 0 0.06em #ffd23f,
+      0 0 0 0.16em #8e0638,
+      0 0.35em 0.8em rgba(70, 0, 30, 0.45),
+      inset 0 0.12em 0 rgba(255, 255, 255, 0.55),
+      inset 0 -0.18em 0 rgba(120, 0, 50, 0.45);
+    text-shadow: 0 0.08em 0 rgba(110, 0, 46, 0.5);
+  }
+
+  .machine__side .controls .btn--spin .btn__spin-label {
+    font-size: clamp(12px, calc(var(--cons-scale) * 0.062), 26px);
+    letter-spacing: 0.12em;
+    text-shadow: 0 0.08em 0 rgba(110, 0, 46, 0.5);
+  }
+
+  .machine__side .controls .btn--spin .btn__spin-icon svg {
+    width: clamp(14px, calc(var(--cons-scale) * 0.058), 26px);
+    height: clamp(14px, calc(var(--cons-scale) * 0.058), 26px);
+    filter: drop-shadow(0 2px 0 rgba(110, 0, 46, 0.45));
+  }
+
+  /* En marcha el mando se apaga, pero sigue siendo la capsula rosa: aqui no hay
+     dibujo de recorte que oscurecer. */
+  .machine__side .controls .btn--spin.is-busy,
+  .machine__side .controls #btn-spin.is-busy {
+    background-image: linear-gradient(180deg, #d98ab8 0%, #b0478a 52%, #7d1e58 100%);
+    color: rgba(255, 246, 252, 0.86);
+    box-shadow:
+      0 0 0 0.06em rgba(255, 210, 63, 0.55),
+      0 0 0 0.16em rgba(120, 4, 50, 0.75),
+      inset 0 0.12em 0 rgba(255, 255, 255, 0.3);
+  }
+
+  /* AUTO · caramelo rojo grande x 51,68-89,34 % · y 79,96-88,51 %.
+     Tambien es ventana al arte: el pulsador se ve igual que el dibujo y aqui
+     solo se reparte el contenido. El rotulo sube a la mitad alta para dejar la
+     mitad baja a la insignia del paquete, que es hermana suya (ver abajo). */
+  .machine__side .controls #btn-auto {
     --art-x: 51.68;
     --art-y: 79.96;
     --art-w: 37.66;
@@ -6568,28 +7457,69 @@ body.is-demo .machine__side .controls .balance::after {
     top: 79.96%;
     width: 37.66%;
     height: 8.55%;
-    gap: 0.4em;
-    padding: 0 2%;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 1.1% 2% 0;
     border-radius: 999px;
   }
 
-  /* El arte nuevo no dibuja un septimo pulsador: AUTO se pinta como capsula
-     azul propia en la banda libre del panel verde (y 67,6-77,2 %), con el
-     mismo relieve de contacto que los caramelos del lienzo. */
-  .machine__side .controls #btn-auto {
-    left: 24%;
-    top: 67.6%;
-    width: 52%;
-    height: 9.6%;
-    border-radius: 999px;
-    background-color: transparent;
-    background-image: linear-gradient(180deg, #63c6ff 0%, #2a86e8 44%, #1559b6 100%);
-    background-size: auto;
-    background-position: 0 0;
+  /* AUTO en marcha (`aria-pressed`): el caramelo sigue siendo el del arte, asi
+     que el estado se marca con un halo dorado por fuera y sin repintar la
+     ventana (el degradado dorado del pulsador candy taparia el dibujo). */
+  .machine__side .controls #btn-auto[aria-pressed="true"].gbtn {
+    background-image: url('../../assets/santa-crush/console/console-desktop.webp');
     box-shadow:
-      inset 0 2px 0 rgba(255, 255, 255, 0.6),
-      inset 0 -3px 0 rgba(4, 40, 96, 0.55),
-      0 8px 18px rgba(3, 24, 60, 0.45);
+      0 0 0 0.08em rgba(255, 226, 111, 0.95),
+      0 0 0.55em rgba(255, 214, 90, 0.6);
+  }
+
+  /* La insignia del paquete es el unico mando que abre la hoja GIROS RAPIDOS.
+     Se apoya centrada en la mitad baja del caramelo rojo, con el dorado de las
+     pastillas del arte, y muestra el paquete vigente (`x10`) o las tiradas que
+     quedan. */
+  .machine__side .controls #btn-auto-pack {
+    position: absolute;
+    left: 63.9%;
+    top: 83.9%;
+    width: 12.4%;
+    height: 3.8%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font);
+    font-size: clamp(6px, calc(var(--cons-scale) * 0.030), 12px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0;
+    color: #5e1503;
+    background: linear-gradient(180deg, #fff6bc, #ffc53d 62%, #e58f12);
+    border: 1px solid #fff3bb;
+    border-radius: 999px;
+    box-shadow: 0 1px 0 rgba(120, 60, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    -webkit-text-stroke: 0;
+    text-shadow: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 3;
+  }
+
+  .machine__side .controls #btn-auto-pack:hover:not(:disabled) { filter: brightness(1.08); }
+
+  .machine__side .controls #btn-auto-pack:active:not(:disabled) { transform: translateY(1px); }
+
+  .machine__side .controls #btn-auto-pack:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.95);
+    outline-offset: 1px;
+  }
+
+  .machine__side .controls #btn-auto-pack:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
   }
 }
 
@@ -8176,703 +9106,5 @@ html.is-low-graphics .toast {
   .tile[data-sym="SC"]::before {
     animation: none !important;
   }
-}
-
-
-
-
-/* ==========================================================================
-   CONSOLA · MODULO DE MANDOS EN CUATRO FILAS
-   ==========================================================================
-   El modulo de referencia (Bloki/MeridianoBet) es un panel propio con cuatro
-   filas, no un lienzo con botones pintados. Este bloque lo construye con CSS y
-   sustituye a los recortes de arte de la consola:
-
-     1. SALDO   · rotulo + importe + moneda, con filete dorado de separacion.
-     2. APUESTA · − · lectura · + · MAX, sobre una tira de teclas.
-     3. GIRAR   · pastilla grande a todo el ancho con aro dorado.
-     4. FEVER + AUTO · compra del bonus a la izquierda, autogiro a la derecha y
-        la insignia del paquete (x5 · x10 · x25) pegada al azul. La insignia es
-        el unico mando con `aria-haspopup`: abre la hoja Giros Rapidos, que es
-        donde se elige el paquete.
-
-   Escala · `--mod` es el 1 % del ancho del panel y se declara en cada viewport
-   (escritorio: 0,856 % de `--side-w`; movil: 1 % de `--m-w`). Todas las medidas
-   del modulo salen de ahi, asi que el mismo juego de numeros sirve para los
-   ~430 px del escritorio y los ~390 px del telefono: no hay dos tablas que
-   mantener en sincronia.
-
-   Los botones siguen siendo `.gbtn` (foco, `:active` y transiciones de la
-   seccion 7bis), pero dejan de ser ventanas al lienzo: fondo, relieve y tinta se
-   pintan aqui y se anulan `--art-*`, `--disc` y el `background-size` del recorte.
-   ========================================================================== */
-
-.machine__side .controls {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  justify-content: center;
-  gap: calc(var(--mod) * 2.2);
-  box-sizing: border-box;
-  padding: calc(var(--mod) * 2.6) calc(var(--mod) * 3.2);
-  border: 0;
-  border-radius: calc(var(--mod) * 5);
-  /* Panel hundido dentro del aro dorado que ya dibuja el arte: marfil arriba,
-     carmesi profundo al fondo, bisel interior en los cuatro cantos. */
-  background:
-    radial-gradient(120% 78% at 50% 0%, rgba(255, 255, 255, 0.16), transparent 62%),
-    linear-gradient(180deg, #7c1130 0%, #5b0a23 54%, #3d0515 100%);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.20),
-    inset 0 -10px 18px rgba(0, 0, 0, 0.42),
-    inset 0 0 0 1px rgba(255, 210, 90, 0.22),
-    0 10px 22px rgba(20, 2, 8, 0.42);
-  overflow: hidden;
-}
-
-/* Los tres contenedores dejan de ser `display: contents`: ahora reparten filas. */
-.machine__side .controls__wallet,
-.machine__side .controls__bet,
-.machine__side .controls__actions {
-  display: flex;
-  grid-column: auto;
-  min-width: 0;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-}
-
-/* --------------------------------------------------------------------------
-   Fila 1 · SALDO
-   -------------------------------------------------------------------------- */
-
-.machine__side .controls__wallet {
-  align-items: center;
-  justify-content: center;
-  padding-bottom: calc(var(--mod) * 1.3);
-  border-bottom: 1px solid rgba(255, 210, 90, 0.32);
-}
-
-/* La placa cambia de sitio: en el arte era una franja sobre el lienzo y en movil
-   subia hasta el HUD. Ahora es la cabecera del panel en los dos viewports. */
-.machine__side .controls .balance,
-body.is-demo .machine__side .controls .balance {
-  position: static;
-  left: auto;
-  top: auto;
-  z-index: auto;
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: center;
-  gap: calc(var(--mod) * 0.9);
-  width: auto;
-  height: auto;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
-  overflow: visible;
-}
-
-.machine__side .controls .balance::after { display: none; }
-
-.machine__side .controls .balance__label {
-  flex: 0 0 auto;
-  font-size: calc(var(--mod) * 2.3);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #ffd977;
-  -webkit-text-fill-color: #ffd977;
-  text-shadow: 0 1px 2px rgba(30, 0, 20, 0.85);
-}
-
-.machine__side .controls .balance__value {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 58%;
-  font-size: calc(var(--mod) * 4.2);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #fff8e6;
-  -webkit-text-fill-color: #fff8e6;
-  background-image: none;
-  -webkit-text-stroke: 0;
-  filter: none;
-  text-shadow: 0 2px 0 rgba(40, 2, 12, 0.55), 0 0 10px rgba(255, 214, 90, 0.28);
-}
-
-.machine__side .controls .balance__currency {
-  flex: 0 0 auto;
-  font-size: calc(var(--mod) * 2.3);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #ffd977;
-  -webkit-text-fill-color: #ffd977;
-  text-shadow: 0 1px 2px rgba(30, 0, 20, 0.85);
-}
-
-
-/* Respuesta al toque del panel: el pulsador se hunde un 3 % y pierde un punto de
-   luz, y vuelve con la misma curva (la `transition` la aporta la capa `.gbtn`).
-   El origen se clava en el centro para que el encogimiento no desplace la tecla
-   dentro de su fila. */
-.machine__side .controls .gbtn {
-  transform-origin: 50% 50%;
-}
-
-.machine__side .controls .gbtn:active:not(:disabled) {
-  transform: scale(0.97) translateY(1px);
-  filter: brightness(0.96) saturate(1.03);
-}
-
-/* --------------------------------------------------------------------------
-   Fila 2 · APUESTA (− · lectura · + · MAX)
-   -------------------------------------------------------------------------- */
-
-.machine__side .controls__bet {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: stretch;
-  justify-content: stretch;
-  gap: calc(var(--mod) * 1.8);
-  height: calc(var(--mod) * 12.4);
-}
-
-/* Las cuatro piezas de la fila son hermanas: teclas rojas a los lados, lectura
-   en el centro (con el precio vivo) y MAX en dorado. Los selectores llevan el
-   `id` y `.gbtn` para ganar por especificidad a los recortes de arte, que
-   declaraban posicion y tamano con la misma cuenta. */
-.machine__side .controls .gbtn#btn-bet-down,
-.machine__side .controls .gbtn#btn-bet-up,
-.machine__side .controls .gbtn#btn-bet-max {
-  position: static;
-  left: auto;
-  top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: calc(var(--mod) * 12.4);
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: calc(var(--mod) * 3.4);
-  background-color: transparent;
-  background-image: linear-gradient(180deg, #ff7c96 0%, #e21c46 46%, #9d0b26 100%);
-  background-repeat: repeat;
-  background-size: auto;
-  background-position: 0 0;
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -5px 9px rgba(90, 0, 20, 0.5),
-    0 3px 0 rgba(60, 0, 16, 0.5);
-  overflow: visible;
-}
-
-/* Los signos − y + son SVG blancos: el arte nuevo deja de dibujarlos. */
-.machine__side .controls__bet .chip__icon {
-  display: block;
-  width: calc(var(--mod) * 5.4);
-  height: calc(var(--mod) * 5.4);
-  filter: drop-shadow(0 2px 0 rgba(96, 0, 24, 0.5));
-}
-
-.machine__side .controls .bet-readout,
-.machine__side .controls__bet .bet-readout {
-  position: static;
-  left: auto;
-  top: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--mod) * 0.5);
-  width: auto;
-  min-width: 0;
-  height: 100%;
-  margin: 0;
-  padding: 0 calc(var(--mod) * 2);
-  border: calc(var(--mod) * 0.55) solid #ffc21a;
-  border-radius: calc(var(--mod) * 3.4);
-  background: linear-gradient(180deg, #4b0718 0%, #30030e 100%);
-  box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.62),
-    0 1px 0 rgba(255, 255, 255, 0.14);
-  overflow: hidden;
-}
-
-.machine__side .controls .bet-readout__label {
-  flex: 0 0 auto;
-  max-width: 100%;
-  margin: 0;
-  font-size: calc(var(--mod) * 2.1);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #ffd977;
-  -webkit-text-fill-color: #ffd977;
-  background: none;
-  text-shadow: 0 1px 2px rgba(20, 0, 10, 0.85);
-}
-
-.machine__side .controls .bet-readout__value {
-  flex: 0 0 auto;
-  max-width: 100%;
-  margin: 0;
-  font-size: calc(var(--mod) * 4.6);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: #fff6c9;
-  -webkit-text-fill-color: #fff6c9;
-  background-image: none;
-  -webkit-text-stroke: 0;
-  filter: none;
-  text-shadow: 0 2px 0 rgba(20, 0, 10, 0.6), 0 0 10px rgba(255, 214, 90, 0.3);
-}
-
-/* MAX: tecla dorada con tinta tostada, una pizca mas ancha que − y +. */
-.machine__side .controls .gbtn#btn-bet-max {
-  width: calc(var(--mod) * 13.4);
-  background-image: linear-gradient(180deg, #ffe066 0%, #ffc21a 52%, #e09a06 100%);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.78),
-    inset 0 -5px 9px rgba(150, 84, 0, 0.45),
-    0 3px 0 rgba(96, 52, 0, 0.5);
-}
-
-.machine__side .controls__bet #btn-bet-max .chip__label {
-  display: block;
-  padding: 0;
-  font-size: calc(var(--mod) * 3.4);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  color: #5f2400;
-  -webkit-text-fill-color: #5f2400;
-  background-image: none;
-  -webkit-text-stroke: 0;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-
-/* --------------------------------------------------------------------------
-   Filas 3 y 4 · GIRAR arriba, FEVER + AUTO abajo
-   -------------------------------------------------------------------------- */
-
-.machine__side .controls__actions {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    "spin spin"
-    "feature auto";
-  gap: calc(var(--mod) * 2.4);
-}
-
-.machine__side .controls__actions > .gbtn {
-  position: static;
-  left: auto;
-  top: auto;
-  width: auto;
-  min-width: 0;
-  margin: 0;
-  border: 0;
-  color: #fff;
-  font-size: inherit;
-  background-color: transparent;
-  background-repeat: repeat;
-  background-size: auto;
-  background-position: 0 0;
-  overflow: visible;
-}
-
-/* GIRAR · pastilla grande con el aro dorado del caramelo. */
-.machine__side .controls .gbtn#btn-spin {
-  grid-area: spin;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--mod) * 2);
-  width: auto;
-  height: calc(var(--mod) * 19);
-  min-height: 0;
-  aspect-ratio: auto;
-  padding: 0 calc(var(--mod) * 4);
-  border-radius: 999px;
-  background-image: linear-gradient(180deg, #ff7c96 0%, #e21c46 44%, #a20c28 100%);
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -8px 14px rgba(96, 2, 24, 0.55),
-    0 0 0 calc(var(--mod) * 1) #ffc21a,
-    0 0 0 calc(var(--mod) * 1.55) #a86f08,
-    0 6px 14px rgba(20, 2, 8, 0.45);
-}
-
-.machine__side .controls .btn--spin .btn__spin-icon {
-  position: static;
-  left: auto;
-  top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: auto;
-  height: auto;
-  aspect-ratio: auto;
-  background: none;
-  box-shadow: none;
-  pointer-events: none;
-}
-
-/* El halo pulsante del lienzo movil se queda fuera: el aro dorado del panel ya
-   es el unico cerco del GIRAR. */
-.machine__side .controls .btn--spin .btn__spin-icon::before,
-.machine__side .controls .btn--spin .btn__spin-icon::after { display: none; }
-
-.machine__side .controls .btn--spin .btn__spin-icon svg {
-  display: block;
-  width: calc(var(--mod) * 6.6);
-  height: calc(var(--mod) * 6.6);
-  fill: none;
-  stroke: #fff;
-  stroke-width: 3.2;
-  filter: drop-shadow(0 2px 0 rgba(130, 0, 50, 0.45));
-}
-
-.machine__side .controls .btn--spin .btn__spin-label {
-  flex: 0 1 auto;
-  min-width: 0;
-  font-size: calc(var(--mod) * 7);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  background-image: none;
-  -webkit-text-stroke: calc(var(--mod) * 0.16) rgba(150, 8, 60, 0.5);
-  paint-order: stroke fill;
-  text-shadow: 0 3px 0 rgba(120, 0, 50, 0.42);
-}
-
-
-/* FEVER · capsula dorada: estrella, rotulo y coste total (`100x · 1,00`). */
-.machine__side .controls .gbtn#btn-feature {
-  grid-area: feature;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--mod) * 0.4);
-  width: auto;
-  height: calc(var(--mod) * 13.6);
-  min-height: 0;
-  padding: 0 calc(var(--mod) * 1.6);
-  border-radius: calc(var(--mod) * 3.4);
-  color: #6b2a00;
-  background-image: linear-gradient(180deg, #ffe066 0%, #ffc21a 52%, #e09a06 100%);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.8),
-    inset 0 -5px 10px rgba(150, 84, 0, 0.45),
-    0 4px 0 rgba(96, 52, 0, 0.45),
-    0 8px 16px rgba(20, 2, 8, 0.35);
-}
-
-.machine__side .controls #btn-feature .btn__main {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--mod) * 0.8);
-  width: auto;
-  max-width: 100%;
-}
-
-.machine__side .controls #btn-feature .btn__glyph {
-  display: block;
-  flex: 0 0 auto;
-  width: calc(var(--mod) * 3.2);
-  height: calc(var(--mod) * 3.2);
-  fill: #fff3bd;
-  stroke: rgba(120, 60, 0, 0.55);
-  stroke-width: 0.8;
-}
-
-.machine__side .controls #btn-feature .btn__main .btn__title {
-  width: auto;
-  font-size: calc(var(--mod) * 4);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  color: #6b2a00;
-  -webkit-text-fill-color: #6b2a00;
-  background-image: none;
-  -webkit-text-stroke: 0;
-  text-align: center;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.machine__side .controls #btn-feature .btn__sub {
-  display: block;
-  max-width: 100%;
-  font-size: calc(var(--mod) * 2.5);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: rgba(88, 38, 0, 0.88);
-  -webkit-text-fill-color: rgba(88, 38, 0, 0.88);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-
-/* AUTO · capsula azul; la insignia del paquete se apoya en su mitad baja. */
-.machine__side .controls .gbtn#btn-auto {
-  grid-area: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  height: calc(var(--mod) * 13.6);
-  min-height: 0;
-  padding: 0 calc(var(--mod) * 1.6) calc(var(--mod) * 4.4);
-  border-radius: calc(var(--mod) * 3.4);
-  color: #fff;
-  background-image: linear-gradient(180deg, #6fb8ff 0%, #2d7de0 46%, #14479c 100%);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.6),
-    inset 0 -5px 10px rgba(4, 30, 80, 0.55),
-    0 4px 0 rgba(4, 28, 72, 0.5),
-    0 8px 16px rgba(20, 2, 8, 0.35);
-}
-
-.machine__side .controls #btn-auto .btn__title {
-  width: auto;
-  font-size: calc(var(--mod) * 4.2);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  background-image: none;
-  -webkit-text-stroke: calc(var(--mod) * 0.12) rgba(8, 40, 90, 0.4);
-  paint-order: stroke fill;
-  text-align: center;
-  text-shadow: 0 2px 0 rgba(6, 40, 96, 0.5);
-}
-
-
-/* Insignia del paquete: heredera de la pildora del azul y, ademas, el mando que
-   abre la hoja Giros Rapidos. Centrada bajo el rotulo AUTO: con dos columnas
-   iguales y un aire de 2,4 `--mod`, el centro del azul cae en el 75 % del ancho
-   de la fila, asi que la insignia (13 % de ancho) arranca en 68,5 %. */
-.machine__side .controls .auto-pack {
-  position: absolute;
-  left: 68.5%;
-  bottom: calc(var(--mod) * 1.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 13%;
-  height: calc(var(--mod) * 4.4);
-  margin: 0;
-  padding: 0 calc(var(--mod) * 0.8);
-  border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-size: calc(var(--mod) * 2.6);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: #123a86;
-  -webkit-text-fill-color: #123a86;
-  background: linear-gradient(180deg, #ffffff 0%, #d9e8ff 100%);
-  box-shadow: inset 0 1px 0 #fff, 0 1px 3px rgba(2, 20, 60, 0.55);
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform 0.12s ease, filter 0.15s ease;
-  z-index: 2;
-}
-
-.machine__side .controls .auto-pack:hover:not(:disabled) { filter: brightness(1.08); }
-.machine__side .controls .auto-pack:active:not(:disabled) { transform: translateY(1px); }
-
-.machine__side .controls .auto-pack:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.machine__side .controls .auto-pack:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.95);
-  outline-offset: 2px;
-}
-
-/* --------------------------------------------------------------------------
-   Pie · estado del motor (una linea, sin caja)
-   -------------------------------------------------------------------------- */
-
-.machine__side .controls .statusbar {
-  position: static;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--mod) * 1.2);
-  width: auto;
-  height: auto;
-  margin: 0;
-  padding: 0;
-  font-size: calc(var(--mod) * 2);
-  line-height: 1.1;
-  color: rgba(255, 214, 90, 0.78);
-  text-shadow: 0 1px 1px rgba(20, 0, 10, 0.8);
-}
-
-.machine__side .controls .statusbar__item {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.machine__side .controls .statusbar__item--right { max-width: 45%; }
-
-
-/* --------------------------------------------------------------------------
-   Escritorio · el panel ocupa el hueco verde del lienzo
-   --------------------------------------------------------------------------
-   Medido sobre `console-desktop.webp` (1041 x 1497) buscando el aro dorado: el
-   interior va de x 6,9 a 92,6 % y de y 49,1 a 88,6 %, asi que el panel se ancla
-   con esos cuatro numeros y deja el aro, la franja de Santa y el pie de estrellas
-   donde los dibujo el arte. El HUD sigue sobre sus tres placas.
-   -------------------------------------------------------------------------- */
-
-@media (min-width: 900px) {
-  .machine__side .controls {
-    /* 1 `--mod` = 1 % del ancho del panel: 85,6 % de `--side-w`. */
-    --mod: calc(var(--side-w) * 0.00856);
-    position: absolute;
-    left: 6.9%;
-    right: 7.4%;
-    top: 49.1%;
-    bottom: 11.4%;
-    width: auto;
-    height: auto;
-    min-height: 0;
-    max-width: none;
-    margin: 0;
-    z-index: 5;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   Movil · el panel sustituye al lienzo de la consola
-   --------------------------------------------------------------------------
-   El ancho de la maquina pasa a ser marco (0,7436) + panel (0,70) por unidad de
-   ancho: el 1,2388 anterior sumaba el lienzo apaisado de la consola (0,4952), que
-   ya no se pinta. Asi el tablero y el panel caben sin scroll en el telefono.
-   -------------------------------------------------------------------------- */
-
-@media (max-width: 899px) {
-  .machine__side .controls {
-    --mod: calc(var(--m-w) * 0.01);
-    grid-area: console;
-    position: relative;
-    left: auto;
-    right: auto;
-    top: auto;
-    bottom: auto;
-    width: var(--m-w);
-    height: calc(var(--m-w) * 0.70);
-    aspect-ratio: auto;
-    max-width: none;
-    margin: 0;
-    align-self: center;
-    justify-self: center;
-    z-index: 2;
-  }
-
-  /* Los rotulos vuelven a su sitio: eran 1x1 porque el arte del pie los pinta y
-     ahora el panel los necesita legibles. */
-  .machine__side .controls #btn-feature .btn__title,
-  .machine__side .controls #btn-auto .btn__title,
-  .machine__side .controls__bet #btn-bet-max .chip__label,
-  .machine__side .controls #spin-label {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0;
-    overflow: visible;
-    clip-path: none;
-    white-space: nowrap;
-    border: 0;
-  }
-
-  /* ...y los rotulos decorativos sobre las capsulas del lienzo desaparecen con
-     el: el texto del DOM ya se lee dentro de cada tecla. */
-  .machine__side .controls #btn-auto::after,
-  .machine__side .controls .gbtn#btn-spin::after,
-  .machine__side .controls .gbtn#btn-bet-max::after {
-    content: none;
-  }
-}
-
-
-/* --------------------------------------------------------------------------
-   Ventanas apaisadas muy bajas (<= 430 px de alto)
-   --------------------------------------------------------------------------
-   Con cuatro filas y 390 px de alto, el panel se queda en ~230 px de ancho: las
-   teclas bajan de 32 px (por debajo del objetivo tactil de 44) y el contenido
-   pide mas alto del que deja la fila. Se aprieta el aire —no el texto— y se
-   retira la linea de estado, que es informativa: las cuatro filas siguen
-   enteras, en su sitio y sin desbordar.
-   -------------------------------------------------------------------------- */
-
-@media (max-width: 899px) and (max-height: 430px) {
-  .machine__side .controls {
-    /* Un 7 % menos de unidad y menos aire: las cuatro filas entran en el 0,70 de
-       ancho que la rejilla deja al panel sin tocar el tamano del texto. */
-    --mod: calc(var(--m-w) * 0.0093);
-    gap: calc(var(--mod) * 1.4);
-    padding: calc(var(--mod) * 1.8) calc(var(--mod) * 2.4);
-  }
-
-  .machine__side .controls__bet { height: calc(var(--mod) * 11); }
-
-  .machine__side .controls .gbtn#btn-spin { height: calc(var(--mod) * 16); }
-
-  .machine__side .controls .gbtn#btn-feature,
-  .machine__side .controls .gbtn#btn-auto { height: calc(var(--mod) * 12); }
-
-  .machine__side .controls .statusbar { display: none; }
 }
 

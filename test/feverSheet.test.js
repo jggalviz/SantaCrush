@@ -860,8 +860,8 @@ test('el marcado trae FEVER, la insignia del paquete y la hoja GIROS RAPIDOS', (
   assert.match(html, /<span class="btn__title">FEVER<\/span>/, 'rotulo del pulsador que compra el bonus');
   assert.match(
     html,
-    /<span class="btn__sub" id="feature-cost">100x · 1,00<\/span>/,
-    'el FEVER publica su coste en el subtitulo'
+    /<span class="pill" id="feature-cost">100x · 1,00<\/span>/,
+    'el FEVER publica su coste en la capsula de valor del caramelo'
   );
   assert.doesNotMatch(html, /id="feature-options"/, 'los chips salieron del panel');
   assert.doesNotMatch(html, /class="btn__opt"/, 'no quedan chips: el paquete se elige en la hoja');
@@ -870,6 +870,9 @@ test('el marcado trae FEVER, la insignia del paquete y la hoja GIROS RAPIDOS', (
     /id="btn-feature"[^>]*aria-haspopup/,
     'el FEVER compra: no abre dialogos'
   );
+  assert.doesNotMatch(html, /class="statusbar"/, 'el pie del panel ya no publica estado ni version');
+  assert.doesNotMatch(html, /id="status-text"/, 'sin barra de estado no queda texto de sesion');
+  assert.doesNotMatch(html, /id="engine-text"/, 'ni la version del motor');
   assert.match(
     html,
     /<h2 class="fever__title" id="fever-title">Giros Rápidos<\/h2>/,
@@ -881,14 +884,9 @@ test('el marcado trae FEVER, la insignia del paquete y la hoja GIROS RAPIDOS', (
     /aria-describedby="fever-lead"/,
     'la descripcion de la hoja queda enlazada al dialogo'
   );
-  assert.match(
-    html,
-    /<span class="btn__sub" id="feature-cost">/,
-    'la capsula del coste del bonus vuelve al panel, ahora como subtitulo del FEVER'
-  );
 });
 
-test('el modulo de cuatro filas y la hoja estan en la fuente y en el minificado', () => {
+test('el panel, los mandos del arte y la hoja estan en la fuente y en el minificado', () => {
   const css = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.css'), 'utf8');
 
   assert.match(
@@ -898,46 +896,65 @@ test('el modulo de cuatro filas y la hoja estan en la fuente y en el minificado'
   );
   assert.match(css, /\.fever__flame\s*\{/, 'la estrella de la cabecera tiene estilo propio');
 
-  /* Panel de cuatro filas: saldo · apuesta · GIRAR · FEVER + AUTO. */
+  /* El panel es el arte: los cinco pulsadores dibujados son ventanas al lienzo. */
   assert.match(
     css,
-    /\.machine__side \.controls\s*\{[^}]*flex-direction:\s*column;/,
-    'la consola es una columna de filas, no un lienzo con botones pintados'
+    /\.machine__side \{\s*background: url\('\.\.\/\.\.\/assets\/santa-crush\/console\/console-desktop\.webp'\) no-repeat center \/ 100% 100%;/,
+    'la consola de escritorio pinta el arte como carcasa'
   );
   assert.match(
     css,
-    /\.machine__side \.controls__actions\s*\{[^}]*grid-template-areas:\s*"spin spin"\s*"feature auto";/,
-    'GIRAR ocupa la fila entera y FEVER + AUTO la de abajo'
+    /\.machine__side \.controls #btn-feature,\s*\n\s*\.machine__side \.controls #btn-auto \{/,
+    'FEVER y AUTO recortan su caramelo del lienzo (no se pinta capsula encima)'
   );
   assert.match(
     css,
-    /\.machine__side \.controls \.gbtn#btn-feature\s*\{[^}]*linear-gradient\(180deg, #ffe066/,
-    'el FEVER es la capsula dorada'
+    /\.machine__side \.controls #btn-auto \{[^}]*--art-x: 51\.68;/,
+    'el AUTO es el caramelo rojo del pie'
   );
   assert.match(
     css,
-    /\.machine__side \.controls \.gbtn#btn-auto\s*\{[^}]*linear-gradient\(180deg, #6fb8ff/,
-    'el AUTO es la capsula azul'
+    /\.machine__side \.controls #btn-feature \{[^}]*--art-x: 10\.18;/,
+    'el FEVER es el caramelo amarillo del pie'
+  );
+
+  /* El unico pulsador que se pinta es el GIRAR grande de la banda libre. */
+  const spin = [...css.matchAll(
+    /\.machine__side \.controls \.btn--spin,\s*\n\s*\.machine__side \.controls #btn-spin \{([^}]*)\}/g
+  )]
+    .map((match) => match[1])
+    .find((body) => body.includes('left: 12%;'));
+  assert.ok(spin, 'El GIRAR declara su capsula propia');
+  assert.match(spin, /top: 67\.4%;/, 'arranca bajo la lectura del saldo');
+  assert.match(spin, /width: 76%;/, 'y ocupa el ancho de la banda libre');
+  assert.match(spin, /linear-gradient\(180deg, #ff7ad0/, 'capsula rosa candy');
+  assert.match(spin, /0 0 0 0\.06em #ffd23f,/, 'con su aro dorado');
+
+  /* Insignia del paquete: hermana del AUTO, en escritorio y en movil. */
+  assert.match(
+    css,
+    /\.machine__side \.controls #btn-auto-pack \{[^}]*position: absolute;[^}]*left: 63\.9%;/,
+    'en escritorio la insignia se apoya en la mitad baja del caramelo rojo'
   );
   assert.match(
     css,
-    /\.machine__side \.controls \.auto-pack\s*\{[^}]*position:\s*absolute;[^}]*left:\s*68\.5%;/,
-    'la insignia del paquete se apoya sobre el azul'
+    /\.machine__side \.controls #btn-auto-pack \{[^}]*left: 21\.44%;/,
+    'en movil ocupa la capsula 2 del pie'
   );
-  assert.match(css, /\.machine__side \.controls \.auto-pack:focus-visible\s*\{/, 'la insignia tiene anillo de foco propio');
-  assert.match(css, /\.machine__side \.controls \.auto-pack:disabled\s*\{/, 'la insignia se apaga con el motor ocupado');
+  assert.match(css, /#btn-auto-pack:focus-visible\s*\{/, 'la insignia tiene anillo de foco propio');
+  assert.match(css, /#btn-auto-pack:disabled\s*\{/, 'la insignia se apaga con el motor ocupado');
   assert.match(
     css,
-    /\.machine__side \.controls #btn-feature \.btn__sub\s*\{/,
-    'el coste del bonus tiene estilo propio dentro del FEVER'
+    /#btn-feature \.pill \{ display: none; \}/,
+    'en movil el precio del FEVER no se pinta sobre el arte'
   );
   assert.doesNotMatch(css, /\.btn__opts\s*\{/, 'los chips salieron de la hoja de estilos');
   assert.doesNotMatch(css, /\.btn__opt\s*\{/, 'no queda estilo de chip que mantener');
 
   const min = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.min.css'), 'utf8');
   assert.ok(min.includes('.fever__flame'), 'el minificado conserva la estrella de la hoja');
-  assert.ok(min.includes('.auto-pack:disabled'), 'el minificado conserva el candado de la insignia');
-  assert.ok(min.includes('.gbtn#btn-feature'), 'el minificado conserva el FEVER');
+  assert.ok(min.includes('#btn-auto-pack:disabled'), 'el minificado conserva el candado de la insignia');
+  assert.ok(min.includes('.machine__side .controls .btn--spin'), 'el minificado conserva el GIRAR grande');
   assert.ok(!min.includes('.btn__opts'), 'el minificado no arrastra los chips');
 });
 

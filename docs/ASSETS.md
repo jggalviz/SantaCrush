@@ -14,7 +14,7 @@ public/assets/santa-crush/
 │   ├── slot-frame.webp        marco de caramelos del tablero (escritorio)
 │   ├── console-desktop.webp   marco y decoración de la consola (escritorio)
 │   ├── slot-frame-mobile.webp marco de campanas doradas del tablero (móvil)
-│   └── console-mobile.webp    panel con Santa y reno (archivo: el módulo es CSS)
+│   └── console-mobile.webp    panel de mandos móvil (Santa y reno, discos y cápsulas)
 ├── tiles/
 │   ├── tile-1.webp            símbolos del tablero (orden = s1..s6 del motor)
 │   ├── …
@@ -36,15 +36,21 @@ los dos pulsadores grandes, 1041 x 1497). Los genera
 `design/frame_desktop_candy.png` y `design/console_desktop_buttons.png`.
 
 La **versión móvil (< 900 px) también sirve el arte navideño** del árbol:
-`bg/bg-mobile.webp` (taller de juguetes vertical, 941 x 1672, q=76) y
+`bg/bg-mobile.webp` (taller de juguetes vertical, 941 x 1672, q=76),
 `console/slot-frame-mobile.webp` (marco de campanas doradas con las tres placas
-del HUD y la ventana del tablero, 1447 x 1076, q=86). `console/console-mobile.webp`
+del HUD y la ventana del tablero, 1447 x 1076, q=86) y `console/console-mobile.webp`
 (panel con Santa y reno: discos CRUSH · AUTO · GIRAR · − · + y la fila de cápsulas
-del pie, 1775 x 879, q=86) se sigue publicando y validando, pero **ya no lo pinta
-ninguna regla**: el módulo de mandos se construye con CSS y es el mismo panel de
-cuatro filas que en escritorio. Los genera el mismo `npm run build:theme-art`
-desde `design/bg_mobile_toy_workshop.png`, `design/frame_mobile_gold_bells.png` y
-`design/console_mobile_santa_reindeer.png`.
+del pie, 1775 x 879, q=86), que es la carcasa de la consola móvil: los mandos son
+áreas táctiles transparentes sobre sus discos y sus cápsulas. Los genera el mismo
+`npm run build:theme-art` desde `design/bg_mobile_toy_workshop.png`,
+`design/frame_mobile_gold_bells.png` y `design/console_mobile_santa_reindeer.png`.
+
+La consola es arte en los dos viewports: cada pulsador del DOM es una ventana al
+recorte del lienzo (`--art-x/--art-y/--art-w/--art-h`), de modo que la tecla se ve
+exactamente como el dibujo y no se pinta ninguna cápsula encima. El único mando
+que ninguno de los dos lienzos dibuja es el **GIRAR grande de escritorio**, que se
+pinta con CSS en la banda verde libre del panel: x 12–88 % · y 67,4–77,6 % del
+recorte de `console-desktop.webp`.
 
 El CSS pinta las piezas en uso a sangre sobre cajas con su relación exacta y ancla
 las capas en % del recorte medido (bloques *ESCRITORIO (≥900 px) · ARTE NAVIDEÑO

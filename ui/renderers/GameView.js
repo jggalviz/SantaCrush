@@ -98,8 +98,8 @@ const WIN_LOW_MIN_RATIO_BALLS = 0.2;
  * Rotulos hablados de los dos pulsadores de giros.
  *
  * La consola tiene tres mandos de accion: `FEVER` compra el bonus (100x la
- * apuesta), el azul `AUTO` juega el paquete de tiradas rapidas y la insignia de
- * ese mismo azul (`#btn-auto-pack`) muestra el paquete vigente y abre la hoja
+ * apuesta), el `AUTO` juega el paquete de tiradas rapidas y la insignia de ese
+ * mismo caramelo (`#btn-auto-pack`) muestra el paquete vigente y abre la hoja
  * donde se elige. `FEATURE.label` (hoy "Santa Crush") sigue nombrando al bonus
  * en el motor y en `/info`. El texto visible va en mayusculas en el marcado,
  * como `MAX`; aqui se guardan las formas habladas, que son las que leen los
@@ -369,8 +369,9 @@ export class Ui {
   }
 
   /**
-   * Abre la hoja de giros rapidos. Solo hay un modo: el amarillo pide cuantas
-   * tiradas se quieren y el azul las juega. No gasta nada al abrirse.
+   * Abre la hoja de giros rapidos. Solo hay un modo: la insignia del paquete
+   * pide cuantas tiradas se quieren y el `AUTO` las juega. No gasta nada al
+   * abrirse.
    *
    * @returns {boolean} true si la hoja existe y quedo abierta
    */
@@ -469,7 +470,8 @@ export class Ui {
   }
 
   /**
-   * Paquetes de tiradas que ofrece el boton amarillo.
+   * Paquetes de tiradas que ofrece la hoja GIROS RAPIDOS, que abre la insignia
+   * del paquete (`#btn-auto-pack`).
    *
    * La lista es configuracion (`bets.quickSpins`): la vista no inventa presets
    * ni deja pedir al jugador un numero libre de tiradas.
@@ -1317,8 +1319,8 @@ export class Ui {
   /**
    * Etiqueta corta de un paquete de tiradas: `x5`, `x10`, `x25`.
    *
-   * Es la misma notacion en los chips del boton amarillo y en la pildora del
-   * azul: el jugador reconoce el paquete en los dos sitios.
+   * Es la misma notacion que la cifra de la insignia del paquete
+   * (`#auto-count`): el jugador reconoce el paquete en los dos sitios.
    *
    * @param {number} spins
    * @returns {string}
@@ -1362,11 +1364,11 @@ export class Ui {
   }
 
   /**
-   * Escribe el nombre accesible del pulsador azul.
+   * Escribe el nombre accesible del pulsador AUTO.
    *
-   * En reposo anuncia el paquete que jugaria (el configurado en el boton
-   * amarillo); en marcha, cuantas tiradas quedan de ese paquete. El numero vive
-   * en un solo sitio —la seleccion del boton amarillo— y aqui solo se refleja.
+   * En reposo anuncia el paquete que jugaria (el elegido en la hoja de giros
+   * rapidos); en marcha, cuantas tiradas quedan de ese paquete. El numero vive en
+   * un solo sitio —la seleccion de la hoja— y aqui solo se refleja.
    *
    * @param {boolean} active el bucle esta en marcha
    * @param {number} [remaining] tiradas que faltan
