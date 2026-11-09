@@ -52,7 +52,8 @@ const supabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const SESSION_SECRET = str('SESSION_SECRET');
 
 /**
- * Variables que un despliegue de produccion necesita ver DEFINIDAS.
+ * Variables que un despliegue de produccion CON persistencia real necesita ver
+ * DEFINIDAS (en un despliegue demo autonomo las de Supabase son opcionales).
  *
  * Se usa solo para diagnostico: cuando el arranque aborta, `server.js` publica
  * los NOMBRES ausentes (`missingEnv`) en el cuerpo del 503 `CONFIG_INVALID`.
@@ -65,9 +66,6 @@ const REQUIRED_ENV = Object.freeze([
   'SUPABASE_SERVICE_ROLE_KEY',
   'ALLOW_DEV_SESSION'
 ]);
-
-/** Nombres obligatorios que llegan vacios o sin definir. */
-const missingEnv = REQUIRED_ENV.filter((name) => str(name) === '');
 
 /** Credenciales de Supabase ausentes (para nombrarlas en el diagnostico). */
 const missingSupabaseEnv = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].filter(
@@ -86,7 +84,9 @@ const missingSupabaseEnv = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].filter(
  *   - `api.connectOrigins` queda vacio: la CSP solo permite `'self'`, de modo
  *     que el navegador no puede llamar a un motor externo.
  *
- * Es un modo de DESARROLLO: con `NODE_ENV=production` el arranque falla.
+ * Es un modo de DESARROLLO. Con `NODE_ENV=production` solo se admite si NO hay
+ * credenciales de Supabase (despliegue demo autonomo); si las hay, el arranque
+ * falla porque es una configuracion contradictoria.
  */
 const TG_DEMO_OPERATOR_VIRTUAL = bool(
   'TG_DEMO_OPERATOR_VIRTUAL',
@@ -124,39 +124,105 @@ const DEMO_MAX_IDEMPOTENT_ROUNDS = int(
 );
 
 /**
+ * Despliegue autonomo de demostracion ("demo sin base de datos").
+ *
+ * Permite publicar el juego en Vercel (o cualquier hosting) SIN Supabase: la
+ * interfaz se sirve igual y la API resuelve todas las rondas en la cartera
+ * virtual en memoria. Se activa cuando el modo "Fichas de Prueba" esta
+ * habilitado y NO hay credenciales reales:
+ *
+ *   DEMO_MODE_ENABLED=true  +  sin SUPABASE_URL/SERVICE_ROLE_KEY  ->  demo
+ *
+ * En ese caso `NODE_ENV=production` ya NO bloquea el arranque (antes un driver
+ * `memory` en produccion era un error fatal). La base de datos real no se toca
+ * nunca: el 100% de las rondas se liquida en `demoWallet`.
+ *
+ * Para exigir persistencia real basta con definir las credenciales de Supabase
+ * (el modo demo se desactiva solo) o `DEMO_MODE_ENABLED=false`.
+ */
+const STANDALONE_DEMO = DEMO_MODE_ENABLED && !supabaseConfigured;
+
+/**
+ * Nombres obligatorios que llegan vacios o sin definir.
+ *
+ * Es diagnostico, no bloqueo: `server.js` los publica como `error.missing` en
+ * el 503 `CONFIG_INVALID`. En modo demo autonomo las credenciales de Supabase
+ * son opcionales, asi que no se nombran como ausentes.
+ */
+const missingEnv = REQUIRED_ENV.filter(
+  (name) =>
+    str(name) === '' &&
+    !(
+      STANDALONE_DEMO &&
+      (name === 'SUPABASE_URL' || name === 'SUPABASE_SERVICE_ROLE_KEY')
+    )
+);
+
+/**
  * Driver de persistencia:
  *   - "supabase": produccion (debito/credito atomico via RPC).
- *   - "memory":   solo desarrollo local; el saldo vive en RAM y se pierde al
- *                 reiniciar. Se activa automaticamente si no hay credenciales
- *                 o si `TG_DEMO_OPERATOR_VIRTUAL=1`.
+ *   - "memory":   el saldo vive en RAM y se pierde al reiniciar. Se activa
+ *                 automaticamente si no hay credenciales, si
+ *                 `TG_DEMO_OPERATOR_VIRTUAL=1` o en un despliegue demo autonomo.
  */
-const DB_DRIVER = TG_DEMO_OPERATOR_VIRTUAL
+const DB_DRIVER = TG_DEMO_OPERATOR_VIRTUAL || STANDALONE_DEMO
   ? 'memory'
   : str('DB_DRIVER', supabaseConfigured ? 'supabase' : 'memory');
 
 const problems = [];
+const warnings = [];
 
-if (DB_DRIVER === 'supabase' && !supabaseConfigured) {
-  problems.push(
-    `DB_DRIVER=supabase requiere SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ` +
-      `(faltan: ${missingSupabaseEnv.join(', ')})`
+/*
+ * En modo demo autonomo se ignora cualquier `DB_DRIVER` heredado del entorno:
+ * la liquidacion ocurre en memoria por diseno, no por accidente.
+ */
+if (STANDALONE_DEMO && str('DB_DRIVER') !== '' && str('DB_DRIVER') !== 'memory') {
+  warnings.push(
+    `DB_DRIVER=${str('DB_DRIVER')} se ignora: el modo demo autonomo liquida en memoria`
   );
 }
-if (DB_DRIVER === 'memory' && IS_PRODUCTION) {
-  problems.push('DB_DRIVER=memory esta prohibido con NODE_ENV=production');
-}
-if (IS_PRODUCTION && !supabaseConfigured && DB_DRIVER !== 'supabase') {
-  // Sin credenciales el driver cae a memoria; se nombra la causa real para que
-  // el 503 no parezca un problema de codigo.
-  problems.push(
-    `En produccion faltan las credenciales de Supabase (${missingSupabaseEnv.join(
-      ', '
-    )}); sin ellas el driver cae a memoria`
+if (STANDALONE_DEMO) {
+  warnings.push(
+    IS_PRODUCTION
+      ? 'Despliegue autonomo de DEMOSTRACION en produccion: sin Supabase, ' +
+          'saldos virtuales en memoria y "Fichas de Prueba" habilitadas'
+      : 'Modo demo autonomo: los saldos viven en memoria (sin Supabase)'
   );
 }
-if (TG_DEMO_OPERATOR_VIRTUAL && IS_PRODUCTION) {
+
+/*
+ * Persistencia real: solo se exige cuando el despliegue NO es una demo
+ * autonoma. Con `DEMO_MODE_ENABLED=true` y sin credenciales el driver en
+ * memoria es una decision de producto valida (Vercel sin Supabase).
+ */
+if (!STANDALONE_DEMO) {
+  if (DB_DRIVER === 'supabase' && !supabaseConfigured) {
+    problems.push(
+      `DB_DRIVER=supabase requiere SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ` +
+        `(faltan: ${missingSupabaseEnv.join(', ')})`
+    );
+  }
+  if (DB_DRIVER === 'memory' && IS_PRODUCTION) {
+    problems.push(
+      'DB_DRIVER=memory esta prohibido con NODE_ENV=production ' +
+        '(define DEMO_MODE_ENABLED=true para publicar una demo sin Supabase)'
+    );
+  }
+  if (IS_PRODUCTION && !supabaseConfigured && DB_DRIVER !== 'supabase') {
+    // Sin credenciales el driver cae a memoria; se nombra la causa real para que
+    // el 503 no parezca un problema de codigo.
+    problems.push(
+      `En produccion faltan las credenciales de Supabase (${missingSupabaseEnv.join(
+        ', '
+      )}); sin ellas el driver cae a memoria`
+    );
+  }
+}
+if (TG_DEMO_OPERATOR_VIRTUAL && IS_PRODUCTION && !STANDALONE_DEMO) {
   problems.push(
-    'TG_DEMO_OPERATOR_VIRTUAL=1 es solo para desarrollo local: en produccion el motor debe usar Supabase'
+    'TG_DEMO_OPERATOR_VIRTUAL=1 es solo para desarrollo local: con SUPABASE_URL y ' +
+      'SUPABASE_SERVICE_ROLE_KEY definidas el motor debe usarlas ' +
+      '(quita el flag o las credenciales)'
   );
 }
 if (DB_DRIVER === 'supabase' && /^https?:\/\/.*\.supabase\.co\/?$/.test(SUPABASE_URL) === false) {
@@ -176,6 +242,15 @@ if (DEMO_MODE_ENABLED && (DEMO_SESSION_TTL_MS < 60000 || DEMO_TOKEN_TTL_SECONDS 
 }
 if (DEMO_MAX_SESSIONS < 1 || DEMO_MAX_IDEMPOTENT_ROUNDS < 1) {
   problems.push('DEMO_MAX_SESSIONS y DEMO_MAX_IDEMPOTENT_ROUNDS deben ser >= 1');
+}
+
+/*
+ * Avisos: no bloquean el arranque, pero un despliegue demo en produccion debe
+ * quedar registrado en los Runtime Logs (el driver en memoria no persiste).
+ */
+if (warnings.length > 0) {
+  // eslint-disable-next-line no-console
+  console.warn(`[config] ${warnings.join('\n  - ')}`);
 }
 
 if (problems.length > 0) {
@@ -217,6 +292,11 @@ const config = Object.freeze({
   }),
   demo: Object.freeze({
     enabled: DEMO_MODE_ENABLED,
+    /**
+     * `true` = demo autonoma: no hay Supabase configurado y todas las rondas se
+     * liquidan en memoria. Es el modo de un despliegue de demostracion (Vercel).
+     */
+    standalone: STANDALONE_DEMO,
     guestId: str('DEMO_GUEST_ID', GAME_DEMO.guestId),
     guestName: str('DEMO_GUEST_NAME', GAME_DEMO.guestName),
     currency: str('DEMO_CURRENCY', GAME_DEMO.currency),
@@ -233,10 +313,17 @@ const config = Object.freeze({
    * autonomo: el motor matematico corre en este mismo proceso, la cartera es
    * virtual y el cliente solo puede llamar a `'self'`. Se publica en
    * `/api/health` para poder verificar el entorno de un vistazo.
+   *
+   * `mode: 'STANDALONE_DEMO'` identifica el despliegue demo sin base de datos
+   * (Vercel sin Supabase): interface estatica + cartera virtual en memoria.
    */
   operator: Object.freeze({
     virtualDemo: TG_DEMO_OPERATOR_VIRTUAL,
-    mode: TG_DEMO_OPERATOR_VIRTUAL ? 'LOCAL_VIRTUAL_DEMO' : 'STANDARD',
+    mode: TG_DEMO_OPERATOR_VIRTUAL
+      ? 'LOCAL_VIRTUAL_DEMO'
+      : STANDALONE_DEMO
+        ? 'STANDALONE_DEMO'
+        : 'STANDARD',
     localEngineOnly: TG_DEMO_OPERATOR_VIRTUAL,
     externalEngineAllowed: !TG_DEMO_OPERATOR_VIRTUAL
   }),

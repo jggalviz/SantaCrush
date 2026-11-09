@@ -32,8 +32,10 @@ Comprobacion en caliente: `GET /api/health` devuelve
 
 Para volver al camino estandar (Supabase + motor externo) pon
 `TG_DEMO_OPERATOR_VIRTUAL=0` y rellena `SUPABASE_URL` /
-`SUPABASE_SERVICE_ROLE_KEY`. El flag es **incompatible con produccion**: con
-`NODE_ENV=production` el arranque falla a proposito.
+`SUPABASE_SERVICE_ROLE_KEY`. En produccion el flag solo se acepta **sin**
+credenciales de Supabase (despliegue demo autonomo:
+`operator.mode = "STANDALONE_DEMO"`); junto a credenciales reales el arranque
+falla a proposito.
 
 ## Estructura
 

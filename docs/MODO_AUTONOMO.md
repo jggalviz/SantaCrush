@@ -22,9 +22,20 @@ en `public/index.html` + `API.baseUrl = ''` significan **mismo origen**. No hay
 que compilar nada para cambiar de motor; el endpoint se sobreescribe en runtime
 con `window.__TROPICAL_GRID__ = { apiBaseUrl: ... }` (ver `ui/README.md`).
 
-Con `NODE_ENV=production` el arranque **falla a proposito**
+## En produccion
+
+`NODE_ENV=production` + `TG_DEMO_OPERATOR_VIRTUAL=1` **sin** credenciales de
+Supabase es un **despliegue demo autonomo** valido (equivalente a
+`DEMO_MODE_ENABLED=true` sin Supabase): arranca con billetera virtual, CSP de
+mismo origen y `/api/health` publicando `dbDriver: "memory"`. Los avisos del
+arranque quedan en los Runtime Logs. Ver
+[`DEPLOY_VERCEL.md`](DEPLOY_VERCEL.md) § *Demo autónoma*.
+
+Con credenciales de Supabase definidas, el flag es una configuración
+contradictoria y el arranque **falla a proposito**
 (`Configuracion invalida: TG_DEMO_OPERATOR_VIRTUAL=1 es solo para desarrollo
-local`). Para un despliegue real: `TG_DEMO_OPERATOR_VIRTUAL=0` + Supabase.
+local…`). Para un despliegue con saldo real: `TG_DEMO_OPERATOR_VIRTUAL=0` +
+Supabase.
 
 ## Arranque
 

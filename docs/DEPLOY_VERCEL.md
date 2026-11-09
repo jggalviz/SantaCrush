@@ -92,8 +92,6 @@ Variables*). No subas `.env` al repositorio.
 | Variable | Valor |
 | --- | --- |
 | `SESSION_SECRET` | 64 caracteres hex (32 bytes). Generar con el comando de abajo |
-| `SUPABASE_URL` | `https://<proyecto>.supabase.co` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Clave `service_role` (solo backend) |
 | `ALLOW_DEV_SESSION` | `false` (obligatorio en producción) |
 
 ```bash
@@ -101,8 +99,45 @@ Variables*). No subas `.env` al repositorio.
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
+Con `SESSION_SECRET` y el modo "Fichas de Prueba" (activado por defecto) el
+juego arranca **sin Supabase**: ver *Demo autónoma* más abajo. Para liquidar
+saldo real añade además:
+
+| Variable | Valor |
+| --- | --- |
+| `SUPABASE_URL` | `https://<proyecto>.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave `service_role` (solo backend) |
+
 Antes del primer despliegue, ejecuta `sql/schema.sql` en el SQL Editor de
 Supabase (crea tablas y la RPC atómica `play_spin`).
+
+### Demo autónoma (sin Supabase)
+
+`server/config.js` detecta un **despliegue demo autónomo** cuando:
+
+```text
+DEMO_MODE_ENABLED=true   y   SUPABASE_URL/SERVICE_ROLE_KEY sin definir
+```
+
+En ese caso:
+
+- `DB_DRIVER` se fuerza a `memory` (se ignora cualquier `DB_DRIVER` heredado) y
+  **`NODE_ENV=production` deja de bloquear** el arranque.
+- La interfaz se sirve igual (`/` + `public/src/**` en el CDN) y la API resuelve
+  `/api/demo/session`, `/api/spin` y `/api/player` en la cartera virtual
+  (`server/services/demoWallet.js`): nunca se escribe en una base de datos.
+- `ALLOW_DEV_SESSION` sigue obligatoriamente `false`: el modo demo emite tokens
+  con el claim `demo: true`, no sesiones de jugador real.
+- En los Runtime Logs aparece un aviso:
+  `Despliegue autonomo de DEMOSTRACION en produccion…` y `/api/health` publica
+  `dbDriver: "memory"`, `operator.mode: "STANDALONE_DEMO"` y
+  `operator.virtualWallet: true`.
+- Los saldos viven en RAM por instancia: al reiniciar (o cambiar de instancia en
+  serverless) el invitado vuelve a 1.000,00 de saldo virtual.
+
+Para exigir persistencia real basta con definir las credenciales de Supabase (el
+modo demo se desactiva solo) o `DEMO_MODE_ENABLED=false`. En ese caso vuelve el
+contrato estricto de abajo.
 
 ### Opcionales (modo "Fichas de Prueba")
 
@@ -125,11 +160,14 @@ acepta el mismo host automáticamente.
 ### Fail-fast
 
 `server/config.js` valida la configuración al importar. Con `NODE_ENV=production`
-(**Vercel lo fija solo**):
+(**Vercel lo fija solo**) y **fuera del modo demo autónomo**:
 
-- `DB_DRIVER=memory` está **prohibido**.
+- `DB_DRIVER=memory` está **prohibido** (para una demo sin Supabase define
+  `DEMO_MODE_ENABLED=true`).
 - `ALLOW_DEV_SESSION=true` está **prohibido**.
-- `TG_DEMO_OPERATOR_VIRTUAL=1` está **prohibido** (es modo local).
+- `TG_DEMO_OPERATOR_VIRTUAL=1` **con** credenciales de Supabase está
+  **prohibido**: es una configuración contradictoria (quita el flag o las
+  credenciales).
 - `SESSION_SECRET` inválido o Supabase incompleto abortan el arranque.
 
 En ese caso `server.js` responde `503 CONFIG_INVALID` y el cuerpo trae el
@@ -149,6 +187,8 @@ diagnóstico sin esperar a los Runtime Logs:
 
 - `missing`: **nombres** de variables obligatorias (`DB_DRIVER`, `SESSION_SECRET`,
   `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ALLOW_DEV_SESSION`) sin definir.
+  En un despliegue demo autónomo las dos de Supabase no se nombran: son opcionales
+  mientras `DEMO_MODE_ENABLED=true`.
 - `problems`: mensajes de la validación (formato inválido, valor prohibido…).
 - Nunca se incluyen **valores** de `process.env`; el detalle completo sigue
   apareciendo en **Runtime Logs**.

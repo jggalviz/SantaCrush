@@ -20,14 +20,22 @@ function banner(port) {
   const rtpFeature = (engine.CERTIFIED_RTP.feature * 100).toFixed(2);
   const mode = config.operator.virtualDemo
     ? `AUTONOMO LOCAL (cartera virtual, motor propio)`
-    : 'estandar';
+    : config.demo.standalone
+      ? `DEMO AUTONOMO (cartera virtual, sin base de datos)`
+      : 'estandar';
   return [
     '',
     '============================================================',
     `  ${engine.GAME_CODE}  v${engine.ENGINE_VERSION}`,
     `  Paytable ${engine.PAYTABLE_VERSION}`,
     `  RTP certificado: base ${rtp}% | bonus ${rtpFeature}%`,
-    `  Persistencia: ${store.driver}${store.driver === 'memory' ? '  (SOLO DESARROLLO)' : ''}`,
+    `  Persistencia: ${store.driver}${
+      store.driver === 'memory'
+        ? config.demo.standalone
+          ? '  (DEMO EN MEMORIA, SIN SUPABASE)'
+          : '  (SOLO DESARROLLO)'
+        : ''
+    }`,
     `  Modo operador: ${mode}`,
     `  Escuchando en http://localhost:${port}`,
     '============================================================',
@@ -40,7 +48,9 @@ function bootstrap() {
     // eslint-disable-next-line no-console
     console.warn(
       '[arranque] Driver en MEMORIA: los saldos se pierden al reiniciar. ' +
-        'Configura SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY para persistencia real.'
+        (config.demo.standalone
+          ? 'Modo demo autonomo: todas las rondas se liquidan en la cartera virtual.'
+          : 'Configura SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY para persistencia real.')
     );
     if (typeof store.ensureDemoPlayer === 'function') {
       store.ensureDemoPlayer({

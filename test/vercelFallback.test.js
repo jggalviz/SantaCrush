@@ -93,6 +93,12 @@ function productionEnv(overrides = {}) {
   return {
     NODE_ENV: 'production',
     TG_DEMO_OPERATOR_VIRTUAL: '0',
+    /*
+     * Produccion ESTRICTA: sin "Fichas de Prueba" el driver en memoria sigue
+     * siendo un error fatal. El despliegue demo autonomo (DEMO_MODE_ENABLED=true
+     * sin Supabase) se cubre en el ultimo test de este archivo.
+     */
+    DEMO_MODE_ENABLED: 'false',
     DB_DRIVER: 'supabase',
     SESSION_SECRET,
     SUPABASE_URL: 'https://proyecto-de-prueba.supabase.co',
@@ -151,6 +157,73 @@ test('el 503 identifica el modo autonomo en produccion, no "faltan secretos"', a
       ),
       true
     );
+  } finally {
+    await server.close();
+  }
+});
+
+/* -------------------------------------------------------------------------- */
+/*  Despliegue demo autonomo (Vercel sin Supabase)                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Un despliegue de demostracion no tiene base de datos: la interfaz se sirve
+ * igual y la API liquida las rondas en la cartera virtual en memoria. Este test
+ * arranca el entrypoint REAL de Vercel con `NODE_ENV=production` y sin
+ * credenciales de Supabase para comprobar que ya no responde 503.
+ */
+test('con Fichas de Prueba y sin Supabase el entrypoint arranca en memoria', async () => {
+  const server = await startEntrypoint(
+    productionEnv({
+      DEMO_MODE_ENABLED: 'true',
+      DB_DRIVER: 'memory',
+      SUPABASE_URL: '',
+      SUPABASE_SERVICE_ROLE_KEY: ''
+    })
+  );
+
+  try {
+    const health = await fetch(`http://127.0.0.1:${server.port}/api/health`);
+    const healthBody = await health.json();
+    assert.equal(health.status, 200, JSON.stringify(healthBody));
+    assert.equal(healthBody.ok, true);
+    assert.equal(healthBody.dbDriver, 'memory');
+    assert.equal(healthBody.operator.mode, 'STANDALONE_DEMO');
+    assert.equal(healthBody.operator.virtualWallet, true);
+
+    // La interfaz se sirve desde el HTML generado (el CDN publica public/src/**).
+    const index = await fetch(`http://127.0.0.1:${server.port}/`);
+    const html = await index.text();
+    assert.equal(index.status, 200);
+    assert.match(html, /Santa Crush/);
+
+    // Fichas de Prueba: sesion virtual + ronda liquidada sin tocar Supabase.
+    const demo = await fetch(`http://127.0.0.1:${server.port}/api/demo/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId: 'invitado_demo' })
+    });
+    const demoBody = await demo.json();
+    assert.equal(demo.status, 200, JSON.stringify(demoBody));
+    assert.equal(demoBody.demo, true);
+    assert.equal(demoBody.balance.cents, 100000);
+
+    const spin = await fetch(`http://127.0.0.1:${server.port}/api/spin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${demoBody.token}`
+      },
+      body: JSON.stringify({
+        betCents: 100,
+        clientSeed: 'vercel-demo-seed',
+        roundRef: 'vercel-demo-ref-1'
+      })
+    });
+    const spinBody = await spin.json();
+    assert.equal(spin.status, 200, JSON.stringify(spinBody));
+    assert.equal(spinBody.demo, true);
+    assert.equal(spinBody.audit.certifiedRtp, 0.9508);
   } finally {
     await server.close();
   }

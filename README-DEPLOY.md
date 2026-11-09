@@ -192,13 +192,13 @@ El backend carga `.env` desde la raíz con `dotenv` (`server/config.js`). En AWS
 
 | Variable | ¿Obligatoria en producción? | Valor recomendado | Notas |
 | --- | --- | --- | --- |
-| `NODE_ENV` | Sí | `production` | Activa validación fail-fast y prohíbe el driver en memoria |
+| `NODE_ENV` | Sí | `production` | Activa validación fail-fast y prohíbe el driver en memoria (salvo demo autónoma) |
 | `PORT` | No | `3000` | El puerto que expone el contenedor |
 | `SESSION_SECRET` | **Sí** | 64 caracteres hex | Firma HMAC de los tokens; si no cumple, el proceso no arranca en producción |
 | `SESSION_TTL_SECONDS` | No | `3600` | Vida del token de sesión real |
-| `DB_DRIVER` | Sí | `supabase` | `memory` está **prohibido** con `NODE_ENV=production` |
-| `SUPABASE_URL` | **Sí** | `https://<ref>.supabase.co` | Debe terminar en `.supabase.co` |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Sí** | *(secreto)* | **Solo backend**; nunca en el navegador ni en S3 |
+| `DB_DRIVER` | Sí | `supabase` | `memory` está **prohibido** con `NODE_ENV=production`, salvo demo autónoma |
+| `SUPABASE_URL` | **Sí** (salvo demo) | `https://<ref>.supabase.co` | Debe terminar en `.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Sí** (salvo demo) | *(secreto)* | **Solo backend**; nunca en el navegador ni en S3 |
 | `SUPABASE_SCHEMA` | No | `public` | Esquema donde viven tablas y RPC |
 | `ALLOW_DEV_SESSION` | Sí | `false` | En producción **debe** ser `false`; el token viene del IdP |
 | `DEV_DEMO_PLAYER_ID` | No | UUID v4 | Jugador usado por `POST /api/session` en desarrollo |
@@ -261,13 +261,20 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 - `DB_DRIVER=supabase` sin `SUPABASE_URL` o sin `SUPABASE_SERVICE_ROLE_KEY`.
 - Producción sin credenciales de Supabase (el driver caería a `memory`).
-- `TG_DEMO_OPERATOR_VIRTUAL=1` (es exclusivo de desarrollo local).
+- `TG_DEMO_OPERATOR_VIRTUAL=1` **con** credenciales de Supabase (configuración contradictoria).
 - `DB_DRIVER=memory` con `NODE_ENV=production`.
 - `SUPABASE_URL` que no sea una URL `https://*.supabase.co`.
 - `SESSION_SECRET` que no sea hexadecimal de exactamente 64 caracteres (32 bytes).
 - `ALLOW_DEV_SESSION=true` en producción.
 - `DEMO_START_BALANCE_CENTS <= 0` con el modo demo activo.
 - TTL demo menor de 60 segundos o topes `DEMO_MAX_*` menores que 1.
+
+> **Excepción: demo autónoma sin base de datos.** Si `DEMO_MODE_ENABLED=true` y no
+> hay credenciales de Supabase, el despliegue es una **demo**: `DB_DRIVER` se
+> fuerza a `memory`, se permiten los puntos 1, 2, 3 y 4 y `/api/health` publica
+> `dbDriver: "memory"` con `operator.mode: "STANDALONE_DEMO"`. `SESSION_SECRET`,
+> `ALLOW_DEV_SESSION=false` y los límites demo se siguen validando igual. Ver
+> `docs/DEPLOY_VERCEL.md` § *Demo autónoma*.
 
 En ECS/App Runner esto se traduce en un **health check fallido**; en Vercel, en `503 CONFIG_INVALID`. `server/config.js` adjunta el diagnóstico al error de arranque y `server.js` lo publica en el cuerpo del 503:
 

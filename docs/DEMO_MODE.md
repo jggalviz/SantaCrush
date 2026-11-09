@@ -89,8 +89,14 @@ Ver `.env.example` → bloque *Fichas de Prueba*: `DEMO_MODE_ENABLED`,
 ## En Vercel
 
 El despliegue (preset Express, `public/**` en el CDN y `server.js` como entry)
-está descrito en [`DEPLOY_VERCEL.md`](./DEPLOY_VERCEL.md). Ten en cuenta que la
-cartera demo vive en RAM por instancia: si Vercel atiende la petición con otra
-instancia, se recrea con el saldo inicial (1.000,00) en lugar de fallar. Para
-una demo pública es aceptable; para continuidad estricta entre instancias hace
-falta un almacén compartido con TTL.
+está descrito en [`DEPLOY_VERCEL.md`](./DEPLOY_VERCEL.md). Con
+`DEMO_MODE_ENABLED=true` y **sin** `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` el
+backend arranca en **modo demo autónomo**: `DB_DRIVER` se fuerza a `memory`,
+`NODE_ENV=production` no bloquea y no hace falta configurar Supabase (solo
+`SESSION_SECRET`). `/api/health` lo confirma con `dbDriver: "memory"`,
+`operator.mode: "STANDALONE_DEMO"` y `operator.virtualWallet: true`.
+
+Ten en cuenta que la cartera demo vive en RAM por instancia: si Vercel atiende la
+petición con otra instancia, se recrea con el saldo inicial (1.000,00) en lugar
+de fallar. Para una demo pública es aceptable; para continuidad estricta entre
+instancias hace falta un almacén compartido con TTL.
