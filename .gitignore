@@ -13,3 +13,4 @@ dist/
 tmp-case/
 # Recortes y scripts de medicion del arte (temporales, no se publican).
 .tmp-preview/
+.env*
