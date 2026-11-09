@@ -1173,15 +1173,15 @@ html {
 }
 
 body {
-  /* Fondo ilustrado de escritorio: public/src/assets/fondo_desk_meridino_crush.webp
-     (1672x941, calidad 86, ~376 KB, generado con `npm run build:bg` desde el
-     maestro `design/fondo_desk_meridino_crush.png`). Es el estadio de deportes
-     del tema Santa Crush y sustituye al reino del arcoiris, que queda
+  /* Fondo ilustrado de escritorio: public/assets/santa-crush/bg/bg-desktop.webp
+     (1672x941, calidad 78, ~363 KB, generado con `npm run build:theme-art`
+     desde el maestro `design/bg_desktop_toy_workshop.png`). Es el taller de
+     juguetes navideño de Santa Crush y sustituye al estadio, que queda
      archivado en `design/`. `cover` + `center` lo escalan sin deformar ni
      repetir en cualquier tamano de pantalla y `fixed` lo ancla al viewport, asi
      que el arte no se desplaza si el contenido crece. Si el WebP no llega
-     (navegador muy antiguo), queda el degradado de estadio de `html`. */
-  background: url('../assets/fondo_desk_meridino_crush.webp') no-repeat center center / cover fixed;
+     (navegador muy antiguo), queda el degradado nocturno de `html`. */
+  background: url('../../assets/santa-crush/bg/bg-desktop.webp') no-repeat center center / cover fixed;
   position: relative;
   overflow-x: hidden;
   color: var(--ink);
@@ -7338,15 +7338,251 @@ body.is-demo .machine__side .controls .balance::after {
   50% { transform: translateY(-4px) scale(1.02); }
 }
 
+/* ==========================================================================
+   ESCRITORIO (≥900 px) · ARTE NAVIDEÑO DEL TEMA
+   --------------------------------------------------------------------------
+   Sustituye el lienzo del estadio y las dos piezas de la maquina por el arte
+   nuevo de `public/assets/santa-crush/`:
+
+     bg/bg-desktop.webp        1672 x 941   taller de juguetes (body)
+     console/slot-frame.webp   1305 x 1090  marco de caramelos del tablero;
+                                            ventana transparente x 6,36-93,64 %
+                                            · y 14,95-91,47 % (medida sobre el
+                                            alfa del recorte)
+     console/console-desktop.webp
+                               1041 x 1497  columna lateral entera: Santa y el
+                                            reno (hero) · tres placas del HUD
+                                            (y 32,87-42,89 %) · fila −/lectura/
+                                            +/MAX (y 51,17-61,06 %) · dos
+                                            pulsadores grandes (y 79,96-88,51 %)
+
+   Las dos piezas de la consola se publican recortadas al bbox de su alfa
+   (`npm run build:theme-art`), asi que su lienzo CSS mide exactamente el
+   dibujo y los anclajes en % valen a cualquier escala. El reparto del alto se
+   mantiene en una sola medida: `--frame-h` manda en las dos columnas y cada
+   una deduce su ancho de su propia relacion (1,19725 el marco y 0,69539 la
+   consola), de modo que el conjunto nunca desborda el viewport y el marco de
+   caramelos queda centrado sobre la cuadricula, con el tablero metido bajo su
+   aro dorado.
+   ========================================================================== */
+
+@media (min-width: 900px) {
+  .machine {
+    /* 1,89264 = 1,19725 (1305/1090 del marco) + 0,69539 (1041/1497 lateral). */
+    --frame-h: min(
+      calc(100dvh - var(--d-chrome) - var(--d-bleed)),
+      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.89264)
+    );
+    --frame-w: calc(var(--frame-h) * 1.19725);
+    --side-w: calc(var(--frame-h) * 0.69539);
+  }
+
+  /* Marco de caramelos: mismo `100% 100%` que el arte anterior, sobre la caja
+     que ya mide la relacion del recorte. */
+  .machine__table {
+    background: url('../../assets/santa-crush/console/slot-frame.webp') no-repeat center / 100% 100%;
+  }
+
+  /* Ventana del dibujo (x 6,36-93,64 % · y 14,95-91,47 %) con el tablero un
+     pelo por fuera, para que su filo se meta bajo el aro dorado y no asome ni
+     una linea dé fondo entre el arte y las casillas. */
+  .machine__table .board {
+    left: 6.2%;
+    top: 14.8%;
+    width: 87.6%;
+    height: 76.9%;
+    border-radius: calc(var(--frame-h) * 0.03);
+  }
+
+  /* Consola: el arte nuevo pinta la carcasa entera (hero + placas + mandos). */
+  .machine__side {
+    background: url('../../assets/santa-crush/console/console-desktop.webp') no-repeat center / 100% 100%;
+  }
+
+  /* Los pulsadores son ventanas al lienzo nuevo: misma formula de recorte que
+     usaba `d2.webp`, solo cambia la imagen de fondo. `AUTO` se excluye porque
+     el arte nuevo no le dibuja hueco (se pinta como capsula propia abajo). */
+  .machine__side .controls .gbtn,
+  .machine__side .controls #btn-bet-down,
+  .machine__side .controls #btn-bet-up,
+  .machine__side .controls #btn-bet-max,
+  .machine__side .controls #btn-spin,
+  .machine__side .controls #btn-feature {
+    background-image: url('../../assets/santa-crush/console/console-desktop.webp');
+  }
+
+  /* Bloque 1 · La pegatina del logo flota sobre la franja de Santa y el reno
+     (y 2-25 % del lienzo) sin llegar a la fila de caramelos (31,2 %). */
+  .machine__side .machine__logo {
+    top: 12.8%;
+    width: 58%;
+  }
+
+  /* Bloque 2 · Una celda del HUD por placa roja: x 6,72-32,66 · 36,89-62,73 ·
+     66,28-92,70 % · banda y 32,87-42,89 %. Los tracks van en % del propio
+     `.hud` para que cada celda caiga sobre su placa y el texto no se salga del
+     borde dorado. */
+  .machine__side .hud {
+    left: 6.72%;
+    top: 33.2%;
+    width: 85.98%;
+    height: 9.4%;
+    grid-template-columns: 30.17% 30.05% 30.73%;
+    column-gap: 4.5%;
+  }
+
+  /* Sobre el carmesi de las placas nuevas, el rotulo dorado se apaga: tinta
+     crema y dato en blanco, con relieve de contacto. */
+  .machine__side .hud .hud__label {
+    color: #ffe9c0;
+    -webkit-text-fill-color: #ffe9c0;
+    text-shadow: 0 1px 2px rgba(70, 4, 8, 0.8);
+  }
+
+  .machine__side .hud .hud__value {
+    background-image: none;
+    -webkit-text-stroke: 0;
+    color: #fffdf5;
+    -webkit-text-fill-color: #fffdf5;
+    filter: none;
+    text-shadow: 0 2px 0 rgba(84, 6, 10, 0.55), 0 0 12px rgba(255, 226, 150, 0.45);
+  }
+
+
+  /* Bloque 3 · Mandos sobre sus huecos dibujados --------------------------- */
+
+  /* Saldo: franja limpia del panel verde, entre la fila de discos y AUTO. */
+  .machine__side .controls .balance,
+  body.is-demo .machine__side .controls .balance {
+    left: 12%;
+    top: 62.2%;
+    width: 76%;
+    height: 4.4%;
+  }
+
+  /* Disco − · x 8,84-23,44 % · y 51,17-61,06 % */
+  .machine__side .controls__bet #btn-bet-down {
+    --art-x: 8.84;
+    --art-y: 51.17;
+    --art-w: 14.6;
+    --art-h: 9.89;
+    left: 8.84%;
+    top: 51.17%;
+    width: 14.6%;
+    height: 9.89%;
+    border-radius: 30%;
+  }
+
+  /* Disco + · x 62,82-77,04 % · y 51,17-61,06 % */
+  .machine__side .controls__bet #btn-bet-up {
+    --art-x: 62.82;
+    --art-y: 51.17;
+    --art-w: 14.22;
+    --art-h: 9.89;
+    left: 62.82%;
+    top: 51.17%;
+    width: 14.22%;
+    height: 9.89%;
+    border-radius: 30%;
+  }
+
+  /* Placa MAX · x 78,00-90,68 % · y 51,24-60,59 % */
+  .machine__side .controls__bet #btn-bet-max {
+    --art-x: 78;
+    --art-y: 51.24;
+    --art-w: 12.68;
+    --art-h: 9.35;
+    left: 78%;
+    top: 51.24%;
+    width: 12.68%;
+    height: 9.35%;
+    border-radius: 28%;
+  }
+
+  /* Lectura de apuesta · placa verde x 24,30-61,96 % · y 51,50-60,79 % */
+  .machine__side .controls .bet-readout,
+  .machine__side .controls__bet .bet-readout {
+    left: 24.3%;
+    top: 51.5%;
+    width: 37.66%;
+    height: 9.29%;
+    border-radius: 12px;
+  }
+
+  /* AUTOGIRO · boton amarillo grande x 10,18-47,74 % · y 80,09-88,44 % */
+  .machine__side .controls #btn-feature {
+    --art-x: 10.18;
+    --art-y: 80.09;
+    --art-w: 37.56;
+    --art-h: 8.35;
+    left: 10.18%;
+    top: 80.09%;
+    width: 37.56%;
+    height: 8.35%;
+    padding: 0 2%;
+    border-radius: 999px;
+  }
+
+  /* GIRAR · boton rojo grande x 51,68-89,34 % · y 79,96-88,51 % */
+  .machine__side .controls .btn--spin {
+    --art-x: 51.68;
+    --art-y: 79.96;
+    --art-w: 37.66;
+    --art-h: 8.55;
+    left: 51.68%;
+    top: 79.96%;
+    width: 37.66%;
+    height: 8.55%;
+    gap: 0.4em;
+    padding: 0 2%;
+    border-radius: 999px;
+  }
+
+  /* El arte nuevo no dibuja un septimo pulsador: AUTO se pinta como capsula
+     azul propia en la banda libre del panel verde (y 67,6-77,2 %), con el
+     mismo relieve de contacto que los caramelos del lienzo. */
+  .machine__side .controls #btn-auto {
+    left: 24%;
+    top: 67.6%;
+    width: 52%;
+    height: 9.6%;
+    border-radius: 999px;
+    background-color: transparent;
+    background-image: linear-gradient(180deg, #63c6ff 0%, #2a86e8 44%, #1559b6 100%);
+    background-size: auto;
+    background-position: 0 0;
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.6),
+      inset 0 -3px 0 rgba(4, 40, 96, 0.55),
+      0 8px 18px rgba(3, 24, 60, 0.45);
+  }
+}
+
+
+/* A partir de 1024 px sobra lienzo: la consola se separa del marco para que el
+   aro de caramelos no toque el borde del case y los pulsadores grandes suben un
+   punto de tipografia. El alto comun (`--frame-h`) sigue mandando en las dos
+   piezas, asi que en 16:9 o mas ancho el arte se escala sin deformarse. */
+@media (min-width: 1024px) {
+  .machine { --d-gap-x: clamp(14px, 1.6vw, 34px); }
+
+  .machine__side .controls .btn--spin .btn__spin-label {
+    font-size: clamp(15px, calc(var(--cons-scale) * 0.085), 34px);
+  }
+
+  .machine__side .controls #btn-auto .btn__title {
+    font-size: clamp(10px, calc(var(--cons-scale) * 0.050), 20px);
+  }
+}
+
 /* --------------------------------------------------------------------------
-   Escritorio bajo (≤660 px de alto): el lienzo de d2 se queda en ~340 px de
-   ancho. El logo mantiene el 80 % —tiene que seguir montando sobre el borde
-   dorado de la nube— y solo se recentra en 21,8 % para ganar el aire que pierde
-   arriba.
+   Escritorio bajo (≤660 px de alto): el lienzo de la consola se queda en ~340
+   px de ancho. El logo mantiene su anclaje sobre la franja de Santa y el reno
+   (12,8 %) y solo se encoge unos puntos para no pisar la fila de caramelos.
    -------------------------------------------------------------------------- */
 @media (min-width: 900px) and (max-height: 660px) {
   .machine__side .machine__hero { display: block; }
-  .machine__side .machine__logo { width: 80%; top: 21.8%; }
+  .machine__side .machine__logo { width: 54%; top: 12.8%; }
 }
 
 /* Ventanas de menos de 470 px de alto: la placa del hero mide ~50 px y el

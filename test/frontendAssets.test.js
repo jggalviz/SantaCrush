@@ -1067,9 +1067,10 @@ test('cada dispositivo pinta su propio fondo ilustrado en WebP optimizado y sin 
   const css = read(STYLE_PATH);
 
   // Un maestro por dispositivo, archivado en `design/`: todo lo que hay en
-  // `public/src/**` se publica en el CDN y cada PNG pesa ~2 MB.
+  // `public/**` se publica en el CDN y cada PNG pesa ~2 MB. El fondo de
+  // escritorio ya vive en el arbol tematico (`assets/santa-crush/bg/**`, ver el
+  // bloque de abajo); el movil sigue en `public/src/assets/**`.
   const fondos = [
-    ['fondo_desk_meridino_crush.png', 'fondo_desk_meridino_crush.webp'],
     ['avenida_fantastica_reino_caramelos.png', 'avenida_fantastica_reino_caramelos.webp'],
   ];
 
@@ -1119,12 +1120,46 @@ test('cada dispositivo pinta su propio fondo ilustrado en WebP optimizado y sin 
     );
   }
 
-  // Escritorio: `body` pinta el estadio de Santa Crush centrado, escalado con
-  // `cover` y anclado al viewport.
+  // Escritorio: el taller de juguetes vive en el arbol tematico y `body` lo
+  // pinta centrado, escalado con `cover` y anclado al viewport.
+  const deskWebp = path.join(PUBLIC_DIR, 'assets', 'santa-crush', 'bg', 'bg-desktop.webp');
+  assert.ok(fs.existsSync(deskWebp), 'Falta public/assets/santa-crush/bg/bg-desktop.webp');
+  const deskBinary = fs.readFileSync(deskWebp);
+  assert.equal(deskBinary.toString('ascii', 0, 4), 'RIFF', 'bg-desktop.webp debe ser un contenedor RIFF/WebP');
+  assert.equal(deskBinary.toString('ascii', 8, 12), 'WEBP', 'bg-desktop.webp debe ser un WebP real');
+
+  // Se publica sin recortar (se pinta con `cover`) y sin alfa: el lienzo del
+  // WebP tiene que medir exactamente lo que el PNG maestro.
+  const deskMaster = path.join(ROOT_DIR, 'design', 'bg_desktop_toy_workshop.png');
+  assert.ok(fs.existsSync(deskMaster), 'Falta el maestro design/bg_desktop_toy_workshop.png');
+  const deskPng = fs.readFileSync(deskMaster);
+  assert.equal(deskPng.toString('ascii', 1, 4), 'PNG', 'design/bg_desktop_toy_workshop.png debe ser el PNG maestro');
+
+  const deskLossy = webpChunks(deskBinary).find((chunk) => chunk.fourCC === 'VP8 ');
+  assert.ok(deskLossy, 'bg-desktop.webp debe ser un WebP lossy (bloque VP8), sin alfa que nadie pinta');
+  assert.equal(
+    deskBinary.readUInt16LE(deskLossy.offset + 14) & 0x3fff,
+    deskPng.readUInt32BE(16),
+    'bg-desktop.webp debe conservar el ancho del maestro'
+  );
+  assert.equal(
+    deskBinary.readUInt16LE(deskLossy.offset + 16) & 0x3fff,
+    deskPng.readUInt32BE(20),
+    'bg-desktop.webp debe conservar el alto del maestro'
+  );
+  assert.ok(
+    deskBinary.length < 420 * 1024,
+    `bg-desktop.webp pesa ${(deskBinary.length / 1024).toFixed(1)} KB (objetivo < 420 KB)`
+  );
+  assert.ok(
+    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'bg_desktop_toy_workshop.png')),
+    'El maestro del taller no debe servirse desde public/src'
+  );
+
   assert.match(
     css,
-    /body\s*\{[^}]*background:\s*url\('\.\.\/assets\/fondo_desk_meridino_crush\.webp'\)\s*no-repeat\s*center\s*center\s*\/\s*cover\s*fixed;/,
-    'El escritorio debe pintar el estadio con `cover`, centrado y `fixed`'
+    /body\s*\{[^}]*background:\s*url\('\.\.\/\.\.\/assets\/santa-crush\/bg\/bg-desktop\.webp'\)\s*no-repeat\s*center\s*center\s*\/\s*cover\s*fixed;/,
+    'El escritorio debe pintar el taller de juguetes con `cover`, centrado y `fixed`'
   );
   // El respaldo inmediato (degradados de `html`) va en la misma gama nocturna,
   // para que el relevo no salte de color mientras baja el WebP.
@@ -1672,8 +1707,8 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
     'El logo monta sobre el borde dorado de la nube de d2 (80 % del ancho)'
   );
   assert.ok(
-    logoBodies.some((body) => body.includes('width: 80%;') && body.includes('top: 21.8%;')),
-    'En ventanas bajas el logo mantiene el 80 % y recentra la chapa en 21,8 %'
+    logoBodies.some((body) => body.includes('width: 54%;') && body.includes('top: 12.8%;')),
+    'En ventanas bajas el logo se encoge al 54 % y mantiene su anclaje en 12,8 %'
   );
   // La respiracion del escritorio va acotada en su propio juego de keyframes
   // (-4 px y 2 %): con los -7 px y el 3 % de la animacion movil el pico del
@@ -2204,4 +2239,106 @@ test('la pastilla del multiplicador se pinta como una cuenta de rubi con volumen
   );
 });
 
+
+/* --------------------------------------------------------------------------
+   Arte navideño de ESCRITORIO (`public/assets/santa-crush/**`)
+   -------------------------------------------------------------------------- */
+test('el arte navideño de escritorio se sirve desde el arbol del tema con su lienzo exacto', () => {
+  const css = read(STYLE_PATH);
+  const themeDir = path.join(PUBLIC_DIR, 'assets', 'santa-crush');
+
+  // Cada pieza se publica recortada al bbox de su alfa con `build:theme-art`;
+  // el CSS la pinta `100% 100%` sobre una caja con la relacion del recorte.
+  const pieces = [
+    {
+      name: 'slot-frame',
+      target: path.join(themeDir, 'console', 'slot-frame.webp'),
+      master: path.join(ROOT_DIR, 'design', 'frame_desktop_candy.png'),
+      canvas: '1305x1090',
+      max: 340 * 1024
+    },
+    {
+      name: 'console-desktop',
+      target: path.join(themeDir, 'console', 'console-desktop.webp'),
+      master: path.join(ROOT_DIR, 'design', 'console_desktop_buttons.png'),
+      canvas: '1041x1497',
+      max: 620 * 1024
+    }
+  ];
+
+  for (const { name, target, master, canvas, max } of pieces) {
+    assert.ok(fs.existsSync(target), `Falta public/assets/santa-crush/console/${name}.webp`);
+    const binary = fs.readFileSync(target);
+    assert.equal(binary.toString('ascii', 0, 4), 'RIFF', `${name} debe ser un contenedor RIFF/WebP`);
+    assert.equal(binary.toString('ascii', 8, 12), 'WEBP', `${name} debe ser un WebP real`);
+
+    const extended = webpChunks(binary).find((chunk) => chunk.fourCC === 'VP8X');
+    assert.ok(extended, `${name} debe declarar VP8X (el recorte lleva alfa)`);
+    const width = binary.readUIntLE(extended.offset + 12, 3) + 1;
+    const height = binary.readUIntLE(extended.offset + 15, 3) + 1;
+    assert.equal(`${width}x${height}`, canvas, `El lienzo de ${name} debe ser exactamente ${canvas}`);
+
+    assert.ok(
+      binary.length < max,
+      `${name} debe pesar menos de ${max / 1024} KB (pesa ${(binary.length / 1024).toFixed(1)} KB)`
+    );
+    assert.ok(fs.existsSync(master), `Falta el maestro ${path.relative(ROOT_DIR, master)}`);
+    assert.ok(
+      !fs.existsSync(path.join(PUBLIC_DIR, 'src', path.basename(master))),
+      `El maestro de ${name} no debe servirse desde public/src`
+    );
+
+    // El CSS pinta la pieza a sangre sobre la caja de su lienzo.
+    assert.match(
+      css,
+      new RegExp(`url\\('\\.\\.\\/\\.\\.\\/assets\\/santa-crush\\/console\\/${name}\\.webp'\\) no-repeat center \\/ 100% 100%`),
+      `El CSS debe pintar ${name}.webp sin aire (100% 100%)`
+    );
+  }
+
+  // El reparto del alto usa las relaciones de los dos recortes nuevos:
+  // 1305/1090 = 1,19725 (marco) y 1041/1497 = 0,69539 (consola).
+  assert.match(css, /--frame-w: calc\(var\(--frame-h\) \* 1\.19725\)/, 'El marco mide 1305/1090 de su alto');
+  assert.match(css, /--side-w: calc\(var\(--frame-h\) \* 0\.69539\)/, 'La consola mide 1041/1497 de su alto');
+  assert.match(
+    css,
+    /--frame-h: min\([\s\S]{0,220}?\/ 1\.89264\)/,
+    'El alto comun descuenta marco y consola (1,19725 + 0,69539)'
+  );
+
+  // La ventana transparente del marco (x 6,36-93,64 % · y 14,95-91,47 %) se
+  // cubre con el tablero un pelo por fuera.
+  const windowBodies = [...css.matchAll(/\.machine__table \.board \{([^}]*)\}/g)].map((match) => match[1]);
+  for (const declaration of ['left: 6.2%;', 'top: 14.8%;', 'width: 87.6%;', 'height: 76.9%;']) {
+    assert.ok(
+      windowBodies.some((body) => body.includes(declaration)),
+      `La ventana del marco de caramelos se cubre con \`${declaration}\``
+    );
+  }
+
+  // El HUD y los mandos se anclan a los huecos medidos sobre la consola nueva.
+  const bodies = (selector) => [...css.matchAll(new RegExp(`${selector} \\{([^}]*)\\}`, 'g'))]
+    .map((match) => match[1]);
+  const hudBodies = bodies('\\.machine__side \\.hud');
+  for (const declaration of ['left: 6.72%;', 'top: 33.2%;', 'width: 85.98%;', 'height: 9.4%;']) {
+    assert.ok(hudBodies.some((body) => body.includes(declaration)), `El HUD se ancla con \`${declaration}\``);
+  }
+  const spinBodies = bodies('\\.machine__side \\.controls \\.btn--spin');
+  for (const declaration of ['left: 51.68%;', 'top: 79.96%;', 'width: 37.66%;', 'height: 8.55%;']) {
+    assert.ok(spinBodies.some((body) => body.includes(declaration)), `El GIRAR se ancla con \`${declaration}\``);
+  }
+
+  // El comando de arte queda registrado y declara los mismos lienzos.
+  const pkg = JSON.parse(read(path.join(ROOT_DIR, 'package.json')));
+  assert.equal(pkg.scripts['build:theme-art'], 'node scripts/build-santa-crush-art.js');
+  const script = read(path.join(ROOT_DIR, 'scripts', 'build-santa-crush-art.js'));
+  for (const { name, canvas } of pieces) {
+    const [w, h] = canvas.split('x');
+    assert.match(
+      script,
+      new RegExp(`name: '${name}',[\\s\\S]{0,400}?canvas: \\{ width: ${w}, height: ${h} \\}`),
+      `El script debe recortar ${name} a ${canvas}`
+    );
+  }
+});
 

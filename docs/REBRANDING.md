@@ -45,11 +45,11 @@ que distinguir dos grupos antes de tocar nada:
 | --- | --- | --- |
 | Boton "Fichas de Prueba", capsula de audio, modal, anillo de foco | CSS | **Si** |
 | Marco interior del tablero (`.board`, `.tile`) | Gradientes CSS | **Si** |
-| Carcasa de controles, placas y botones (escritorio) | Recortes de `d2.webp` | No: reexportar arte |
-| Nube del logo (`.machine__hero`, escritorio) | `d2.webp` | No: reexportar arte |
-| Marco del tablero (escritorio) | `d1.webp` | No: reexportar arte |
+| Carcasa de controles, placas y botones (escritorio) | Recortes de `console/console-desktop.webp` | No: reexportar arte |
+| Nube del logo (`.machine__hero`, escritorio) | `console/console-desktop.webp` | No: reexportar arte |
+| Marco del tablero (escritorio) | `console/slot-frame.webp` | No: reexportar arte |
 | Carcasa movil (`.machine__table`, `.controls`) | `marco_movil.webp`, `consola_movil.webp` | No: reexportar arte |
-| Fondo de escenario y logotipo | `fondo_desk_meridino_crush.webp` / `avenida_fantastica_reino_caramelos.webp`, `MERIDIANOBET-CRUSH-LOGO.webp` | No: reexportar arte |
+| Fondo de escenario y logotipo | `assets/santa-crush/bg/bg-desktop.webp` (escritorio) / `avenida_fantastica_reino_caramelos.webp` (movil), `MERIDIANOBET-CRUSH-LOGO.webp` | No: reexportar arte |
 | Simbolos del tablero | `public/src/assets/slot/*.webp` (maestros en `design/symbols/*.png`) | No: reexportar arte |
 
 Las 30 casillas se pintan con el **azul de la consola**: `theme.css` define
@@ -191,19 +191,19 @@ el propio origen.
    La barra del navegador movil usa la meta `theme-color`, ya en rojo de marca:
    `<meta name="theme-color" content="#c8102e" />`.
 
-   En escritorio (`min-width: 900px`) el logo no va en una tarjeta: se pega en el
-   hueco azul de la nube que dibuja `d2.webp`, centrado en el 50 % / 21,6 % de ese
-   lienzo. La caja mide el **43,2 % del ancho** del lienzo (283 x 141,5 px sobre
-   655 x 928), que es el 120 % del 36 % anterior: el interior azul liso de la nube
-   mide 397 x 179 px, asi que quedan ~20 px de aire arriba y abajo y la animacion
-   (`pana-logo-breathe`, sube 7 px y escala un 3 %) no toca el borde dorado. En
-   ventanas bajas (`max-height: 660px`) el lienzo se queda en ~340 px de ancho y el
-   logo baja al 39,6 % (120 % del 33 % anterior) con el centro en 21,8 %.
+   En escritorio (`min-width: 900px`) el logo no va en una tarjeta: flota sobre
+   la franja de Santa y el reno de `console-desktop.webp`, centrado en el
+   50 % / 12,8 % de ese lienzo, con el 58 % del ancho del recorte. La animacion
+   (`pana-logo-breathe`, sube 7 px y escala un 3 %) no llega a la fila de
+   caramelos ni al HUD (33,2 %). En ventanas bajas (`max-height: 660px`) el
+   lienzo se queda en ~340 px de ancho y el logo baja al 54 %.
 
 Pendiente de arte (ver la tabla de alcance): las carcasas moviles
 (`marco_movil.webp`, `consola_movil.webp`) y los simbolos del tablero. El arte de
-escritorio ya es el del tema: el marco (`d1.webp`) y la columna lateral entera
-(`d2.webp`, que funde la nube del logo, las placas y la consola en una pieza).
+escritorio ya es el navideño del tema: el taller de juguetes de fondo, el marco
+de caramelos (`slot-frame.webp`) y la columna lateral entera
+(`console-desktop.webp`, que funde a Santa y el reno, las tres placas y la
+consola en una pieza).
 Mientras el movil siga con el arte original, esa vista se lee como "interfaz de
 marca dentro del marco candy".
 

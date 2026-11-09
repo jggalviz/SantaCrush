@@ -8,9 +8,10 @@
  *   - `config/gameConfig.js`: nombre visible (`GAME.name`), rotulo del bonus
  *     (`FEATURE.label`) y rutas del arte (`ASSETS`). El motor conserva su
  *     `code` (`TROPICAL_GRID_6X5_95_10K`): rebrandear no cambia matematicas.
- *   - `public/assets/santa-crush/**`: el arbol de arte de la marca, versionado
- *     aunque hoy solo tenga marcadores (el arte anterior sigue sirviendose
- *     desde `public/src/assets/**` hasta que se reexporte).
+ *   - `public/assets/santa-crush/**`: el arbol de arte de la marca. La version
+ *     de escritorio ya sirve el arte navideño (fondo, marco de caramelos y
+ *     consola de mandos) y las piezas restantes siguen en
+ *     `public/src/assets/**` hasta que se reexporten.
  *   - `ui/services/SessionManager.js`: prefijo propio en `localStorage`, para
  *     que el navegador de otra maquina del equipo no arrastre su sesion.
  *
@@ -50,6 +51,8 @@ test('el arte de la marca se declara una sola vez en GAME_CONFIG.assets', () => 
     assets.bg.desktop,
     assets.bg.mobile,
     assets.console.mobileFrame,
+    assets.console.desktopFrame,
+    assets.console.desktopConsole,
     assets.tiles.dir,
     assets.audio.bgm,
     assets.audio.win,
@@ -70,7 +73,7 @@ test('el arte de la marca se declara una sola vez en GAME_CONFIG.assets', () => 
     'las piezas del tablero van numeradas y en orden'
   );
 
-  for (const entry of [...paths.slice(0, 3), files[0], assets.audio.bgm]) {
+  for (const entry of [...paths.slice(0, 5), files[0], assets.audio.bgm]) {
     assert.match(
       entry,
       /\.(webp|mp3)$/,
@@ -93,11 +96,25 @@ test('public/assets/santa-crush existe con las cuatro carpetas del tema', () => 
   }
 
   const { planCopy } = require('../scripts/build-dist.js');
-  const markers = planCopy()
+  const themeFiles = planCopy()
     .map((file) => file.relative)
-    .filter((relative) => relative.startsWith('assets/'));
+    .filter((relative) => relative.startsWith('assets/santa-crush/'));
 
-  assert.deepEqual(markers, [], 'dist/ no debe publicar los marcadores de carpeta vacia');
+  assert.deepEqual(
+    themeFiles.filter((relative) => relative.endsWith('.gitkeep')),
+    [],
+    'dist/ no debe publicar los marcadores de carpeta vacia'
+  );
+
+  // El arte del tema viaja con el paquete de integracion (se sirve desde el
+  // CDN con cache inmutable, ver `docs/ASSETS.md`).
+  for (const relative of [
+    'assets/santa-crush/bg/bg-desktop.webp',
+    'assets/santa-crush/console/slot-frame.webp',
+    'assets/santa-crush/console/console-desktop.webp'
+  ]) {
+    assert.ok(themeFiles.includes(relative), `planCopy debe publicar ${relative}`);
+  }
 });
 
 test('la sesion del cliente usa un prefijo propio de Santa Crush', () => {

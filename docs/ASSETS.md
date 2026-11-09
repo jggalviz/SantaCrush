@@ -11,7 +11,9 @@ public/assets/santa-crush/
 │   ├── bg-desktop.webp        fondo de escritorio (body, >= 900 px)
 │   └── bg-mobile.webp         fondo de móvil (<= 899 px)
 ├── console/
-│   └── mobile-frame.webp      marco de la consola móvil
+│   ├── mobile-frame.webp      marco de la consola móvil
+│   ├── slot-frame.webp        marco de caramelos del tablero (escritorio)
+│   └── console-desktop.webp   consola de mandos completa (escritorio)
 ├── tiles/
 │   ├── tile-1.webp            símbolos del tablero (orden = s1..s6 del motor)
 │   ├── …
@@ -24,21 +26,30 @@ public/assets/santa-crush/
 
 ## Estado
 
-Las carpetas existen y están versionadas (`.gitkeep`), pero **todavía no hay
-archivos**: el arte que se sirve hoy es el vigente de `public/src/assets/**`
-(`fondo_desk_meridino_crush.webp`, `avenida_fantastica_reino_caramelos.webp`,
-`consola_movil.webp`, `marco_movil.webp`, `MERIDIANOBET-CRUSH-LOGO.webp`,
-`slot/s1..s11.webp`, los MP3) y se mantiene hasta que llegue la versión Santa
-Crush, para no romper la portada.
+La **versión de escritorio ya sirve el arte navideño** de este árbol:
+`bg/bg-desktop.webp` (taller de juguetes, 1672 x 941), `console/slot-frame.webp`
+(marco de caramelos del tablero, 1305 x 1090) y `console/console-desktop.webp`
+(consola de mandos: Santa y el reno, tres placas del HUD, fila −/lectura/+/MAX y
+los dos pulsadores grandes, 1041 x 1497). Los genera
+`npm run build:theme-art` desde los maestros `design/bg_desktop_toy_workshop.png`,
+`design/frame_desktop_candy.png` y `design/console_desktop_buttons.png`; el CSS
+los pinta a sangre sobre cajas con su relación exacta y ancla las capas en % del
+recorte medido (ver el bloque *ESCRITORIO (≥900 px) · ARTE NAVIDEÑO DEL TEMA* de
+`public/src/css/style.css`).
+
+El resto de piezas siguen siendo las de `public/src/assets/**`
+(`avenida_fantastica_reino_caramelos.webp` para móvil, `consola_movil.webp`,
+`marco_movil.webp`, `MERIDIANOBET-CRUSH-LOGO.webp`, `slot/s1..s11.webp` y los
+MP3) hasta que se reexporten a este árbol.
 
 ## Cómo cambiar el arte
 
 1. Dejar los maestros (PNG/JPG grandes) en `design/`, **nunca** en `public/`:
    todo lo que entra en `public/**` se publica en el CDN.
 2. Optimizar con los scripts de arte (`npm run build:bg`, `build:logo`,
-   `build:symbols`, `build:seals`, `build:win`, `build:art`, `build:desktop-art`)
-   y escribir el WebP final en la carpeta correspondiente de este árbol,
-   respetando el nombre exacto que declara `ASSETS`.
+   `build:symbols`, `build:seals`, `build:win`, `build:art`, `build:desktop-art`,
+   `build:theme-art`) y escribir el WebP final en la carpeta correspondiente de
+   este árbol, respetando el nombre exacto que declara `ASSETS`.
 3. Apuntar los consumidores a `GAME_CONFIG.assets`:
    - `ui/lib/format.js` (imágenes del tablero y símbolos especiales),
    - `ui/audio/sfx.js` (bucle y efectos),

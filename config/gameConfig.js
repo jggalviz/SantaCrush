@@ -90,7 +90,13 @@ const ASSETS = Object.freeze({
     mobile: `${ASSET_BASE_PATH}bg/bg-mobile.webp`
   }),
   console: Object.freeze({
-    mobileFrame: `${ASSET_BASE_PATH}console/mobile-frame.webp`
+    mobileFrame: `${ASSET_BASE_PATH}console/mobile-frame.webp`,
+    /* Escritorio: marco de caramelos de la ventana del tablero y consola de
+       mandos completa (hero + tres placas + fila -/lectura/+/MAX + los dos
+       pulsadores grandes). Los genera `npm run build:theme-art` desde los
+       maestros de `design/`. */
+    desktopFrame: `${ASSET_BASE_PATH}console/slot-frame.webp`,
+    desktopConsole: `${ASSET_BASE_PATH}console/console-desktop.webp`
   }),
   tiles: Object.freeze({
     dir: `${ASSET_BASE_PATH}tiles/`,

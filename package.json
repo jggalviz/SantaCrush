@@ -19,6 +19,7 @@
     "build:dist": "node scripts/build-dist.js",
     "build:art": "node scripts/build-mobile-art.js",
     "build:desktop-art": "node scripts/build-desktop-art.js",
+    "build:theme-art": "node scripts/build-santa-crush-art.js",
     "build:bg": "node scripts/build-backgrounds.js",
     "build:logo": "node scripts/build-logo-asset.js",
     "build:symbols": "node scripts/build-symbol-assets.js",
