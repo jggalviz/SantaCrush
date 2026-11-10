@@ -37,6 +37,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const sharp = require('sharp');
+const { paintGirarPlate } = require('./lib/girarPlate');
 
 const ROOT = path.join(__dirname, '..');
 const ASSETS_DIR = path.join(ROOT, 'public', 'src', 'assets');
@@ -59,10 +60,15 @@ const PIECES = [
   // La columna lateral entera (655 x 928 de alfa sobre un maestro de 657 x 942)
   // se publica sin reescalar: en 1920 px el panel se pinta a ~670 px de ancho y
   // el arte va sobrado para DPR 2.
+  // `paint` completa el arte antes de recortar: el maestro deja la franja del
+  // GIRAR en el verde de la tarjeta y `scripts/lib/girarPlate.js` dibuja ahi la
+  // placa roja (aro dorado, bisel y sombra) con el mismo lenguaje que los otros
+  // cinco controles. Se aplica sobre la copia, nunca sobre `design/d2.png`.
   {
     name: 'd2',
     label: 'columna lateral (hero + consola)',
     canvas: { width: 655, height: 928 },
+    paint: paintGirarPlate,
     quality: 90,
     maxBytes: 560 * 1024
   }
@@ -92,16 +98,20 @@ function alphaBox(data, width, height, channels, threshold = 8) {
 const kb = (n) => `${(n / 1024).toFixed(1)} kB`;
 const pct = (n, d) => `${((n / d) * 100).toFixed(2)}%`;
 
-async function build({ name, label, canvas, quality, maxBytes }) {
+async function build({ name, label, canvas, quality, maxBytes, paint }) {
   const source = path.join(ROOT, 'design', `${name}.png`);
   const target = path.join(ASSETS_DIR, `${name}.webp`);
   if (!fs.existsSync(source)) {
     throw new Error(`Falta el arte de origen: ${path.relative(ROOT, source)}`);
   }
 
-  const base = sharp(source).ensureAlpha();
-  const meta = await base.metadata();
-  const { data, info } = await base.raw().toBuffer({ resolveWithObject: true });
+  // El maestro llega en PNG sin perdida; si la pieza declara `paint`, la capa
+  // generada se compone aqui y el resto del proceso trabaja sobre esa copia.
+  const raw = await sharp(source).ensureAlpha().png().toBuffer();
+  const art = paint ? await paint(raw) : raw;
+
+  const meta = await sharp(raw).metadata();
+  const { data, info } = await sharp(art).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const box = alphaBox(data, info.width, info.height, info.channels);
 
   const canvasRatio = canvas.width / canvas.height;
@@ -118,7 +128,7 @@ async function build({ name, label, canvas, quality, maxBytes }) {
     );
   }
 
-  const trimmed = await sharp(source)
+  const trimmed = await sharp(art)
     .ensureAlpha()
     .extract({ left: box.left, top: box.top, width: box.width, height: box.height })
     .resize(canvas.width, canvas.height, { fit: 'fill' })

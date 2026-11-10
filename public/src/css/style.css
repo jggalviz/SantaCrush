@@ -7160,6 +7160,9 @@ body.is-demo .machine__side .controls .balance::after {
     text-shadow: 0 2px 0 rgba(6, 40, 96, 0.55);
   }
 
+  /* La placa roja del GIRAR pide tinta calida: el contorno vino y el brillo
+     ambar sustituyen al rosa del caramelo antiguo, que sobre rojo se leia como
+     un halo lila. El glifo y el aro de giro siguen en blanco, como el `+`. */
   .machine__side .controls .btn--spin .btn__spin-label {
     font-size: clamp(16px, calc(var(--cons-scale) * 0.100), 40px);
     font-weight: 900;
@@ -7168,16 +7171,22 @@ body.is-demo .machine__side .controls .balance::after {
     color: #fff;
     -webkit-text-fill-color: #fff;
     background-image: none;
-    -webkit-text-stroke: 1.5px rgba(170, 10, 110, 0.55);
+    -webkit-text-stroke: 1.8px rgba(96, 0, 10, 0.62);
     paint-order: stroke fill;
-    text-shadow: 0 3px 0 rgba(140, 0, 90, 0.55), 0 0 16px rgba(255, 210, 250, 0.5);
+    text-shadow: 0 3px 0 rgba(96, 0, 12, 0.6), 0 0 16px rgba(255, 190, 170, 0.45);
   }
 
   .machine__side .controls .btn--spin .btn__spin-icon svg {
     width: clamp(18px, calc(var(--cons-scale) * 0.090), 40px);
     height: clamp(18px, calc(var(--cons-scale) * 0.090), 40px);
     stroke-width: 3.4;
-    filter: drop-shadow(0 2px 0 rgba(140, 0, 90, 0.45));
+    filter: drop-shadow(0 2px 0 rgba(96, 0, 12, 0.5));
+  }
+
+  /* Los destellos del DOM tambien se visten de la placa: blanco calido. */
+  .machine__side .controls .btn--spin .spin-spark {
+    color: #fff8f0;
+    text-shadow: 0 0 8px #fff, 0 0 16px rgba(255, 196, 150, 0.85);
   }
 
   /* La placa dorada del MAX lleva su rotulo en tinta tostada. */

@@ -1725,6 +1725,69 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   );
 });
 
+test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', async () => {
+  // El maestro de escritorio deja la franja del GIRAR en el verde de la tarjeta:
+  // la placa es una capa generada (`scripts/lib/girarPlate.js`) que
+  // `build:desktop-art` compone antes de recortar, asi que el WebP publicado
+  // siempre la lleva y `design/d2.png` se queda intacto.
+  const libPath = path.join(ROOT_DIR, 'scripts', 'lib', 'girarPlate.js');
+  assert.ok(fs.existsSync(libPath), 'Falta scripts/lib/girarPlate.js');
+  const lib = read(libPath);
+  assert.match(
+    lib,
+    /const BOX = \{ left: 60, top: 611, width: 529, height: 156 \};/,
+    'La placa vive en la caja del pulsador sobre el lienzo de d2 (655 x 928)'
+  );
+  assert.match(
+    lib,
+    /module\.exports = \{ paintGirarPlate, GIRAR_BOX: BOX \};/,
+    'El modulo publica el pintado y la caja medida'
+  );
+
+  const pipeline = read(path.join(ROOT_DIR, 'scripts', 'build-desktop-art.js'));
+  assert.match(pipeline, /require\('\.\/lib\/girarPlate'\)/, 'El build de escritorio importa la placa');
+  const d2 = pipeline.slice(pipeline.indexOf("name: 'd2'"));
+  assert.match(
+    d2.slice(0, 420),
+    /paint: paintGirarPlate,/,
+    'd2 se completa con la placa antes de recortar y codificar'
+  );
+
+  // Los px de la caja son exactamente los porcentajes que ancla el CSS.
+  const css = read(STYLE_PATH);
+  const spinBodies = [...css.matchAll(/\.machine__side \.controls \.btn--spin[^{]*\{([^}]*)\}/g)].map(
+    (match) => match[1]
+  );
+  assert.ok(spinBodies.length, 'La capsula GIRAR debe declarar su caja');
+  const anchors = [
+    ['left', 60, 655],
+    ['top', 611, 928],
+    ['width', 529, 655],
+    ['height', 156, 928]
+  ];
+  for (const [property, pixels, total] of anchors) {
+    const declaration = `${property}: ${((pixels / total) * 100).toFixed(2)}%;`;
+    assert.ok(
+      spinBodies.some((body) => body.includes(declaration)),
+      `La placa y el CSS comparten ${declaration}`
+    );
+  }
+
+  // Y el WebP que se sirve lleva la cara roja en el centro de la placa: si
+  // alguien publica el maestro sin la capa, el pulsador vuelve a ser un hueco.
+  const asset = path.join(PUBLIC_DIR, 'src', 'assets', 'd2.webp');
+  const { data, info } = await sharp(asset).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const sample = (x, y) => {
+    const index = (y * info.width + x) * info.channels;
+    return [data[index], data[index + 1], data[index + 2]];
+  };
+  const [r, g, b] = sample(150, 720);
+  assert.ok(
+    r > 150 && g < 80 && b < 80,
+    `La cara del GIRAR debe ser roja en (150, 720): rgb(${r}, ${g}, ${b})`
+  );
+});
+
 test('el pulsador se hunde en 80 ms al tocarlo y vuelve con la misma curva', () => {
   const css = read(STYLE_PATH);
 
