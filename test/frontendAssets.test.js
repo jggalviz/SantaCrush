@@ -27,19 +27,31 @@ const LOGO_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'MERIDIANOBET-CRUSH-LOG
 const LOGO_MASTER_PATH = path.join(ROOT_DIR, 'design', 'MeridianoBet Sports Crush Logo.png');
 const WIN_ART_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_deportiva.webp');
 const WIN_MASTER_PATH = path.join(ROOT_DIR, 'design', 'victoria_deportiva.png');
-const WIN_SOUND_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'AUDIO-WIN-NEW-stadium-applause.MP3');
+const WIN_SOUND_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'AUDIO-WIN-santa-crush.mp3');
+const SPIN_SOUND_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'AUDIO-SPIN-santa-crush.mp3');
 const MUSIC_SOUND_PATH = path.join(
+  PUBLIC_DIR,
+  'src',
+  'assets',
+  'Santa_Crush_Holiday_Loop_19s_256k.mp3'
+);
+const RETIRED_WIN_SOUND_PATH = path.join(
+  PUBLIC_DIR,
+  'src',
+  'assets',
+  'AUDIO-WIN-NEW-stadium-applause.MP3'
+);
+const RETIRED_MUSIC_SOUND_PATH = path.join(
   PUBLIC_DIR,
   'src',
   'assets',
   'Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3'
 );
-const RETIRED_WIN_SOUND_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'AUDIO-WIN-2.MP3');
 const UNVERSIONED_MUSIC_PATH = path.join(
   PUBLIC_DIR,
   'src',
   'assets',
-  'Sport_Crush_Energy_Gaming_Loop_20s.mp3'
+  'Santa_Crush_Holiday_Loop.mp3'
 );
 const SFX_PATH = path.join(PUBLIC_DIR, 'ui', 'audio', 'sfx.js');
 const PUBLIC_SRC_DIR = path.join(PUBLIC_DIR, 'src');
@@ -808,89 +820,125 @@ test('la victoria llueve los simbolos del tablero en lugar de caramelos', () => 
   );
 });
 
-test('la victoria usa los aplausos nuevos y el fondo suena en bucle mas suave', () => {
-  // El archivo se normaliza a `.MP3` exacto: el doble sufijo `.MP3.mpeg` hacia
-  // que la ruta del cliente y el MIME del CDN dependieran del servidor. Los
-  // aplausos de estadio sustituyen al MP3 anterior (`AUDIO-WIN-2.MP3`).
+test('la victoria, el giro y el fondo usan los MP3 del tema', () => {
+  // Los tres MP3 son los entregados por el disenador y se sirven sin reencodear.
+  // `src/assets/**` se cachea un ano con `immutable`, de ahi que el bucle lleve
+  // su duracion y bitrate en el nombre y que los audios anteriores (aplausos de
+  // estadio y bucle Sport Crush) no puedan volver a `public/`.
   assert.ok(
     fs.existsSync(WIN_SOUND_PATH),
-    'Falta public/src/assets/AUDIO-WIN-NEW-stadium-applause.MP3'
+    'Falta public/src/assets/AUDIO-WIN-santa-crush.mp3'
   );
   assert.ok(
-    !fs.existsSync(
-      path.join(PUBLIC_DIR, 'src', 'assets', 'AUDIO-WIN-NEW-stadium-applause.MP3.mpeg')
-    ),
-    'El asset antiguo con doble extension no debe seguir en public/'
+    fs.existsSync(SPIN_SOUND_PATH),
+    'Falta public/src/assets/AUDIO-SPIN-santa-crush.mp3'
   );
-  assert.ok(!fs.existsSync(RETIRED_WIN_SOUND_PATH), 'AUDIO-WIN-2.MP3 ya no debe servirse');
   assert.ok(
     fs.existsSync(MUSIC_SOUND_PATH),
-    'Falta public/src/assets/Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3'
+    'Falta public/src/assets/Santa_Crush_Holiday_Loop_19s_256k.mp3'
+  );
+  assert.ok(
+    !fs.existsSync(RETIRED_WIN_SOUND_PATH),
+    'Los aplausos de estadio ya no deben servirse'
+  );
+  assert.ok(
+    !fs.existsSync(RETIRED_MUSIC_SOUND_PATH),
+    'El bucle Sport Crush ya no debe servirse'
   );
   assert.ok(
     !fs.existsSync(UNVERSIONED_MUSIC_PATH),
     'El bucle sin version en el nombre no debe volver: la cache de src/assets es immutable un ano'
   );
 
+  /* Victoria: ~2 s VBR y 28 KB; es el sonido que mas se repite por ronda. */
   const binary = fs.readFileSync(WIN_SOUND_PATH);
   const hasId3 = binary.toString('ascii', 0, 3) === 'ID3';
   const hasMpegFrame = binary[0] === 0xff && (binary[1] & 0xe0) === 0xe0;
-  assert.ok(hasId3 || hasMpegFrame, 'AUDIO-WIN-NEW-stadium-applause.MP3 debe ser un MP3 valido');
-  assert.ok(binary.length > 0 && binary.length < 200 * 1024, 'El MP3 de victoria debe ser ligero');
+  assert.ok(hasId3 || hasMpegFrame, 'AUDIO-WIN-santa-crush.mp3 debe ser un MP3 valido');
+  assert.ok(binary.length > 0 && binary.length < 60 * 1024, 'El MP3 de victoria debe ser ligero');
 
-  /* Los aplausos ya venian a 128 kbps: no se reencodean para no sumar una
-     generacion de perdida al sonido que mas se oye. */
   const winFrames = readMp3Frames(binary);
+  assert.equal(winFrames.sampleRate, 44100, 'La victoria debe ir a 44,1 kHz');
+  assert.ok(
+    winFrames.seconds > 1.8 && winFrames.seconds < 2.3,
+    `La victoria debe durar ~2 s (mide ${winFrames.seconds.toFixed(2)} s)`
+  );
   assert.ok(
     winFrames.avgKbps >= 96 && winFrames.avgKbps <= 160,
-    `Los aplausos deben rondar los 128 kbps (miden ${winFrames.avgKbps} kbps)`
+    `La victoria ronda los 114 kbps VBR (mide ${winFrames.avgKbps} kbps)`
   );
 
+  /* Giro: el efecto del boton GIRAR, 2,4 s a 256 kbps (76 KB). */
+  const spin = fs.readFileSync(SPIN_SOUND_PATH);
+  const spinHasId3 = spin.toString('ascii', 0, 3) === 'ID3';
+  const spinHasMpegFrame = spin[0] === 0xff && (spin[1] & 0xe0) === 0xe0;
+  assert.ok(spinHasId3 || spinHasMpegFrame, 'AUDIO-SPIN-santa-crush.mp3 debe ser un MP3 valido');
+  assert.ok(
+    spin.length > 0 && spin.length < 100 * 1024,
+    'El efecto del boton GIRAR debe pesar menos de 100 KB'
+  );
+
+  const spinFrames = readMp3Frames(spin);
+  assert.equal(spinFrames.sampleRate, 44100, 'El giro debe ir a 44,1 kHz');
+  assert.equal(spinFrames.channels, 2, 'El giro debe ir en estereo');
+  assert.ok(
+    spinFrames.seconds > 2.1 && spinFrames.seconds < 2.8,
+    `El giro debe durar ~2,4 s (mide ${spinFrames.seconds.toFixed(2)} s)`
+  );
+  assert.ok(
+    spinFrames.avgKbps >= 224 && spinFrames.avgKbps <= 320,
+    `El giro se sirve a 256 kbps (mide ${spinFrames.avgKbps} kbps)`
+  );
+
+  /* Fondo: el bucle de 19,25 s, 44,1 kHz estereo y 256 kbps CBR tal como se
+     entrego (602 KB). Cabe en el presupuesto de `test/assetBudget.test.js`; si
+     algun dia se reencodea con `ffmpeg -q:a 4`, el nombre debe cambiar a la vez
+     (ver README-DEPLOY.md, "El audio va comprimido y con el nombre versionado"). */
   const music = fs.readFileSync(MUSIC_SOUND_PATH);
   const musicHasId3 = music.toString('ascii', 0, 3) === 'ID3';
   const musicHasMpegFrame = music[0] === 0xff && (music[1] & 0xe0) === 0xe0;
   assert.ok(musicHasId3 || musicHasMpegFrame, 'El bucle ambiental debe ser un MP3 valido');
   assert.ok(
-    music.length > 0 && music.length < 460 * 1024,
-    'El bucle ambiental de 20 s debe pesar menos de 460 KB'
+    music.length > 0 && music.length < 640 * 1024,
+    'El bucle ambiental de 19 s debe pesar menos de 640 KB'
   );
 
-  /* El bucle se reencoderiza desde el maestro de 256 kbps a LAME VBR `-q:a 4`:
-     conserva duracion, frecuencia y canales, y baja un 36 % de peso. */
   const musicFrames = readMp3Frames(music);
-  assert.equal(musicFrames.sampleRate, 44100, 'El bucle debe seguir a 44,1 kHz');
-  assert.equal(musicFrames.channels, 2, 'El bucle debe seguir en estereo');
+  assert.equal(musicFrames.sampleRate, 44100, 'El bucle debe ir a 44,1 kHz');
+  assert.equal(musicFrames.channels, 2, 'El bucle debe ir en estereo');
   assert.ok(
-    musicFrames.seconds > 19.9 && musicFrames.seconds < 20.3,
-    `El bucle debe durar ~20 s (mide ${musicFrames.seconds.toFixed(2)} s)`
+    musicFrames.seconds > 19 && musicFrames.seconds < 19.6,
+    `El bucle debe durar ~19,25 s (mide ${musicFrames.seconds.toFixed(2)} s)`
   );
   assert.ok(
-    musicFrames.avgKbps >= 128 && musicFrames.avgKbps <= 192,
-    `El bucle debe rondar los 160 kbps (mide ${musicFrames.avgKbps} kbps)`
+    musicFrames.avgKbps >= 240 && musicFrames.avgKbps <= 270,
+    `El bucle se sirve a 256 kbps (mide ${musicFrames.avgKbps} kbps)`
   );
-  assert.ok(musicFrames.vbr, 'El bucle se sirve en VBR para gastar menos sin perder calidad');
+  assert.equal(musicFrames.vbr, false, 'El bucle llega en CBR 256 kbps: el nombre lo declara');
 
   const sfx = read(SFX_PATH);
   assert.match(
     sfx,
-    /export const WIN_SOUND_SRC = '\/src\/assets\/AUDIO-WIN-NEW-stadium-applause\.MP3';/,
-    'sfx.js debe apuntar a la ruta publica de los aplausos nuevos'
+    /export const WIN_SOUND_SRC = '\/src\/assets\/AUDIO-WIN-santa-crush\.mp3';/,
+    'sfx.js debe apuntar a la ruta publica de la victoria'
   );
   assert.match(
     sfx,
-    /export const MUSIC_SOUND_SRC = '\/src\/assets\/Sport_Crush_Energy_Gaming_Loop_20s_160k\.mp3';/,
-    'sfx.js debe apuntar a la ruta publica del bucle ambiental comprimido'
+    /export const SPIN_SOUND_SRC = '\/src\/assets\/AUDIO-SPIN-santa-crush\.mp3';/,
+    'sfx.js debe apuntar a la ruta publica del efecto del boton GIRAR'
   );
   assert.match(
     sfx,
-    /void preloadSound\(WIN_SOUND_SRC\);/,
-    'Los aplausos deben precargarse al crear el reproductor'
+    /export const MUSIC_SOUND_SRC = '\/src\/assets\/Santa_Crush_Holiday_Loop_19s_256k\.mp3';/,
+    'sfx.js debe apuntar a la ruta publica del bucle de fondo'
   );
-  assert.match(
-    sfx,
-    /void preloadSound\(MUSIC_SOUND_SRC\);/,
-    'El bucle ambiental tambien debe precargarse'
-  );
+  for (const source of ['WIN_SOUND_SRC', 'SPIN_SOUND_SRC', 'MUSIC_SOUND_SRC']) {
+    assert.match(
+      sfx,
+      new RegExp(`void preloadSound\\(${source}\\);`),
+      `${source} debe precargarse al crear el reproductor`
+    );
+  }
   assert.match(
     sfx,
     /fetch\(src, \{\s*cache: 'force-cache',\s*credentials: 'same-origin'\s*\}\)/,
@@ -901,8 +949,18 @@ test('la victoria usa los aplausos nuevos y el fondo suena en bucle mas suave', 
   assert.match(sfx, /createGain\(\)/, 'El reproductor debe controlar el volumen con un GainNode');
   assert.match(
     sfx,
-    /gain\.gain\.setValueAtTime\(WIN_SOUND_VOLUME, ctx\.currentTime\)/,
-    'El volumen de los aplausos debe fijarse antes de reproducir'
+    /playSound\(WIN_SOUND_SRC, \{\s*volume: WIN_SOUND_VOLUME,\s*maxVoices: MAX_WIN_VOICES\s*\}\)/,
+    'La victoria debe reproducir su MP3 con su propio volumen y su techo de voces'
+  );
+  assert.match(
+    sfx,
+    /playSound\(SPIN_SOUND_SRC, \{\s*volume: SPIN_SOUND_VOLUME,\s*maxVoices: MAX_SPIN_VOICES\s*\}\)/,
+    'El boton GIRAR debe reproducir su MP3 con una sola voz'
+  );
+  assert.match(
+    sfx,
+    /gain\.gain\.setValueAtTime\(volume, ctx\.currentTime\)/,
+    'El volumen de cada MP3 debe fijarse antes de reproducir'
   );
   assert.match(sfx, /source\.loop = true;/, 'La musica ambiental debe reproducirse en bucle');
   assert.match(
@@ -924,7 +982,7 @@ test('la victoria usa los aplausos nuevos y el fondo suena en bucle mas suave', 
   );
   assert.match(
     sfx,
-    /autostart\(\)\s*{[\s\S]{0,200}void ensureMusic\(ctx\);/,
+    /autostart\(\)\s*{[\s\S]{0,320}void ensureMusic\(ctx\);/,
     'autostart debe intentar arrancar la musica de inmediato'
   );
 
@@ -935,12 +993,14 @@ test('la victoria usa los aplausos nuevos y el fondo suena en bucle mas suave', 
     'main.js debe arrancar la musica por defecto al iniciar el juego'
   );
 
-  // Mezcla equilibrada: el fondo tiene que quedar por debajo de la victoria.
+  // Mezcla equilibrada: el fondo por debajo del giro y el giro por debajo de la
+  // victoria, que es el remate de la ronda.
   const winVolume = Number(sfx.match(/const WIN_SOUND_VOLUME = ([\d.]+);/)[1]);
+  const spinVolume = Number(sfx.match(/const SPIN_SOUND_VOLUME = ([\d.]+);/)[1]);
   const musicVolume = Number(sfx.match(/const MUSIC_VOLUME = ([\d.]+);/)[1]);
   assert.ok(
-    musicVolume < winVolume,
-    `La musica (${musicVolume}) debe quedar por debajo de los aplausos (${winVolume})`
+    musicVolume < spinVolume && spinVolume < winVolume,
+    `La mezcla debe ser fondo (${musicVolume}) < giro (${spinVolume}) < victoria (${winVolume})`
   );
 
   assert.doesNotMatch(sfx, /arpeggio/, 'La victoria ya no debe usar el arpegio sintetizado anterior');
@@ -953,8 +1013,18 @@ test('la victoria usa los aplausos nuevos y el fondo suena en bucle mas suave', 
   );
   assert.match(
     sfx,
-    /while \(activeWinSources\.size >= MAX_WIN_VOICES\)/,
+    /while \(voices\.size >= maxVoices\)/,
     'Las cascadas con premio deben poder solapar voces de victoria'
+  );
+  assert.match(
+    animator,
+    /this\.sfx\.spin\(\);/,
+    'RoundAnimator debe seguir disparando el efecto del boton GIRAR'
+  );
+  assert.doesNotMatch(
+    sfx,
+    /spin\(\)\s*\{\s*tone\(/,
+    'El giro ya no se sintetiza: suena el MP3 del boton GIRAR'
   );
 });
 

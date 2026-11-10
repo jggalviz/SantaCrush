@@ -75,24 +75,24 @@ Medición real de `public/` en este repositorio:
 
 | Tipo | Archivos | Tamaño | Notas |
 | --- | ---: | ---: | --- |
-| WebP de arte (fondos, marco, consola, logo, victoria) | 8 | 2,12 MB | Se cachean un año (`immutable`); `fondo_desk` y `victoria` son las piezas grandes |
-| WebP de símbolos (`src/assets/slot`) | 11 | 0,33 MB | 335×341 px con alfa sin pérdida, generados con `npm run build:symbols` |
+| WebP de arte (fondos, marcos, consolas, logo, victoria) | 14 | 3,94 MB | Se cachean un año (`immutable`); los fondos y las corazas de `assets/santa-crush/**` son las piezas grandes |
+| WebP de símbolos (`src/assets/slot`) | 11 | 0,49 MB | 335×341 px con alfa sin pérdida, generados con `npm run build:symbols` |
 | WOFF2 (tipografías) | 4 | 0,04 MB | Fredoka y Lilita One, precargadas desde `index.html` |
-| MP3 (victoria + bucle ambiental) | 2 | 0,43 MB | `AUDIO-WIN-NEW-stadium-applause.MP3` (aplausos de victoria, 128 kbps, ~40 KB) y `Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3` (música de fondo en bucle, LAME VBR `-q:a 4` ~164 kbps, ~401 KB) |
-| JS de la UI (`public/ui/**`) | 16 | 0,18 MB | Espejo ESM de `ui/` (sin minificar: se sirve con gzip/brotli del CDN) |
+| MP3 (victoria + giro + bucle) | 3 | 0,69 MB | `AUDIO-WIN-santa-crush.mp3` (victoria, 2 s, ~28 KB), `AUDIO-SPIN-santa-crush.mp3` (botón GIRAR, 2,4 s a 256 kbps, ~76 KB) y `Santa_Crush_Holiday_Loop_19s_256k.mp3` (fondo en bucle, 19,25 s a 256 kbps CBR, ~602 KB) |
+| JS de la UI (`public/ui/**`) | 16 | 0,19 MB | Espejo ESM de `ui/` (sin minificar: se sirve con gzip/brotli del CDN) |
 | CSS minificado | 2 | 0,16 MB | `style.min.css` + `theme.min.css`; las fuentes legibles (0,32 MB) siguen en el repo, pero el HTML no las enlaza |
-| HTML | 3 | 0,05 MB | `index.html` y las dos previews internas |
-| **Total publicado** | **44** | **3,28 MB** | Un móvil descarga ≈ 1,85 MB en la primera pantalla (arte); los 0,43 MB de audio entran al arrancar o con el primer gesto |
+| HTML | 1 | 0,02 MB | `index.html` (las previews internas no viajan en `dist/`) |
+| **Total publicado** | **51** | **5,52 MB** | El audio (0,69 MB) entra al arrancar o con el primer gesto, fuera del primer pintado; quedan ~80 KB de margen sobre el tope de 5,6 MB |
 
 Características que condicionan el despliegue:
 
 - **Los nombres de archivo no incluyen hash de contenido** (por ejemplo `style.min.css`, `main.js`, `MERIDIANOBET-CRUSH-LOGO.webp`). Por eso JS y CSS se sirven con `Cache-Control: no-cache` y revalidan en cada visita; solo `src/assets/**` (arte, tipografía y audio) va con caché de un año e `immutable`.
-- **El audio va comprimido y con el nombre versionado.** El bucle ambiental se sirve en MP3 LAME VBR `-q:a 4` (~164 kbps, 44,1 kHz estéreo: 401 KB frente a los 627 KB del maestro a 256 kbps) y los aplausos se quedan a 128 kbps, que era su calidad original. Como `src/assets/**` se cachea un año con `immutable`, **cambiar el contenido de un MP3 exige cambiar el nombre** (de ahí el sufijo `_160k`): con el mismo nombre, los navegadores que ya lo descargaron no lo volverían a pedir. Receta usada (no hay máster sin pérdida en el repo, así que no se reencodea dos veces):
+- **El audio es el entregado por el diseñador y va con el nombre versionado.** Los tres MP3 se sirven tal cual: victoria de 2 s (28 KB), efecto del botón GIRAR de 2,4 s a 256 kbps (76 KB) y bucle de fondo de 19,25 s a 256 kbps CBR (602 KB). Como `src/assets/**` se cachea un año con `immutable`, **cambiar el contenido de un MP3 exige cambiar el nombre** (de ahí el sufijo `_19s_256k` del bucle) y la ruta de `ui/audio/sfx.js`: con el mismo nombre, los navegadores que ya lo descargaron no lo volverían a pedir. Si el paquete necesita aire (queda en 5,52 MB sobre un tope de 5,6 MB), esta receta deja el bucle en ~380 KB sin cambiar duración, frecuencia ni canales, y **obliga a renombrarlo** a `_19s_160k`:
 
   ```bash
-  ffmpeg -i Sport_Crush_Energy_Gaming_Loop_20s.mp3 -map_metadata -1 \
+  ffmpeg -i Santa_Crush_Holiday_Loop_19s_256k.mp3 -map_metadata -1 \
          -c:a libmp3lame -q:a 4 -ar 44100 -ac 2 \
-         public/src/assets/Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3
+         public/src/assets/Santa_Crush_Holiday_Loop_19s_160k.mp3
   ```
 - **El CSS se minifica** en `npm start`/`npm run dev`/`vercel-build` (`npm run build:css`): `style.css` y `theme.css` son las fuentes que se editan a mano y `*.min.css` lo que enlaza `index.html`. El JS de la UI se sirve tal cual (ESM legible, 0,16 MB) y se comprime en el transporte; no hay fingerprinting: para caché inmutable de JS/CSS haría falta hashear los nombres (ver §4.7).
 - **No hay rutas de cliente**: toda la aplicación vive en `/`. El "fallback a `index.html`" es una red de seguridad para rutas desconocidas, no un requisito de navegación interna.
@@ -918,7 +918,7 @@ Asóciala en la consola: *Distribution → Behaviors → Default (*) → Edit �
 | `/ui/**` | `text/javascript; charset=utf-8` | `public, max-age=0, must-revalidate` | `pana-crush-revalidate` | **Sin hash** en el nombre: cachear 1 año dejaría JS viejo tras un deploy |
 | `/src/css/**` | `text/css; charset=utf-8` | `public, max-age=0, must-revalidate` | `pana-crush-revalidate` | Igual que JS |
 | `/src/assets/**/*.webp` | `image/webp` | `public, max-age=31536000, immutable` | `pana-crush-assets-immutable` | Arte estable (incluye `slot/s1..s11.webp`); se renombra o invalida si cambia |
-| `/src/assets/**/*.mp3` | `audio/mpeg` | `public, max-age=31536000, immutable` | `pana-crush-assets-immutable` | Aplausos de victoria y bucle ambiental versionados |
+| `/src/assets/**/*.mp3` | `audio/mpeg` | `public, max-age=31536000, immutable` | `pana-crush-assets-immutable` | Victoria, giro y bucle de fondo, con el nombre versionado |
 | `/src/assets/fonts/*.woff2` | `font/woff2` | `public, max-age=31536000, immutable` | `pana-crush-assets-immutable` | Tipografías versionadas |
 | `/api/*` | `application/json` | Definido por Express | **CachingDisabled** | Saldos y rondas nunca se cachean |
 

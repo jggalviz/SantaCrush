@@ -50,42 +50,25 @@ test('en local (staticDir = public/) tambien se sirven los estaticos', async () 
     assert.equal(asset.status, 200);
     assert.match(asset.headers.get('content-type') || '', /javascript/);
 
-    const sound = await request('GET', '/src/assets/AUDIO-WIN-NEW-stadium-applause.MP3');
-    assert.equal(sound.status, 200, 'Los aplausos de victoria deben servirse en local');
-    assert.match(
-      sound.headers.get('content-type') || '',
-      /^audio\/mpeg/,
-      'Express debe servir los aplausos con su MIME de audio'
-    );
-    assert.equal(
-      Number(sound.headers.get('content-length')),
-      fs.statSync(
-        path.join(__dirname, '..', 'public', 'src', 'assets', 'AUDIO-WIN-NEW-stadium-applause.MP3')
-      ).size,
-      'El tamano servido debe coincidir con el asset de victoria'
-    );
-
-    const music = await request('GET', '/src/assets/Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3');
-    assert.equal(music.status, 200, 'El bucle ambiental debe servirse en local');
-    assert.match(
-      music.headers.get('content-type') || '',
-      /^audio\/mpeg/,
-      'El bucle ambiental debe servirse con su MIME de audio'
-    );
-    assert.equal(
-      Number(music.headers.get('content-length')),
-      fs.statSync(
-        path.join(
-          __dirname,
-          '..',
-          'public',
-          'src',
-          'assets',
-          'Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3'
-        )
-      ).size,
-      'El tamano servido debe coincidir con el bucle ambiental'
-    );
+    /* Los tres MP3 del tema se sirven con su MIME y su tamano exacto. */
+    for (const file of [
+      'AUDIO-WIN-santa-crush.mp3',
+      'AUDIO-SPIN-santa-crush.mp3',
+      'Santa_Crush_Holiday_Loop_19s_256k.mp3'
+    ]) {
+      const sound = await request('GET', `/src/assets/${file}`);
+      assert.equal(sound.status, 200, `${file} debe servirse en local`);
+      assert.match(
+        sound.headers.get('content-type') || '',
+        /^audio\/mpeg/,
+        `${file} debe servirse con su MIME de audio`
+      );
+      assert.equal(
+        Number(sound.headers.get('content-length')),
+        fs.statSync(path.join(__dirname, '..', 'public', 'src', 'assets', file)).size,
+        `El tamano servido debe coincidir con ${file}`
+      );
+    }
   } finally {
     await server.close();
   }

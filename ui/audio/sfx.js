@@ -1,15 +1,20 @@
 /**
  * Efectos de sonido y musica del cliente.
  *
- * Los efectos cortos se sintetizan con WebAudio. La victoria usa los aplausos
- * `AUDIO-WIN-NEW-stadium-applause.MP3` (MP3 128 kbps, ~40 KB) y la musica
- * ambiental el bucle `Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3` (LAME VBR
- * `-q:a 4`, ~164 kbps y ~401 KB frente a los ~627 KB del maestro a 256 kbps;
- * mismo 44,1 kHz estereo y misma ganancia). Ambos se precargan con `fetch`, se
- * decodifican en el AudioContext desbloqueado por el primer gesto del jugador y
- * se reproducen con un `GainNode` que fija el volumen. Las victorias encadenadas
- * usan voces simultaneas (con un techo) para que ninguna cascada quede muda y el
- * bucle ambiental suena por debajo de los aplausos.
+ * Los efectos de interfaz (clic, caida, racimo, bomba, error) se sintetizan con
+ * WebAudio; los tres sonidos del tema son MP3 entregados por el disenador y se
+ * sirven tal cual, sin reencodear:
+ *
+ *   - `AUDIO-WIN-santa-crush.mp3`   victoria: 2,0 s, VBR ~114 kbps, 28 KB
+ *   - `AUDIO-SPIN-santa-crush.mp3`  boton GIRAR: 2,4 s, 256 kbps, 76 KB
+ *   - `Santa_Crush_Holiday_Loop_19s_256k.mp3`  fondo en bucle: 19,25 s,
+ *     44,1 kHz estereo, 256 kbps CBR, 602 KB
+ *
+ * Los tres se precargan con `fetch`, se decodifican en el AudioContext
+ * desbloqueado por el primer gesto del jugador y se reproducen con un
+ * `GainNode` que fija el volumen. La victoria y el giro usan voces simultaneas
+ * (con un techo) para que ninguna cascada quede muda, y el bucle ambiental
+ * suena por debajo de los efectos.
  *
  * El asset y la peticion son del mismo origen, por lo que encajan con la CSP
  * (`default-src 'self'` / `connect-src 'self'`). Todo fallo de audio se ignora
@@ -20,19 +25,28 @@
  * clic o tecla en cualquier parte del juego la arranca (no hace falta girar).
  */
 
-export const WIN_SOUND_SRC = '/src/assets/AUDIO-WIN-NEW-stadium-applause.MP3';
-export const MUSIC_SOUND_SRC = '/src/assets/Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3';
+export const WIN_SOUND_SRC = '/src/assets/AUDIO-WIN-santa-crush.mp3';
+export const SPIN_SOUND_SRC = '/src/assets/AUDIO-SPIN-santa-crush.mp3';
+export const MUSIC_SOUND_SRC = '/src/assets/Santa_Crush_Holiday_Loop_19s_256k.mp3';
 
-/* Volumen lineal de los aplausos (0-1): presente pero sin tapar los efectos. */
+/* Volumen lineal de la victoria (0-1): presente pero sin tapar la musica. */
 const WIN_SOUND_VOLUME = 0.62;
 
-/* La musica ambiental queda por debajo de la victoria (0.2 < 0.62): es un
-   colchon de fondo y los aplausos siempre se oyen por encima de la mezcla. */
+/* El efecto del boton GIRAR abre la tirada: por encima del fondo y por debajo
+   de la victoria, que es el remate de la ronda. */
+const SPIN_SOUND_VOLUME = 0.5;
+
+/* La musica ambiental queda por debajo de los dos efectos (0.2 < 0.5 < 0.62):
+   es un colchon de fondo y nunca tapa el remate de una ronda. */
 const MUSIC_VOLUME = 0.2;
 
 /* Cascadas encadenadas: se permite que varias victorias suenen a la vez, pero
    con un techo para no saturar la salida ni acumular fuentes sin control. */
 const MAX_WIN_VOICES = 3;
+
+/* El giro no encadena: una sola voz, para que pulsar GIRAR otra vez no sume un
+   segundo barrido sobre el que ya esta sonando. */
+const MAX_SPIN_VOICES = 1;
 
 /* Gestos que desbloquean el audio en cualquier navegador. El primero que ocurra
    arranca la musica ambiental, sin obligar al jugador a girar. */
@@ -42,7 +56,10 @@ export function createSfx({ muted = false } = {}) {
   let context = null;
   let isMuted = muted;
   let gestureUnlocked = false;
-  let activeWinSources = new Set();
+  /* Voces de un solo disparo (victoria y giro) agrupadas por MP3: cada entrada
+     guarda las fuentes vivas de ese audio para cortarlas al silenciar o al
+     superar su techo. La musica tiene su propio canal (`musicSource`). */
+  const activeVoices = new Map();
   let musicSource = null;
   let musicGain = null;
   /* Enganche del primer gesto de la pagina; se retira en cuanto se usa. */
@@ -90,10 +107,21 @@ export function createSfx({ muted = false } = {}) {
     }
   }
 
-  /** Detiene y libera una voz concreta (o todas si no se pasa ninguna). */
-  function stopWinSource(source) {
+  /** Voces registradas para un MP3 concreto (se crean al primer disparo). */
+  function voicesFor(src) {
+    let voices = activeVoices.get(src);
+    if (!voices) {
+      voices = new Set();
+      activeVoices.set(src, voices);
+    }
+    return voices;
+  }
+
+  /** Detiene y libera una voz concreta del MP3 indicado. */
+  function stopVoice(src, source) {
     if (!source) return;
-    activeWinSources.delete(source);
+    const voices = activeVoices.get(src);
+    if (voices) voices.delete(source);
     try {
       source.stop();
     } catch {
@@ -101,8 +129,16 @@ export function createSfx({ muted = false } = {}) {
     }
   }
 
-  function stopWinSound() {
-    for (const source of [...activeWinSources]) stopWinSource(source);
+  /** Detiene todas las voces de un mismo MP3. */
+  function stopSound(src) {
+    const voices = activeVoices.get(src);
+    if (!voices) return;
+    for (const source of [...voices]) stopVoice(src, source);
+  }
+
+  /** Corta los efectos de un solo disparo (la musica tiene su propio canal). */
+  function stopOneShots() {
+    for (const src of [...activeVoices.keys()]) stopSound(src);
   }
 
   /**
@@ -184,14 +220,19 @@ export function createSfx({ muted = false } = {}) {
     return request;
   }
 
-  function playWinSound(ctx, buffer) {
+  /**
+   * Reproduce un MP3 ya decodificado con su volumen y su techo de voces.
+   *
+   * Cada disparo inicia su propia voz para que las cascadas encadenadas no se
+   * corten entre si. Si se supera el techo, sale la voz mas antigua de ese
+   * mismo audio: el remate nuevo siempre se oye de inmediato.
+   */
+  function playBuffer(ctx, src, buffer, { volume, maxVoices }) {
     if (!ctx || !buffer || isMuted) return;
 
-    /* Cada premio inicia su propia voz para que las cascadas encadenadas no se
-       corten entre si. Si se supera el techo, sale la victoria mas antigua:
-       el premio nuevo siempre se oye de inmediato. */
-    while (activeWinSources.size >= MAX_WIN_VOICES) {
-      stopWinSource(activeWinSources.values().next().value);
+    const voices = voicesFor(src);
+    while (voices.size >= maxVoices) {
+      stopVoice(src, voices.values().next().value);
     }
 
     let source = null;
@@ -199,16 +240,39 @@ export function createSfx({ muted = false } = {}) {
       source = ctx.createBufferSource();
       const gain = ctx.createGain();
       source.buffer = buffer;
-      gain.gain.setValueAtTime(WIN_SOUND_VOLUME, ctx.currentTime);
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
       source.connect(gain);
       gain.connect(ctx.destination);
-      source.onended = () => activeWinSources.delete(source);
-      activeWinSources.add(source);
+      source.onended = () => {
+        const alive = activeVoices.get(src);
+        if (alive) alive.delete(source);
+      };
+      voices.add(source);
       source.start(0);
     } catch {
-      if (source) activeWinSources.delete(source);
+      if (source) voices.delete(source);
       /* audio no disponible */
     }
+  }
+
+  /**
+   * Suena un MP3 de un solo disparo (victoria o giro). Si el buffer aun no esta
+   * decodificado se reproduce en cuanto lo este: el primer giro puede llegar
+   * antes de que la red termine.
+   */
+  function playSound(src, options) {
+    if (isMuted) return;
+    const ctx = ensureContext();
+    if (!ctx) return;
+    unlockContext(ctx);
+
+    const buffer = decodedBuffers.get(src);
+    if (buffer) {
+      playBuffer(ctx, src, buffer, options);
+      return;
+    }
+
+    void decodeSound(ctx, src).then((decoded) => playBuffer(ctx, src, decoded, options));
   }
 
   /** Detiene el bucle ambiental y libera su GainNode. */
@@ -237,7 +301,7 @@ export function createSfx({ muted = false } = {}) {
       const source = ctx.createBufferSource();
       const gain = ctx.createGain();
       source.buffer = buffer;
-      /* `loop` repite los 20 s sin cortes ni reinicios del contexto. */
+      /* `loop` repite los 19 s del bucle sin cortes ni reinicios del contexto. */
       source.loop = true;
       gain.gain.setValueAtTime(MUSIC_VOLUME, ctx.currentTime);
       source.connect(gain);
@@ -273,13 +337,15 @@ export function createSfx({ muted = false } = {}) {
    */
   function startAudio() {
     void preloadSound(WIN_SOUND_SRC);
+    void preloadSound(SPIN_SOUND_SRC);
     void preloadSound(MUSIC_SOUND_SRC);
     const ctx = ensureContext();
     if (!ctx) return;
     unlockContext(ctx);
-    /* Deja ambos buffers listos antes de que llegue el resultado del servidor
-       y arranca el bucle ambiental dentro del gesto del jugador. */
+    /* Deja los tres buffers listos antes de que llegue el resultado del
+       servidor y arranca el bucle ambiental dentro del gesto del jugador. */
     void decodeSound(ctx, WIN_SOUND_SRC);
+    void decodeSound(ctx, SPIN_SOUND_SRC);
     void ensureMusic(ctx);
   }
 
@@ -338,9 +404,10 @@ export function createSfx({ muted = false } = {}) {
   }
 
   /* La red se precarga en cuanto se crea el reproductor: `autostart()` solo
-     tiene que decodificar y soltar la musica. La decodificacion espera al
+     tiene que decodificar y soltar los tres audios. La decodificacion espera al
      gesto cuando el navegador no permite crear el AudioContext antes. */
   void preloadSound(WIN_SOUND_SRC);
+  void preloadSound(SPIN_SOUND_SRC);
   void preloadSound(MUSIC_SOUND_SRC);
 
   return {
@@ -354,6 +421,7 @@ export function createSfx({ muted = false } = {}) {
     autostart() {
       bindFirstGesture();
       void preloadSound(WIN_SOUND_SRC);
+      void preloadSound(SPIN_SOUND_SRC);
       void preloadSound(MUSIC_SOUND_SRC);
       const ctx = ensureContext();
       if (!ctx) return;
@@ -365,7 +433,7 @@ export function createSfx({ muted = false } = {}) {
     setMuted(value) {
       isMuted = Boolean(value);
       if (isMuted) {
-        stopWinSound();
+        stopOneShots();
         stopMusic();
         return;
       }
@@ -379,8 +447,15 @@ export function createSfx({ muted = false } = {}) {
     click() {
       tone({ freq: 520, toFreq: 640, duration: 0.07, type: 'triangle', volume: 0.05 });
     },
+    /**
+     * Arranque de la tirada: el efecto del boton GIRAR. Una sola voz, para que
+     * un segundo giro no sume un barrido encima del que ya esta sonando.
+     */
     spin() {
-      tone({ freq: 180, toFreq: 320, duration: 0.28, type: 'sawtooth', volume: 0.035 });
+      playSound(SPIN_SOUND_SRC, {
+        volume: SPIN_SOUND_VOLUME,
+        maxVoices: MAX_SPIN_VOICES
+      });
     },
     drop(index = 0) {
       tone({ freq: 300 + index * 18, toFreq: 190, duration: 0.1, type: 'sine', volume: 0.03 });
@@ -393,20 +468,12 @@ export function createSfx({ muted = false } = {}) {
       tone({ freq: 150, toFreq: 60, duration: 0.3, type: 'square', volume: 0.04 });
       tone({ freq: 320, toFreq: 120, duration: 0.24, type: 'sawtooth', volume: 0.025, delay: 0.03 });
     },
+    /** Remate de ronda: el MP3 de victoria, con voces simultaneas por cascada. */
     win() {
-      if (isMuted) return;
-      const ctx = ensureContext();
-      if (!ctx) return;
-      unlockContext(ctx);
-
-      const buffer = decodedBuffers.get(WIN_SOUND_SRC);
-      if (buffer) {
-        playWinSound(ctx, buffer);
-        return;
-      }
-
-      /* Si la decodificacion aun no termino, reproduce en cuanto este lista. */
-      void decodeSound(ctx, WIN_SOUND_SRC).then((decoded) => playWinSound(ctx, decoded));
+      playSound(WIN_SOUND_SRC, {
+        volume: WIN_SOUND_VOLUME,
+        maxVoices: MAX_WIN_VOICES
+      });
     },
     error() {
       tone({ freq: 220, toFreq: 140, duration: 0.22, type: 'sawtooth', volume: 0.045 });

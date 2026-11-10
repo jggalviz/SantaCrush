@@ -17,7 +17,7 @@ navegador**.
 | `renderers/RoundAnimator.js` | Reproduce una ronda ya resuelta por el servidor. |
 | `renderers/reels.js`, `renderers/fx.js` | Rodillos y efectos visuales. |
 | `lib/*` | Formato, matemática de rodillos, tiempos y niveles de premio. |
-| `audio/sfx.js` | Efectos locales (WebAudio), aplausos de victoria y música de fondo en bucle que arranca por defecto. |
+| `audio/sfx.js` | Efectos de interfaz (WebAudio), MP3 de victoria y del botón GIRAR, y música de fondo en bucle que arranca por defecto. |
 | `config/gameConfig.js` | Espejo ESM **generado** desde `config/gameConfig.js`. |
 
 ## Límites de responsabilidad

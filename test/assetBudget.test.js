@@ -45,9 +45,10 @@ const mb = (bytes) => `${(bytes / MB).toFixed(2)} MB`;
 const kb = (bytes) => `${(bytes / KB).toFixed(1)} KB`;
 
 test('el arte y el audio servidos no pasan de 3,5 MB', () => {
-  // Incluye los dos MP3: los aplausos de victoria (~40 KB a 128 kbps) y el
-  // bucle ambiental de 20 s reencodeado a LAME VBR `-q:a 4` (~401 KB). El
-  // maestro del bucle venia a 256 kbps (~627 KB): ese margen ya no se recupera.
+  // Incluye los tres MP3 del tema (705 KB en total): victoria (~28 KB), boton
+  // GIRAR (~76 KB) y bucle de fondo de 19 s a 256 kbps (~602 KB). El bucle
+  // llega a 256 kbps CBR; un pase de `ffmpeg -q:a 4` lo dejaria en ~380 KB, pero
+  // lo que se sirve es el archivo entregado.
   // El set navideño del tablero (s1..s9 y el bono) tiene volumen, brillos y
   // sombras suaves: pesa ~140 KB mas que los balones planos que sustituyo, de ahi
   // el tope de 3,5 MB sobre los 3 MB anteriores.
@@ -160,12 +161,16 @@ test('el paquete de integracion (dist/) omite fuentes y previews', () => {
   assert.ok(names.includes('src/css/style.min.css'), 'dist/ debe llevar las hojas minificadas');
   assert.ok(names.includes('src/assets/slot/s1.webp'), 'dist/ debe llevar los simbolos');
   assert.ok(
-    names.includes('src/assets/AUDIO-WIN-NEW-stadium-applause.MP3'),
-    'dist/ debe llevar los aplausos de victoria'
+    names.includes('src/assets/AUDIO-WIN-santa-crush.mp3'),
+    'dist/ debe llevar el MP3 de victoria'
   );
   assert.ok(
-    names.includes('src/assets/Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3'),
-    'dist/ debe llevar el bucle ambiental'
+    names.includes('src/assets/AUDIO-SPIN-santa-crush.mp3'),
+    'dist/ debe llevar el efecto del boton GIRAR'
+  );
+  assert.ok(
+    names.includes('src/assets/Santa_Crush_Holiday_Loop_19s_256k.mp3'),
+    'dist/ debe llevar el bucle de fondo'
   );
 
   for (const excluded of ['src/css/style.css', 'src/css/theme.css']) {
@@ -178,8 +183,10 @@ test('el paquete de integracion (dist/) omite fuentes y previews', () => {
   );
 
   const total = files.reduce((acc, file) => acc + file.bytes, 0);
-  // El arte navideño de escritorio (`assets/santa-crush/bg` y `/console`) suma
-  // ~870 KB y entra en este paquete: el tope sube con el, no lo esconde.
+  // El arte navideño de los dos viewports (`assets/santa-crush/bg` y `/console`)
+  // suma ~1,83 MB y entra en este paquete, igual que los tres MP3 (0,69 MB): el
+  // tope sube con ellos, no los esconde. Hoy queda en 5,52 MB, a ~80 KB del
+  // limite; README-DEPLOY.md trae la receta para reencodear el bucle si crece.
   assert.ok(
     total < 5.6 * MB,
     `dist/ pesa ${mb(total)}: el paquete de integracion debe bajar de 5,6 MB (arte + audio)`

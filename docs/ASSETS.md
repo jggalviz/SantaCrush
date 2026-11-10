@@ -70,7 +70,33 @@ como multiplicador (MX). Los once maestros están en `design/symbols/` (lienzo
 común de 335 x 341 px) y se publican tal cual con `npm run build:symbols`: el
 build no deriva ninguna pieza, solo cambia el códec a WebP con alfa sin pérdida.
 
-## Cómo cambiar el arte
+## Audio en uso
+
+Los tres sonidos del juego son MP3 del tema que viven en `public/src/assets/` y
+se sirven sin reencodear (`ui/audio/sfx.js` fija las rutas en
+`WIN_SOUND_SRC`, `SPIN_SOUND_SRC` y `MUSIC_SOUND_SRC`):
+
+| Archivo | Rol | Formato | Peso |
+| --- | --- | --- | ---: |
+| `AUDIO-WIN-santa-crush.mp3` | victoria de ronda y de cascada | 2,0 s · 44,1 kHz mono · VBR ~114 kbps | 28 KB |
+| `AUDIO-SPIN-santa-crush.mp3` | efecto del botón GIRAR (antes se sintetizaba) | 2,4 s · 44,1 kHz estéreo · 256 kbps CBR | 76 KB |
+| `Santa_Crush_Holiday_Loop_19s_256k.mp3` | música de fondo en bucle | 19,25 s · 44,1 kHz estéreo · 256 kbps CBR | 602 KB |
+
+Los efectos de interfaz que no tienen MP3 (clic, caída, racimo, bomba, error)
+siguen sintetizándose con WebAudio. Los volúmenes de la mezcla son
+`MUSIC_VOLUME 0.2 < SPIN_SOUND_VOLUME 0.5 < WIN_SOUND_VOLUME 0.62`: el fondo
+nunca tapa el remate de una ronda.
+
+La carpeta `public/assets/santa-crush/audio/` sigue existiendo solo como destino
+declarado en `GAME_CONFIG.assets.audio` (`bgm-holiday.mp3`, `win-applause.mp3`,
+`click.mp3`) para cuando el arte y el audio se sirvan desde el CDN del tema; hoy
+solo contiene su `.gitkeep`.
+
+**Los nombres de los MP3 son versionados** (duración y bitrate en el del bucle)
+porque `src/assets/**` se cachea un año con `immutable`: cambiar el contenido de
+un audio exige cambiar su nombre y la ruta de `ui/audio/sfx.js`. Los maestros
+sustituidos quedan archivados en `design/legacy/audio/`.
+
 
 1. Dejar los maestros (PNG/JPG grandes) en `design/`, **nunca** en `public/`:
    todo lo que entra en `public/**` se publica en el CDN.

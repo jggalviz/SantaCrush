@@ -5,9 +5,10 @@
  *
  * `sfx.js` es ESM dentro de un package CommonJS, asi que se carga por `data:`
  * URL. Se sustituyen `window` y `fetch` por dobles minimos para comprobar el
- * flujo real sin navegador: precarga de los MP3 (aplausos y bucle ambiental),
- * decodificacion unica, volumenes de los GainNode, loop del fondo, arranque por
- * defecto de la musica, desbloqueo dentro del gesto y respeto del mute.
+ * flujo real sin navegador: precarga de los tres MP3 (victoria, boton GIRAR y
+ * bucle ambiental), decodificacion unica, volumenes de los GainNode, loop del
+ * fondo, arranque por defecto de la musica, desbloqueo dentro del gesto y
+ * respeto del mute.
  */
 
 const test = require('node:test');
@@ -73,8 +74,11 @@ function createAudioHarness({ failDecodes = 0 } = {}) {
 
     createGain() {
       const node = {
+        /* Ultimo volumen fijado: los tests lo usan para saber que MP3 suena. */
+        value: null,
         gain: {
           setValueAtTime(value, time) {
+            node.value = value;
             calls.gains.push({ value, time });
           }
         },
@@ -102,14 +106,17 @@ function createAudioHarness({ failDecodes = 0 } = {}) {
   return { calls, FakeAudioContext, decodedBuffer };
 }
 
-test('la victoria usa los aplausos nuevos y la musica ambiental suena en bucle por debajo', async () => {
+test('la victoria, el boton GIRAR y el fondo suenan con los MP3 del tema', async () => {
   const { calls, FakeAudioContext, decodedBuffer } = createAudioHarness();
   const originalWindow = globalThis.window;
   const originalFetch = globalThis.fetch;
   const bytes = new Uint8Array([0x49, 0x44, 0x33, 0x04, 0x00]);
 
-  /* Voz de victoria: cualquier MP3 decodificado que no sea el bucle ambiental. */
-  const isWinSource = (source) => source.buffer === decodedBuffer && source.loop !== true;
+  /* Los tres MP3 comparten el mismo buffer falso: se distinguen por el volumen
+     que fija su GainNode (0.62 victoria, 0.5 giro, 0.2 musica). */
+  const volumeOf = (source) => (source.connectedTo ? source.connectedTo.value : undefined);
+  const isWinSource = (source) => volumeOf(source) === 0.62;
+  const isSpinSource = (source) => volumeOf(source) === 0.5;
 
   globalThis.window = { AudioContext: FakeAudioContext };
   globalThis.fetch = async (url, options) => {
@@ -122,17 +129,18 @@ test('la victoria usa los aplausos nuevos y la musica ambiental suena en bucle p
   };
 
   try {
-    const { createSfx, WIN_SOUND_SRC, MUSIC_SOUND_SRC } = await import(SFX_URL);
-    assert.equal(WIN_SOUND_SRC, '/src/assets/AUDIO-WIN-NEW-stadium-applause.MP3');
-    assert.equal(MUSIC_SOUND_SRC, '/src/assets/Sport_Crush_Energy_Gaming_Loop_20s_160k.mp3');
+    const { createSfx, WIN_SOUND_SRC, SPIN_SOUND_SRC, MUSIC_SOUND_SRC } = await import(SFX_URL);
+    assert.equal(WIN_SOUND_SRC, '/src/assets/AUDIO-WIN-santa-crush.mp3');
+    assert.equal(SPIN_SOUND_SRC, '/src/assets/AUDIO-SPIN-santa-crush.mp3');
+    assert.equal(MUSIC_SOUND_SRC, '/src/assets/Santa_Crush_Holiday_Loop_19s_256k.mp3');
 
     const sfx = createSfx();
     await wait();
 
     assert.deepEqual(
       calls.fetch.map((call) => call.url),
-      [WIN_SOUND_SRC, MUSIC_SOUND_SRC],
-      'createSfx debe precargar los aplausos y el bucle ambiental una sola vez'
+      [WIN_SOUND_SRC, SPIN_SOUND_SRC, MUSIC_SOUND_SRC],
+      'createSfx debe precargar la victoria, el giro y el bucle una sola vez'
     );
     for (const call of calls.fetch) {
       assert.deepEqual(call.options, {
@@ -148,7 +156,7 @@ test('la victoria usa los aplausos nuevos y la musica ambiental suena en bucle p
     sfx.unlock();
     await wait();
 
-    assert.equal(calls.decoded, 2, 'Cada MP3 debe decodificarse una sola vez');
+    assert.equal(calls.decoded, 3, 'Cada MP3 debe decodificarse una sola vez');
     assert.equal(calls.silentBuffers, 1, 'El gesto debe desbloquear una sola vez');
     assert.equal(
       calls.starts.filter((source) => source.buffer && source.buffer.silent).length,
@@ -156,7 +164,7 @@ test('la victoria usa los aplausos nuevos y la musica ambiental suena en bucle p
       'El desbloqueo debe arrancar un unico buffer silencioso'
     );
 
-    /* Musica de fondo: una sola voz, en bucle y mas suave que los aplausos. */
+    /* Musica de fondo: una sola voz, en bucle y mas suave que los efectos. */
     const musicStarts = calls.starts.filter((source) => source.loop === true);
     assert.equal(musicStarts.length, 1, 'El gesto debe arrancar el bucle ambiental');
     assert.equal(musicStarts[0].buffer, decodedBuffer);
@@ -169,32 +177,57 @@ test('la victoria usa los aplausos nuevos y la musica ambiental suena en bucle p
     const winStarts = calls.starts.filter(isWinSource);
     assert.equal(winStarts.length, 2, 'Cada victoria inicia su propia fuente');
     assert.equal(winStarts[0].connectedTo.gain !== undefined, true);
-    const winGains = calls.gains.filter((entry) => entry.value !== musicVolume);
+    const winGains = calls.gains.filter((entry) => entry.value === 0.62);
     assert.deepEqual(
       winGains,
       [
         { value: 0.62, time: 1.25 },
         { value: 0.62, time: 1.25 }
       ],
-      'Los aplausos deben fijar su propio volumen'
+      'La victoria debe fijar su propio volumen'
     );
     assert.ok(
       winGains.every((entry) => entry.value > musicVolume),
-      `Los aplausos (${winGains[0].value}) deben oirse por encima de la musica (${musicVolume})`
+      `La victoria (${winGains[0].value}) debe oirse por encima de la musica (${musicVolume})`
     );
     assert.ok(
       winStarts.every((source) => source.stopped !== true),
       'Dos victorias seguidas deben solaparse sin cortarse'
     );
 
+    /* El boton GIRAR suena con su MP3 y no acumula voces. */
+    sfx.spin();
+    sfx.spin();
+
+    const spinStarts = calls.starts.filter(isSpinSource);
+    assert.equal(spinStarts.length, 2, 'Cada giro inicia su propia voz');
+    assert.equal(spinStarts[0].stopped, true, 'El techo del giro corta el barrido anterior');
+    assert.ok(spinStarts[1].stopped !== true, 'El giro nuevo debe quedar sonando');
+    assert.ok(
+      spinStarts[0].connectedTo.value === 0.5,
+      'El efecto del giro fija su propio volumen'
+    );
+    assert.ok(
+      spinStarts[0].connectedTo.value > musicVolume &&
+        spinStarts[0].connectedTo.value < winGains[0].value,
+      'El giro debe quedar entre el fondo y la victoria'
+    );
+
     sfx.setMuted(true);
     assert.ok(winStarts.every((source) => source.stopped === true), 'El mute debe detener todas las voces');
+    assert.ok(spinStarts.every((source) => source.stopped === true), 'El mute tambien corta el giro');
     assert.equal(musicStarts[0].stopped, true, 'El mute debe detener el bucle ambiental');
     sfx.win();
+    sfx.spin();
     assert.equal(
       calls.starts.filter(isWinSource).length,
       2,
-      'El mute no debe reproducir los aplausos'
+      'El mute no debe reproducir la victoria'
+    );
+    assert.equal(
+      calls.starts.filter(isSpinSource).length,
+      2,
+      'El mute no debe reproducir el giro'
     );
 
     /* Al reactivar el sonido el bucle ambiental vuelve solo. */
@@ -282,7 +315,7 @@ test('la musica arranca por defecto y el primer gesto de la pagina la desbloquea
     await wait();
 
     assert.equal(calls.silentBuffers, 1, 'El primer gesto desbloquea el contexto');
-    assert.equal(calls.decoded, 2, 'El primer gesto decodifica tambien los aplausos');
+    assert.equal(calls.decoded, 3, 'El primer gesto decodifica tambien la victoria y el giro');
     assert.equal(musicStarts().length, 1, 'El gesto no debe duplicar la voz del bucle');
     assert.deepEqual(listeners, [], 'El enganche se retira tras el primer gesto');
   } finally {
@@ -325,7 +358,7 @@ test('si el arranque no puede decodificar, el primer gesto reintenta la musica',
     sfx.unlock();
     await wait();
 
-    assert.equal(calls.decoded, 3, 'El reintento decodifica aplausos y bucle');
+    assert.equal(calls.decoded, 4, 'El reintento decodifica la victoria, el giro y el bucle');
     assert.equal(musicStarts().length, 1, 'La musica debe arrancar en el reintento');
     assert.equal(musicStarts()[0].buffer, decodedBuffer, 'El bucle reintentado debe sonar');
   } finally {
