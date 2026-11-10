@@ -169,11 +169,11 @@ test('los especiales publican scatter, rango de bombas y ganancia maxima', async
   const ui = await openInfoModal();
   const html = ui.refs.modalBody.innerHTML;
 
-  assert.match(html, /Logo Santa Crush · scatter \(SC\)/);
+  assert.match(html, /Regalo navideño · scatter \(SC\)/);
   for (const [count, pay] of Object.entries(GAME_INFO.scatterPays)) {
     assert.ok(
       html.includes(`<td>${formatPay(pay)}</td>`),
-      `el scatter debe pagar ${count} logos`
+      `el scatter debe pagar ${count} regalos`
     );
   }
 

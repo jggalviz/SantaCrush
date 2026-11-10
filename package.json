@@ -23,7 +23,6 @@
     "build:bg": "node scripts/build-backgrounds.js",
     "build:logo": "node scripts/build-logo-asset.js",
     "build:symbols": "node scripts/build-symbol-assets.js",
-    "build:seals": "node scripts/build-brand-seals.js",
     "build:win": "node scripts/build-win-art.js",
     "vercel-build": "node scripts/build-game-config.js && node scripts/build-ui.js && node scripts/build-minify.js && node scripts/build-index-html.js",
     "simulate": "node scripts/simulate.js",

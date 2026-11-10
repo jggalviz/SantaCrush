@@ -1966,9 +1966,10 @@ export class Ui {
       <p>Santa Crush no tiene comodín (wild) que sustituya a otros símbolos: cada
       símbolo paga por sí mismo. Los especiales son estos dos:</p>
 
-      <p><strong>Logo Santa Crush · scatter (SC)</strong>: paga solo en la tirada inicial,
-      esté donde esté, y no se elimina con las cascadas.</p>
-      ${payTable(`<th scope="col">Logos (scatter)</th>${scatterHeader}`, `<tr><th scope="row">Pago × apuesta</th>${scatterCells}</tr>`)}
+      <p><strong>Regalo navideño · scatter (SC)</strong>: el regalo con lazo dorado
+      paga solo en la tirada inicial, esté donde esté, y no se elimina con las
+      cascadas.</p>
+      ${payTable(`<th scope="col">Regalos (scatter)</th>${scatterHeader}`, `<tr><th scope="row">Pago × apuesta</th>${scatterCells}</tr>`)}
 
       <p><strong>Bono navideño (MX)</strong>: se queda en el tablero
       hasta el final de la ronda y cada uno vale ${bombRange}. Al terminar la ronda se

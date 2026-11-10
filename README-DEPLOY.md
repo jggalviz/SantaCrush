@@ -388,13 +388,12 @@ No es necesario para un despliegue normal: los WebP/WOFF2/PNG ya están versiona
 | `npm run build:bg` | `fondo_desk_meridino_crush.png`, `avenida_fantastica_reino_caramelos.png` | `fondo_desk_meridino_crush.webp`, `avenida_fantastica_reino_caramelos.webp` |
 | `npm run build:logo` | `MeridianoBet Sports Crush Logo.png` | `MERIDIANOBET-CRUSH-LOGO.webp` |
 | `npm run build:symbols` | `symbols/s1.png` … `symbols/s11.png` | `slot/s1.webp` … `slot/s11.webp` |
-| `npm run build:seals` | `MBETN-LOGO@3x.png` | `symbols/s10.png`, `symbols/s11.png` (antes de `build:symbols`) |
 | `npm run build:win` | `victoria_deportiva.png` | `victoria_deportiva.webp` |
 
 - Requieren `sharp` (ya está en `devDependencies`) y son **idempotentes**.
-- Los PNG maestros de `design/` **no se publican**: `public/src/assets/` solo contiene lo que descarga el cliente. `design/symbols/` guarda los maestros de origen —los nueve balones y los dos sellos de la marca—; `npm run build:symbols` los convierte a WebP con el canal alfa sin pérdida (1,42 MB → 0,31 MB).
-- Los dos sellos (`s10` scatter y `s11` multiplicador) son **el mismo sello circular** y **no se editan a mano**: `npm run build:seals` los deriva del único maestro `design/MBETN-LOGO@3x.png` convirtiendo en transparencia su fondo blanco opaco y reponiendo el disco interior al 90 % de opacidad (`rgba(255, 255, 255, 0.9)`), para que los rayos dorados de la casilla se filtren por dentro del aro (ver `docs/REBRANDING.md`). El logotipo del planeta anterior vive fuera del build en `design/legacy/s10-planeta.png`.
-- Si regeneras arte, **haz commit de los WebP resultantes** y planifica la invalidación/renombrado correspondiente en CloudFront (§4.7). Los sellos conservan el nombre `s10.webp`/`s11.webp`: invalida esas dos rutas y avisa de una recarga forzada, porque el navegador los guardó con `immutable`.
+- Los PNG maestros de `design/` **no se publican**: `public/src/assets/` solo contiene lo que descarga el cliente. `design/symbols/` guarda los maestros de origen —los nueve símbolos navideños y los dos especiales (el regalo del scatter y el bono)—; `npm run build:symbols` los convierte a WebP con el canal alfa sin pérdida (2,10 MB → 0,50 MB).
+- Los dos especiales se **publican tal cual**: no hay ninguna pieza derivada en el build (`build:seals` ya no existe). `s10` es el regalo navideño con lazo dorado que cae como scatter y `s11` el bono del multiplicador; los dos llegan sobre alfa desde el maestro. Se sustituyen reemplazando el PNG de `design/symbols/` con el encuadre común (escala uniforme 335 / ancho de la fuente y centrado vertical en el lienzo de 335 x 341) y corriendo `npm run build:symbols` (ver `docs/REBRANDING.md`). Los artes anteriores del scatter viven fuera del build en `design/legacy/` (`s10-planeta.png` y `s10-sello-marca.png`).
+- Si regeneras arte, **haz commit de los WebP resultantes** y planifica la invalidación/renombrado correspondiente en CloudFront (§4.7). Los especiales conservan el nombre `s10.webp`/`s11.webp`: invalida esas dos rutas y avisa de una recarga forzada, porque el navegador los guardó con `immutable`.
 
 ### 3.4 Generación de la build final estática
 

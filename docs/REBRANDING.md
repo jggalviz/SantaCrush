@@ -236,53 +236,50 @@ movil (`slot-frame-mobile.webp`), la consola de escritorio
 
 Los simbolos del tablero **ya son el set navideño**: la cara de Santa, el reno,
 el adorno, la piruleta, el cascanueces, el calcetin, la bola de nieve, el tren de
-juguete y la casa de jengibre, con el bono como multiplicador.
+juguete y la casa de jengibre, con el regalo navideño como scatter y el bono como
+multiplicador.
 
 Los simbolos del tablero (once WebP en `public/src/assets/slot/`) se mapean en
 `ui/lib/format.js` (`SYMBOL_IMAGE_PATH`). `s1.webp` .. `s9.webp` son los nueve
 regulares, en el mismo orden que los tramos de la tabla de pagos (s1 = S1, el
-mas comun, ... s9 = S9, el mas raro); `s10.webp` cae como scatter (SC) y
-`s11.webp` como multiplicador (MX), con el arte del bono navideño. Si se
-sustituyen por otra iconografia, hay que conservar los nombres `s*.webp` o
-actualizar ese mapeo; `test/frontendAssets.test.js` valida que las 11 imagenes
-existan.
+mas comun, ... s9 = S9, el mas raro); `s10.webp` es el regalo con lazo dorado que
+cae como scatter (SC) y `s11.webp` el bono navideño que cae como multiplicador
+(MX). Si se sustituyen por otra iconografia, hay que conservar los nombres
+`s*.webp` o actualizar ese mapeo; `test/frontendAssets.test.js` valida que las 11
+imagenes existan.
 
 Los PNG maestros viven en `design/symbols/` y `npm run build:symbols` los
-convierte a WebP (alfa sin perdida, mismo lienzo de 335 x 341 px): 1,90 MB de
-PNG pasan a 0,47 MB sin tocar el dibujo ni la geometria de las casillas. El set
+convierte a WebP (alfa sin perdida, mismo lienzo de 335 x 341 px): 2,10 MB de
+PNG pasan a 0,50 MB sin tocar el dibujo ni la geometria de las casillas. El set
 navideño pesa mas que los balones planos que sustituyo (cada pieza llega a
 ~55 KB frente a los ~25 KB de antes), asi que el tope por pieza subio a 60 KB y
 el presupuesto de `public/src/assets` a 3,5 MB.
 
-El sello del scatter (`s10.png`) no se edita a mano: lo deriva
-`npm run build:seals` del unico maestro `design/MBETN-LOGO@3x.png`. Ese PNG trae
-**fondo blanco opaco** (el arte se dibujo sobre blanco, no sobre alfa), asi que
-el script lo convierte en transparencia con el inverso del alpha blending
-(`a = 255 - min(r, g, b)`) en vez de recortarlo: los bordes del aro y de las
-letras conservan su antialias. Despues repone el **relleno interior del disco al
-90 % de opacidad** (`rgba(255, 255, 255, 0.9)`) componiendo la tinta encima con
-un `source-over`, de modo que los rayos dorados de la casilla
-(`logo-tile-sheen`) se filtran un 10 % por dentro del aro sin perder
-legibilidad; fuera del circulo el lienzo sigue transparente.
+Los once maestros se publican tal cual: no hay ninguna pieza derivada en el build
+(`npm run build:seals` ya no existe). Lo unico que se aplica al arte es el
+encuadre comun, y se hace una vez al preparar el maestro: escala uniforme
+335 / ancho de la fuente y centrado vertical en el lienzo de 335 x 341. Asi
+ninguna pieza se recorta, todas conservan su proporcion y las once encajan en la
+misma casilla sin tocar el CSS.
 
-* `s10.png` (scatter): el **sello circular** de la marca, con la moneda, la `m`,
-  el `Bet` y el texto interior (`JUEGA | GANA | #COBRASEGURO`) dentro del aro
-  rojo, y **sin el planeta del logo anterior**. Sale 1:1 en el lienzo de
-  335 x 341 (335 x 335 de tinta, 3 px de aire arriba y abajo), sin sangrado ni
-  recorte de aire: `--logo-bleed: 0%` y `object-view-box: inset(0)` en
-  `style.css`.
+* `s10.png` (scatter): el **regalo navideño** brillante con lazo dorado, dibujado
+  dentro de un emblema circular con aro de oro, acebo, campanas y estrellas. Ocupa
+  329 x 305 del lienzo de 335 x 341 (2 px de aire a la izquierda, 4 a la derecha y
+  18 arriba y abajo), sin sangrado ni recorte de aire: `--logo-bleed: 0%` y
+  `object-view-box: inset(0)` en `style.css`, para que el aro caiga entero sobre
+  la medalla dorada de la casilla.
 * `s11.png` (multiplicador): el **bono navideño** dibujado (regalo rojo con lazo
-  dorado), encajado en el mismo lienzo de 335 x 341. `build:seals` no lo escribe:
-  se publica tal cual y lo que anuncia su valor es la etiqueta que pinta el motor
-  encima (2x .. 250x).
+  dorado y el rotulo `BONO`), encajado en el mismo lienzo de 335 x 341 (316 x 318
+  de tinta). Lo que anuncia su valor es la etiqueta que pinta el motor encima
+  (2x .. 250x).
 
-El logotipo del planeta (`s10-planeta.png`) se conserva fuera del flujo del
-build en `design/legacy/` (los maestros publicables son los `s*.png` de
-`design/symbols`), y `test/frontendAssets.test.js` mide sobre los WebP servidos
-que el scatter siga siendo el sello (esquinas transparentes, disco blanco al
-90 % de opacidad, sin fondo blanco opaco ni un solo pixel del globo terraqueo) y
-que el multiplicador caiga con el bono (alfa real, lazo rojo y oro, y un dibujo
-distinto al del scatter).
+En `design/legacy/` quedan fuera del flujo del build los dos artes que el tablero
+ya no pinta (`s10-planeta.png`, el logotipo con el globo terraqueo, y
+`s10-sello-marca.png`, el sello circular de la marca); los maestros publicables
+son los `s*.png` de `design/symbols`. `test/frontendAssets.test.js` mide sobre los
+WebP servidos que los dos especiales lleguen sobre alfa (entre el 20 % y el 48 %
+del lienzo transparente, sin fondo blanco opaco), con el rojo del regalo y el oro
+del lazo, y que el scatter y el multiplicador no sean el mismo dibujo.
 
 El multiplicador (MX) ya no usa el caramelo de `symbols/candy_4.png` ni el sello
 de la marca: cae con el arte del bono (`s11.png`) y se pinta con su valor encima

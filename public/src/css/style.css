@@ -1400,7 +1400,7 @@ body::after {
     0 6px 14px rgba(93, 11, 91, 0.14);
 }
 
-/* El bloque de los sellos de marca es el único distinto del tablero y tiene que
+/* El bloque de los dos especiales es el único distinto del tablero y tiene que
    gritarlo: es la casilla que el jugador quiere ver. Tres cosas lo separan de las
    pelotas. Primero la medalla: en vez del vidrio azul se pinta oro macizo (filo
    quemado, luz blanca arriba) con un abanico de rayos fijos, que le da cuerpo de
@@ -1408,16 +1408,16 @@ body::after {
    tamano: el bloque entero se dibuja un 4 % mas grande que su hueco, asi que la
    casilla sobresale de la rejilla y aun deja una linea de separacion con la
    medalla vecina (el sangrado es de 3 px en un hueco de 9 px, de modo que nunca la
-   pisa). El sello va con alfa —el disco interior al 90 %—, asi que esos rayos se
-   filtran por dentro del aro.
+   pisa). El arte va con su alfa, asi que el dibujo no tapa la medalla y los rayos
+   asoman hasta el filo del bloque.
    Tercero el halo: `box-shadow` calido alrededor, que se rasteriza una vez.
    La medalla vive en `::before` y no en el `background` del bloque a proposito:
    los temas repintan `.tile` con mas especificidad (`html[data-theme] .tile`), y
    desde el pseudo elemento la medalla gana siempre sin pelearse con ellos. El
    pseudo esta recortado al bloque por su propio `border-radius`, asi que los
-   rayos no invaden al vecino. Lo comparten el scatter (`s10`) y el
-   multiplicador (`s11`), que caen con el mismo sello circular de la marca: las
-   dos son piezas de marca y las dos tienen que dominar el tablero. */
+   rayos no invaden al vecino. Lo comparten los dos especiales —el scatter
+   (`s10`, el regalo del emblema dorado) y el multiplicador (`s11`, el bono)—:
+   los dos son premio y los dos tienen que dominar el tablero. */
 .tile[data-sym="SC"],
 .tile[data-sym="MX"] {
   --logo-tile-scale: 1.04;
@@ -1461,18 +1461,17 @@ body::after {
   100% { background-position: 160% 50%, 50% 50%, 50% 50%, 50% 50%; }
 }
 
-/* Los dos sellos de marca son el mismo dibujo: el sello circular que genera
-   `npm run build:seals` —moneda, `m`, `Bet` y el texto interior dentro del aro—,
-   1:1 y encajado en el lienzo comun de 335 x 341 px. Como el arte llena el ancho
-   y solo le sobran 3 px de aire arriba y abajo, no hay que recortarle nada ni
-   empujarlo fuera del marco: `object-view-box: inset(0)` deja el sello como
-   viene, `contain` lo ajusta al bloque —en una casilla apaisada manda el alto,
-   asi que el circulo queda entero y centrado— y el 4 % de `--logo-tile-scale`
-   sobre el bloque ya lo saca del hueco, como una pegatina. Un sangrado extra
-   (`--logo-bleed`) solo comeria el aro contra el filo dorado, asi que va a cero.
-   El `overflow` visible deja caer la sombra fuera del bloque, el `z-index`
-   mantiene el sello por delante de las pelotas y la flotacion perpetua
-   (`logo-tile-lift`) lo deja respirando sobre la medalla. */
+/* El arte de los dos especiales se publica tal cual, encajado en el lienzo comun
+   de 335 x 341 px: el emblema circular del scatter (`s10`) y el regalo del bono
+   (`s11`) llegan con su alfa y sin recortes, asi que no hay que quitarles aire ni
+   empujarlos fuera del marco. `object-view-box: inset(0)` los deja como vienen y
+   `contain` los ajusta al bloque —en una casilla apaisada manda el alto, asi que
+   el dibujo queda entero y centrado—, mientras el 4 % de `--logo-tile-scale`
+   sobre el bloque ya los saca del hueco, como una pegatina. Un sangrado extra
+   (`--logo-bleed`) solo comeria el aro del emblema contra el filo dorado, asi que
+   va a cero. El `overflow` visible deja caer la sombra fuera del bloque, el
+   `z-index` mantiene el especial por delante de las pelotas y la flotacion
+   perpetua (`logo-tile-lift`) lo deja respirando sobre la medalla. */
 .tile[data-sym="SC"],
 .tile[data-sym="MX"] {
   --logo-bleed: 0%;
@@ -1565,12 +1564,12 @@ body::after {
   }
 }
 
-/* Los dos sellos viajan con alfa de verdad: `npm run build:seals` convierte en
-   transparencia el fondo blanco del maestro `MBETN-LOGO@3x.png` y repone el
-   disco interior al 90 % de opacidad (`rgba(255, 255, 255, 0.9)`). Aro, letras y
-   moneda conservan su antialias —sin halo— y el oro de `::before` se filtra por
-   el blanco en vez de quedar tapado por un parche opaco. La sombra calida del
-   `.tile__img` sigue marcando el relieve sobre la medalla. */
+/* Los dos especiales viajan con alfa de verdad: `s10` y `s11` se publican desde
+   sus maestros de `design/symbols/` sin recortes ni parches, asi que el aro del
+   emblema, el lazo y las letras conservan su antialias —sin halo— y el oro de
+   `::before` se ve por detras del dibujo en vez de quedar tapado por un fondo
+   opaco. La sombra calida del `.tile__img` sigue marcando el relieve sobre la
+   medalla. */
 
 /* Con movimiento reducido la medalla se queda encendida pero quieta: conserva el
    oro, los rayos y el halo, pero pierde barrido, flotacion y latido. */

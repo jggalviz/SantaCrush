@@ -64,20 +64,23 @@ maestros quedan archivados en `design/`.
 
 Los **símbolos del tablero** son el set navideño de `public/src/assets/slot/`:
 `slot/s1.webp` (Papá Noel) a `slot/s9.webp` (casa de jengibre), en el mismo orden
-que los tramos de la tabla de pagos; `slot/s10.webp` es el sello de la marca que
-cae como scatter (SC) y `slot/s11.webp` el bono navideño que cae como
-multiplicador (MX). Los maestros están en `design/symbols/` (lienzo común de
-335 x 341 px) y se publican con `npm run build:symbols`; el sello del scatter lo
-deriva `npm run build:seals` del máster de la marca.
+que los tramos de la tabla de pagos; `slot/s10.webp` es el regalo navideño con
+lazo dorado que cae como scatter (SC) y `slot/s11.webp` el bono navideño que cae
+como multiplicador (MX). Los once maestros están en `design/symbols/` (lienzo
+común de 335 x 341 px) y se publican tal cual con `npm run build:symbols`: el
+build no deriva ninguna pieza, solo cambia el códec a WebP con alfa sin pérdida.
 
 ## Cómo cambiar el arte
 
 1. Dejar los maestros (PNG/JPG grandes) en `design/`, **nunca** en `public/`:
    todo lo que entra en `public/**` se publica en el CDN.
 2. Optimizar con los scripts de arte (`npm run build:bg`, `build:logo`,
-   `build:symbols`, `build:seals`, `build:win`, `build:art`, `build:desktop-art`,
+   `build:symbols`, `build:win`, `build:art`, `build:desktop-art`,
    `build:theme-art`) y escribir el WebP final en la carpeta correspondiente de
-   este árbol, respetando el nombre exacto que declara `ASSETS`.
+   este árbol, respetando el nombre exacto que declara `ASSETS`. En el tablero no
+   hay nada derivado: el maestro se encuadra una vez (escala uniforme
+   335 / ancho de la fuente y centrado vertical en el lienzo de 335 x 341) y
+   `build:symbols` solo lo convierte a WebP.
 3. Apuntar los consumidores a `GAME_CONFIG.assets`:
    - `ui/lib/format.js` (imágenes del tablero y símbolos especiales),
    - `ui/audio/sfx.js` (bucle y efectos),

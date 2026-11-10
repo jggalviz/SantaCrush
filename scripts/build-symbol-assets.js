@@ -1,16 +1,16 @@
 'use strict';
 
 /**
- * Convierte los diez maestros del tablero a WebP con alfa sin perdida.
+ * Convierte los once maestros del tablero a WebP con alfa sin perdida.
  *
- *   design/symbols/s1.png .. s10.png  ->  public/src/assets/slot/s1.webp .. s10.webp
+ *   design/symbols/s1.png .. s11.png  ->  public/src/assets/slot/s1.webp .. s11.webp
  *
- * Las diez piezas se pintan a ~80 px CSS (hasta 3x de densidad), asi que no se
+ * Las once piezas se pintan a ~80 px CSS (hasta 3x de densidad), asi que no se
  * reescala el arte: 335 x 341 px es la resolucion de dibujo y el WebP conserva
- * exactamente ese lienzo. Lo que cambia es el codec: el PNG de estos balones
- * pesa ~170 KB porque guarda el alfa sin comprimir, mientras que el WebP con
+ * exactamente ese lienzo. Lo que cambia es el codec: el PNG del set navideño
+ * pesa ~190 KB porque guarda el alfa sin comprimir, mientras que el WebP con
  * `alphaQuality: 100` deja el canal alfa intacto (sin perdida) y comprime el
- * color con perdida de alta calidad, bajando cada pieza a ~25 KB.
+ * color con perdida de alta calidad, bajando cada pieza a ~45 KB.
  *
  * Los PNG de `design/` son los maestros (no se publican): el arbol `public/` es
  * lo que se sube al CDN, asi que el peso muerto no debe vivir ahi.
@@ -39,8 +39,8 @@ const QUALITY = Number(process.env.SYMBOL_QUALITY || 90);
 
 /* Tope por pieza: si un simbolo se pasa, el build falla y hay que revisar el
    arte en vez de publicar un tablero pesado sin enterarse. El set navideño
-   (s1..s9 y el bono) tiene volumen, brillos y sombras suaves, asi que pesa mas
-   que los balones planos que sustituyo: el tope es 60 KB por pieza. */
+   (s1..s11) tiene volumen, brillos y sombras suaves, asi que pesa mas que los
+   balones planos que sustituyo: el tope es 60 KB por pieza. */
 const MAX_BYTES = Number(process.env.SYMBOL_MAX_BYTES || 60 * 1024);
 
 function kb(bytes) {
@@ -136,7 +136,7 @@ async function build(name) {
 async function main() {
   const masters = listMasters();
   if (masters.length === 0) {
-    throw new Error(`No hay maestros s1..s10 en ${path.relative(ROOT, SOURCE_DIR)}`);
+    throw new Error(`No hay maestros s1..s11 en ${path.relative(ROOT, SOURCE_DIR)}`);
   }
 
   const results = [];

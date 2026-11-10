@@ -13,9 +13,9 @@ import { GRID } from '../config/gameConfig.js';
  *     al que mas: el numero del archivo coincide con el tramo de la tabla de
  *     pagos (`s1` es la cara de Santa, el mas comun, y `s9` la casa de
  *     jengibre, el mas raro).
- *   - El sello circular de la marca (`s10.webp`), que cae como scatter (SC), el
- *     simbolo que mejor paga: moneda, `m`, `Bet` y el texto interior dentro del
- *     aro rojo, sin el planeta del logo anterior.
+ *   - El regalo navideño (`s10.webp`), que cae como scatter (SC), el simbolo que
+ *     mejor paga: el emblema circular con el aro dorado, el acebo, las campanas
+ *     y el regalo rojo con el lazo de oro en el centro.
  *   - El bono navideño (`s11.webp`) como multiplicador (`MX`), el regalo con el
  *     lazo que se pinta con su valor encima (2x .. 250x) y sobrevive a las
  *     cascadas.
@@ -25,13 +25,15 @@ import { GRID } from '../config/gameConfig.js';
  *
  * Los once WebP se generan desde `design/symbols/*.png` con
  * `npm run build:symbols` (alfa sin perdida y 335 x 341 px de lienzo): pesan
- * ~43 KB cada uno frente a los ~190 KB del PNG de origen. El sello del scatter
- * no se edita a mano: `npm run build:seals` lo deriva del unico maestro
- * `design/MBETN-LOGO@3x.png` quitandole el fondo blanco y reponiendo el disco
- * interior al 90 % de opacidad (`rgba(255, 255, 255, 0.9)`).
+ * ~45 KB cada uno frente a los ~190 KB del PNG de origen. Los once maestros se
+ * publican tal cual, sin derivar ninguno: la unica regla es el encuadre comun
+ * —escala uniforme 335 / ancho de la fuente y centrado vertical en el lienzo de
+ * 335 x 341—, asi que ninguna pieza se recorta ni cambia de proporcion.
  */
 const SYMBOL_IMAGE_PATH = '/src/assets/slot/';
-const BRAND_LOGO_IMAGE = `${SYMBOL_IMAGE_PATH}s10.webp`;
+/* El scatter cae con el arte del regalo navideño (`s10.webp`): emblema circular
+   de aro dorado con el regalo rojo del lazo de oro dentro. */
+const SCATTER_IMAGE = `${SYMBOL_IMAGE_PATH}s10.webp`;
 /* El multiplicador cae con el arte del bono navideño (`s11.webp`): el regalo
    dibujado, sin sello de marca, y la etiqueta del valor encima es lo que anuncia
    cuanto multiplica. */
@@ -47,7 +49,7 @@ export const SYMBOLS = Object.freeze({
   S7: { glyph: '⛄', name: 'Bola de nieve', image: `${SYMBOL_IMAGE_PATH}s7.webp` },
   S8: { glyph: '🚂', name: 'Tren de juguete', image: `${SYMBOL_IMAGE_PATH}s8.webp` },
   S9: { glyph: '🏠', name: 'Casa de jengibre', image: `${SYMBOL_IMAGE_PATH}s9.webp` },
-  SC: { glyph: '✨', name: 'Logo Santa Crush (scatter)', image: BRAND_LOGO_IMAGE },
+  SC: { glyph: '🎀', name: 'Regalo navideño (scatter)', image: SCATTER_IMAGE },
   MX: { glyph: '🎁', name: 'Bono navideño (multiplicador)', image: MULTIPLIER_IMAGE }
 });
 
