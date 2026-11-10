@@ -1,0 +1,22 @@
+# Archivos que nunca deben subirse al build de Vercel.
+# (El bundle de la funcion ademas los excluye via vercel.json > functions.excludeFiles)
+.env
+.env.*
+.vercel
+.sim
+.diag*
+*.log
+
+# Material de origen: no lo necesita ni el build ni el runtime, y son ~55 MB de
+# PNG/GIF/MP3 maestros que alargarian el upload en cada despliegue.
+design/
+docs/
+test/
+sql/
+# Arte fuente y audio original (solo los usa scripts/build-santa-masters.js).
+desk/
+movil/
+slot/
+sonidos/
+SANTA-CRUSH-LOGO-ANIMADO.gif
+Victoria navideña con mono y regalos.png
