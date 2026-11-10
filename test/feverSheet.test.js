@@ -1145,3 +1145,133 @@ test('el panel, los mandos del arte y la hoja estan en la fuente y en el minific
 });
 
 
+
+/* ------------------------------------------- sincronia de la insignia movil */
+
+test('elegir paquete repinta la insignia aunque el azul tenga aria-pressed pegado', async () => {
+  const ui = await createView();
+
+  /* Atributo pegado: la insignia no puede depender de el para decidir si pinta
+     —un bucle cortado a mitad puede dejarlo en `true`—, el estado manda. */
+  ui.refs.autoBtn.setAttribute('aria-pressed', 'true');
+
+  assert.equal(ui.setQuickSpins(25), true);
+  assert.equal(ui.refs.autoCount.textContent, 'x25', 'la cifra cambia en la misma llamada');
+  assert.match(
+    ui.refs.autoPack.getAttribute('aria-label'),
+    /Paquete de tiradas automáticas · 25\./,
+    'el nombre accesible viaja con la cifra'
+  );
+
+  assert.equal(ui.setQuickSpins(5), true);
+  assert.equal(ui.refs.autoCount.textContent, 'x5', 'y sigue cambiando en cada paquete');
+});
+
+test('el clon del rodillo se retira solo aunque no llegue animationend', async () => {
+  const ui = await createView();
+  ui.rollCleanupMs = 5;
+
+  const attached = [];
+  const host = {
+    offsetWidth: 48,
+    querySelectorAll: () => attached.filter((node) => node.attached),
+    appendChild(node) { node.parentNode = host; node.attached = true; attached.push(node); },
+    removeChild(node) { node.attached = false; }
+  };
+
+  const count = ui.refs.autoCount;
+  count.parentNode = host;
+  count.classList = { add() {}, remove() {}, toggle() {} };
+  count.textContent = '';
+
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    createElement: () => {
+      const node = fakeNode();
+      node.attached = false;
+      node.parentNode = null;
+      return node;
+    }
+  };
+
+  try {
+    ui.setQuickSpins(10);
+    ui.setQuickSpins(25);
+    assert.equal(attached.length, 1, 'la cifra saliente se clona');
+    assert.equal(count.textContent, 'x25', 'la cifra viva es la nueva');
+
+    /* Sin `animationend` (pestaña en segundo plano, animaciones apagadas con la
+       pagina abierta) el respaldo retira el clon: si se quedara, taparia la
+       cifra nueva con la vieja. */
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(attached.filter((node) => node.attached).length, 0, 'el clon se retira igual');
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
+});
+
+test('con movimiento reducido activado en vivo la cifra cambia sin rodillo', async () => {
+  const ui = await createView();
+  const classes = [];
+  let created = 0;
+
+  const count = ui.refs.autoCount;
+  count.parentNode = { offsetWidth: 48, appendChild() {}, removeChild() {}, querySelectorAll: () => [] };
+  count.classList = {
+    add: (name) => classes.push(name),
+    remove() {},
+    toggle() {}
+  };
+  count.textContent = '';
+
+  const previousDocument = globalThis.document;
+  const previousWindow = globalThis.window;
+  globalThis.document = {
+    createElement: () => {
+      created += 1;
+      return fakeNode();
+    }
+  };
+  /* El sistema activa "reducir movimiento" con la pagina ya cargada: el CSS
+     deja de animar en vivo y la vista tiene que enterarse en el momento. */
+  globalThis.window = { matchMedia: () => ({ matches: true }) };
+
+  try {
+    ui.setQuickSpins(10);
+    ui.setQuickSpins(25);
+    assert.equal(count.textContent, 'x25', 'el texto se actualiza igual de rapido');
+    assert.equal(created, 0, 'sin animacion no se clona la cifra saliente');
+    assert.deepEqual(classes, [], 'tampoco se marca la entrada');
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
+test('ciclar el paquete desde el controlador repinta la insignia de la vista', async () => {
+  const { GameController } = await loadUiModule('controllers/GameController.js');
+  const ui = await createView();
+  const sfx = createSfxSpy();
+
+  const api = { spin: async () => ({ ok: true }), gameInfo: async () => ({}) };
+  const session = { isDemo: false, invalidate() {}, resolve: async () => ({ source: 'dev' }) };
+  const game = new GameController({ api, ui, sfx, session });
+
+  assert.equal(ui.refs.autoCount.textContent, 'x10', 'arranca con el paquete por defecto');
+
+  assert.equal(game.cycleQuickSpins(), 25);
+  assert.equal(game.quickSpinsPick, 25);
+  assert.equal(ui.refs.autoCount.textContent, 'x25', 'el toque corto deja la cifra nueva');
+
+  assert.equal(game.cycleQuickSpins(), 5);
+  assert.equal(ui.refs.autoCount.textContent, 'x5', 'y la siguiente, tambien');
+
+  assert.equal(game.pickQuickSpins(10), true);
+  assert.equal(game.quickSpinsPick, 10);
+  assert.equal(ui.refs.autoCount.textContent, 'x10', 'elegir en la hoja repinta la pastilla');
+  assert.match(ui.refs.autoPack.getAttribute('aria-label'), /· 10\./);
+});
+

@@ -25,9 +25,16 @@ import { createReels } from './reels.js';
 import { TIMING, sleep } from '../lib/timing.js';
 import { LEVEL_LABEL } from '../lib/winLevel.js';
 
+/* Preferencia leida al cargar. Es solo el valor de partida: `motionReduced_()`
+   la vuelve a consultar en el momento de animar, porque el jugador puede
+   activarla con la pagina abierta y el CSS la aplica en vivo. */
 const REDUCED_MOTION = typeof window !== 'undefined'
   && typeof window.matchMedia === 'function'
   && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* Vida del clon del rodillo del paquete. La animacion dura 280 ms; el margen
+   cubre un fotograma lento y deja sitio al `animationend`. */
+const PACK_ROLL_CLEANUP_MS = 420;
 
 /**
  * Cascada de caida: cada columna arranca `DROP_STAGGER` ms despues de la
@@ -138,6 +145,9 @@ export class Ui {
       : this.quickSpins[0];
     /* Tiradas que le quedan al bucle en curso: la pildora azul las muestra. */
     this.autoRemaining = 0;
+    /* Vida del clon que sale por arriba en el rodillo de la insignia. Es una
+       propiedad y no una constante para que las pruebas no esperen 420 ms. */
+    this.rollCleanupMs = PACK_ROLL_CLEANUP_MS;
     /* El autogiro manda: con el bucle en marcha la insignia del paquete no
        reconfigura nada, igual que el resto de controles de apuesta. */
     this.autoActive = false;
@@ -552,12 +562,14 @@ export class Ui {
    * contradigan.
    */
   paintQuickSpinsOptions_() {
-    /* El azul repite el numero en su insignia, pero con el bucle en marcha manda
-       el progreso que pinta `setAuto`: no se pisa. */
-    const autoBtn = this.ref_('autoBtn');
-    if (autoBtn && autoBtn.getAttribute('aria-pressed') !== 'true') {
-      this.paintAutoCount_();
-      this.paintAutoLabel_(false);
+    /* La cifra de la insignia es el paquete vigente mientras el bucle esta
+       parado. Se reafirma aqui —y no leyendo `aria-pressed` del DOM— para que
+       un atributo pegado no deje la pastilla con el valor anterior: el estado
+       que manda es `autoActive`. Con el bucle en marcha manda el progreso que
+       pinta `setAuto` y no se pisa. */
+    if (!this.autoActive) {
+      this.paintAutoCount_(false, 0);
+      this.paintAutoLabel_(false, 0);
     }
 
     this.refreshQuickSpinsAvailability_();
@@ -1372,13 +1384,38 @@ export class Ui {
   }
 
   /**
+   * true si el sistema pide movimiento reducido.
+   *
+   * Se consulta EN EL MOMENTO, no al cargar el modulo: la preferencia se puede
+   * activar con la pagina abierta y el CSS deja de animar en vivo. Si aqui se
+   * dijera que si se puede animar, la animacion no correria nunca, no llegaria
+   * el `animationend` y el clon del rodillo se quedaria encima de la cifra
+   * nueva mostrando la vieja.
+   *
+   * @returns {boolean}
+   */
+  motionReduced_() {
+    if (REDUCED_MOTION) return true;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+    try {
+      return Boolean(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (err) {
+      /* Un `matchMedia` que lanza (WebView antiguo) no debe impedir el cambio. */
+      return false;
+    }
+  }
+
+  /**
    * Rodillo de la cifra del paquete: la cifra anterior sale por arriba mientras
    * la nueva entra desde abajo.
    *
    * La cifra viva es la del DOM —los lectores de pantalla y el `aria-label` la
    * leen al instante—, asi que el clon que sale es solo pintura: va
-   * `aria-hidden`, sin eventos y lo retira `animationend`. Si el navegador pide
-   * movimiento reducido, o no hay DOM, el cambio es instantaneo.
+   * `aria-hidden`, sin eventos y lo retira `animationend`... o el temporizador
+   * de seguridad, porque el evento no siempre llega (pestaña en segundo plano,
+   * animaciones desactivadas con la pagina abierta, navegadores que no lo
+   * emiten). Sin ese respaldo el clon taparia la cifra nueva para siempre. Si
+   * el sistema pide movimiento reducido no se clona nada.
    *
    * @param {object} node `#auto-count`
    * @param {string} previous cifra que acaba de salir
@@ -1386,7 +1423,7 @@ export class Ui {
    */
   rollAutoCount_(node, previous) {
     const host = node ? node.parentNode : null;
-    if (REDUCED_MOTION || !host) return false;
+    if (!host || this.motionReduced_()) return false;
 
     const doc = typeof document !== 'undefined' ? document : null;
     if (!doc || typeof doc.createElement !== 'function') return false;
@@ -1413,15 +1450,17 @@ export class Ui {
     node.classList.add('is-roll-in');
     host.appendChild(ghost);
 
+    let cleaned = false;
     const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
       if (ghost.parentNode === host) host.removeChild(ghost);
       node.classList.remove('is-roll-in');
     };
     if (typeof ghost.addEventListener === 'function') {
       ghost.addEventListener('animationend', cleanup, { once: true });
-    } else if (typeof setTimeout === 'function') {
-      setTimeout(cleanup, 400);
     }
+    if (typeof setTimeout === 'function') setTimeout(cleanup, this.rollCleanupMs);
     return true;
   }
 
@@ -1681,6 +1720,11 @@ export class Ui {
    * Fija el paquete de tiradas automaticas elegido en la hoja. No gira ni
    * gasta: mueve el chip resaltado del amarillo y la pildora del azul.
    *
+   * La pastilla se repinta aqui mismo —cifra, rodillo y nombre accesible— y no
+   * como efecto lateral de la hoja: es la ruta que usan el toque corto, la
+   * eleccion de una tarjeta y el arranque del bucle, y ninguna puede quedarse
+   * con el valor anterior.
+   *
    * @param {number} spins debe pertenecer a `bets.quickSpins`
    * @returns {boolean} true si el paquete es valido
    */
@@ -1689,6 +1733,10 @@ export class Ui {
     if (!Number.isInteger(value) || !this.quickSpins.includes(value)) return false;
 
     this.quickSpinsPick = value;
+    /* Con el bucle en marcha la insignia cuenta las que quedan, no el paquete
+       nuevo; en reposo, el paquete elegido. En los dos casos se pinta ya. */
+    this.paintAutoCount_(this.autoActive, this.autoRemaining);
+    this.paintAutoLabel_(this.autoActive, this.autoRemaining);
     /* El chip resaltado, la pildora y el nombre accesible siguen al paquete
        elegido; con el bucle en marcha siguen mostrando las que quedan. */
     this.paintQuickSpinsOptions_();

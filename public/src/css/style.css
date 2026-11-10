@@ -5607,6 +5607,13 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .controls #btn-auto-pack #auto-count.is-roll-in {
     animation: none;
   }
+
+  /* El clon existe solo para la animacion: sin animacion no debe pintarse. Si
+     quedara encima, taparia la cifra nueva con la vieja y la insignia pareceria
+     congelada. */
+  .machine__side .controls #btn-auto-pack .pill__roll-ghost {
+    display: none;
+  }
 }
 
 /* --------------------------------------------------------------------------

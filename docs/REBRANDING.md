@@ -222,7 +222,14 @@ paquete vigente (o las tiradas que quedan con el bucle en marcha) y funciona com
 **rodillo**. Cada pulsacion corta pasa al siguiente paquete publicado
 (`bets.quickSpins`, hoy `x5 → x10 → x25` y vuelta a empezar) y la cifra entra
 desde abajo: `GameView.rollAutoCount_` clona la saliente en `.pill__roll-ghost`
-—solo pintura, `aria-hidden`— y anima la viva con `pack-roll-in/out`. **Rodar el
+—solo pintura, `aria-hidden`— y anima la viva con `pack-roll-in/out`. El clon lo
+retira `animationend` **y** un temporizador de seguridad: el evento no llega si
+la pestaña esta en segundo plano o si el sistema pide movimiento reducido con la
+pagina abierta, y un clon huerfano taparia la cifra nueva con la vieja (la
+insignia parecia congelada). `GameView.setQuickSpins` repinta cifra, nombre
+accesible y chip en la misma llamada, sin depender de `aria-pressed` del DOM, asi
+que el toque corto, la tarjeta de la hoja y el arranque del bucle nunca dejan la
+pastilla con el valor anterior. **Rodar el
 paquete no gira ni gasta saldo.** La **pulsacion larga** (o `Shift+Enter` con el
 foco en la insignia) abre la hoja **Giros Rapidos**, que es donde se ve el coste
 de cada paquete y sigue siendo el unico mando con `aria-haspopup`; el FEVER avisa
