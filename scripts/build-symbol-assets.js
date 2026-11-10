@@ -1,11 +1,11 @@
 'use strict';
 
 /**
- * Convierte los diez maestros del tablero a WebP con alfa sin perdida.
+ * Convierte los once maestros del tablero a WebP con alfa sin perdida.
  *
- *   design/symbols/s1.png .. s10.png  ->  public/src/assets/slot/s1.webp .. s10.webp
+ *   design/symbols/s1.png .. s11.png  ->  public/src/assets/slot/s1.webp .. s11.webp
  *
- * Las diez piezas se pintan a ~80 px CSS (hasta 3x de densidad), asi que no se
+ * Las once piezas se pintan a ~80 px CSS (hasta 3x de densidad), asi que no se
  * reescala el arte: 335 x 341 px es la resolucion de dibujo y el WebP conserva
  * exactamente ese lienzo. Lo que cambia es el codec: el PNG de estos balones
  * pesa ~170 KB porque guarda el alfa sin comprimir, mientras que el WebP con
@@ -39,6 +39,17 @@ const TARGET_DIR = path.join(ROOT, 'public', 'src', 'assets', 'slot');
 // rozan el tope de 48 KB a q=90). A q=82 la pieza mas pesada baja a 45.3 KB y
 // deja aire para cualquier pieza nueva.
 const QUALITY = Number(process.env.SYMBOL_QUALITY || 82);
+
+/* Unica excepcion por pieza: el emblema BONO (scatter) junta oro, cintas,
+   nieve y letras con antialias en el mismo lienzo, y a q=82 se pasa del tope
+   (50.5 KB). A q=76 queda en 45.2 KB y a tamano de casilla no se distingue del
+   maestro, asi que el resto del set conserva su calidad. */
+const QUALITY_OVERRIDES = Object.freeze({ 's10.png': 76 });
+
+/** Calidad efectiva de un maestro: su excepcion o la del set. */
+function qualityFor(name) {
+  return QUALITY_OVERRIDES[name] || QUALITY;
+}
 
 /* Tope por pieza: si un simbolo se pasa, el build falla y hay que revisar el
    arte en vez de publicar un tablero pesado sin enterarse. */
@@ -88,9 +99,10 @@ async function build(name) {
 
   const master = await sharp(sourcePath).metadata();
   const alpha = await sharp(sourcePath).ensureAlpha().raw().toBuffer();
+  const quality = qualityFor(name);
 
   const webp = await sharp(sourcePath)
-    .webp({ quality: QUALITY, alphaQuality: 100, effort: 6, smartSubsample: true })
+    .webp({ quality, alphaQuality: 100, effort: 6, smartSubsample: true })
     .toBuffer();
 
   const { meta, info, alphaDiff } = await decode(webp, alpha);
@@ -130,6 +142,7 @@ async function build(name) {
     bytes: webp.length,
     width: info.width,
     height: info.height,
+    quality,
     written: !identical
   };
 }
@@ -137,7 +150,7 @@ async function build(name) {
 async function main() {
   const masters = listMasters();
   if (masters.length === 0) {
-    throw new Error(`No hay maestros s1..s10 en ${path.relative(ROOT, SOURCE_DIR)}`);
+    throw new Error(`No hay maestros s1..s11 en ${path.relative(ROOT, SOURCE_DIR)}`);
   }
 
   const results = [];
@@ -156,6 +169,7 @@ async function main() {
       `${r.targetName.padEnd(10)} ${`${r.width}x${r.height}`.padEnd(9)} ` +
         `${kb(r.masterBytes).padStart(9)} -> ${kb(r.bytes).padStart(8)}  ` +
         `${(100 - (r.bytes / r.masterBytes) * 100).toFixed(1).padStart(5)} % menos` +
+        `  q=${r.quality}` +
         (r.written ? '' : '  (sin cambios)')
     );
   }

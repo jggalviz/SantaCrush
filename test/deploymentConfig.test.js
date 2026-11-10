@@ -103,6 +103,34 @@ test('Vercel sirve / desde el HTML generado y no traza public/', () => {
   );
 });
 
+test('.vercelignore ancla las carpetas de origen para no borrar el arte publicado', () => {
+  // Gitignore aplica los patrones sin barra inicial a cualquier nivel del arbol:
+  // la regla `slot/` excluia tambien `public/src/assets/slot/`, asi que el build
+  // generaba los once simbolos y Vercel los dejaba fuera del despliegue (404 en
+  // produccion y la rejilla cayendo al emoji de reserva). Toda carpeta de origen
+  // va anclada a la raiz y ninguna regla puede tocar el arbol publicado.
+  const rules = read('.vercelignore')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith('#'));
+
+  for (const rule of rules) {
+    if (/^[^/].*\/$/.test(rule)) {
+      assert.fail(
+        `La regla "${rule}" se aplica a cualquier nivel del arbol: anclala como "/${rule}" ` +
+          'para que no excluya el arte de public/src/assets'
+      );
+    }
+  }
+
+  assert.ok(rules.includes('/slot/'), 'El arte fuente del escritorio se excluye anclado a la raiz');
+  assert.equal(rules.includes('slot/'), false, 'La regla sin anclar se llevaria public/src/assets/slot');
+
+  for (const published of ['/public/', '/src/', '/ui/']) {
+    assert.equal(rules.includes(published), false, `${published} no puede viajar en .vercelignore`);
+  }
+});
+
 test('server/generated/indexHtml.js refleja public/index.html', () => {
   const { INDEX_HTML } = require('../server/generated/indexHtml');
 

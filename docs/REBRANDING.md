@@ -188,53 +188,48 @@ marca dentro del marco candy".
 Los simbolos del tablero (once WebP en `public/src/assets/slot/`) se mapean en
 `ui/lib/format.js` (`SYMBOL_IMAGE_PATH`). `s1.webp` .. `s9.webp` son los nueve
 regulares, en el mismo orden que los tramos de la tabla de pagos (s1 = S1, el
-mas comun, ... s9 = S9, el mas raro); `s10.webp` cae como scatter (SC) y
-`s11.webp` como multiplicador (MX), y los dos son **el mismo sello circular de la
-marca**. Si se sustituyen por otra iconografia, hay que conservar los nombres
-`s*.webp` o actualizar ese mapeo; `test/frontendAssets.test.js` valida que las 11
-imagenes existan.
+mas comun, ... s9 = S9, el mas raro); `s10.webp` cae como scatter (SC) con el
+emblema **BONO** y `s11.webp` como multiplicador (MX) con el **sello del
+regalo**. Son dos dibujos distintos a proposito: el bono no se confunde con el
+valor que lo multiplica. Si se sustituyen por otra iconografia, hay que conservar
+los nombres `s*.webp` o actualizar ese mapeo; `test/frontendAssets.test.js`
+valida que las 11 imagenes existan y que cada simbolo apunte a la suya.
+
+La URL de cada pieza lleva un sufijo de version (`?v=2`, `SYMBOL_IMAGE_VERSION`
+en `ui/lib/format.js`) porque `/src/assets/**` se sirve `immutable` durante un
+ano: al repintar el tablero hay que subir ese numero para que el jugador no siga
+viendo el arte cacheado.
 
 Los PNG maestros viven en `design/symbols/` y `npm run build:symbols` los
-convierte a WebP (alfa sin perdida, mismo lienzo de 335 x 341 px): 1,42 MB de
-PNG pasan a 0,31 MB sin tocar el dibujo ni la geometria de las casillas.
+convierte a WebP (alfa sin perdida, mismo lienzo de 335 x 341 px): ~1,8 MB de
+PNG pasan a ~0,44 MB sin tocar el dibujo ni la geometria de las casillas.
 
-Los dos sellos de marca (`s10.png` y `s11.png`) no se editan a mano: los deriva
-`npm run build:seals` del unico maestro `design/MBETN-LOGO@3x.png`. Ese PNG trae
-**fondo blanco opaco** (el arte se dibujo sobre blanco, no sobre alfa), asi que
-el script lo convierte en transparencia con el inverso del alpha blending
-(`a = 255 - min(r, g, b)`) en vez de recortarlo: los bordes del aro y de las
-letras conservan su antialias. Despues repone el **relleno interior del disco al
-90 % de opacidad** (`rgba(255, 255, 255, 0.9)`) componiendo la tinta encima con
-un `source-over`, de modo que los rayos dorados de la casilla
-(`logo-tile-sheen`) se filtran un 10 % por dentro del aro sin perder
-legibilidad; fuera del circulo el lienzo sigue transparente.
+Los maestros tampoco se editan a mano: `npm run build:slot-art -- --source="<carpeta>"`
+importa el arte del disenador, recorta cada pieza al bbox de sus pixeles visibles
+y la encaja en el lienzo comun sin deformarla. El mapa nombre -> casilla vive en
+`scripts/import-slot-art.js`: `Bono ...png` -> `s10.png` (scatter, SC) y
+`Regalo ...png` -> `s11.png` (multiplicador, MX), y los nueve regulares llegan ya
+numerados `s1.png` .. `s9.png`. El emblema BONO es la pieza mas densa del set y
+a q=82 se pasaba del tope de 48 KB, asi que `build-symbols.js` le baja la calidad
+a 76 (unica excepcion por pieza); el resto del set sigue a q=82.
 
-* `s10.png` (scatter) y `s11.png` (multiplicador): **el mismo sello circular**,
-  con la moneda, la `m`, el `Bet` y el texto interior (`JUEGA | GANA |
-  #COBRASEGURO`) dentro del aro rojo, y **sin el planeta del logo anterior**.
-  Sale 1:1 en el lienzo de 335 x 341 (335 x 335 de tinta, 3 px de aire arriba y
-  abajo), sin sangrado ni recorte de aire: `--logo-bleed: 0%` y
-  `object-view-box: inset(0)` en `style.css`. El build escribe el sello una vez y
-  copia el mismo PNG a los dos maestros, asi que no pueden divergir; lo que
-  distingue a `MX` en el tablero es la etiqueta del valor (2x .. 250x), no el
-  arte.
+`scripts/build-brand-seals.js` queda como herramienta historica del sello
+anterior (derivaba los dos maestros del unico `design/MBETN-LOGO@3x.png`
+convirtiendo su fondo blanco en alfa): **ya no alimenta el tablero** y ejecutarlo
+sobrescribe `s10`/`s11` con el sello viejo, asi que despues habria que repetir
+`build:slot-art` y `build:symbols`. `test/frontendAssets.test.js` mide sobre los
+WebP servidos el lienzo comun, el alfa real (esquinas transparentes) y que `s10`
+y `s11` sean dos piezas distintas.
 
-El logotipo del planeta (`s10-planeta.png`) se conserva fuera del flujo del
-build en `design/legacy/` (los maestros publicables son los `s*.png` de
-`design/symbols`), y `test/frontendAssets.test.js` mide sobre los WebP servidos
-que los dos sellos sean identicos, que las esquinas sigan transparentes, que el
-disco blanco llegue al 90 % de opacidad, que no quede fondo blanco opaco ni un
-solo pixel del globo terraqueo.
-
-El multiplicador (MX) ya no usa el caramelo de `symbols/candy_4.png` ni un arte
-propio: cae con el mismo sello de marca (`s11.png`, derivado de
-`design/MBETN-LOGO@3x.png`) y se pinta con su valor encima (2x .. 250x). El set
+El multiplicador (MX) ya no usa el caramelo de `symbols/candy_4.png`: cae con el
+sello del regalo (`s11.png`) y se pinta con su valor encima (2x .. 250x). El set
 de caramelos se retiro de `public/` para no publicar ~7 MB que el cliente nunca
 descargaba.
 
 Ese set **si es deportivo**, igual que el marco (`d1`/`d2`) y los fondos:
 balones de beisbol, futbol, tenis, futbol americano, basquet, golf, voley, la
-bola 8, la bola de bolos y los dos sellos de la marca (el mismo sello circular). Un test
+bola 8, la bola de bolos y las dos piezas de marca (el emblema BONO del scatter
+y el sello del regalo del multiplicador). Un test
 (`los simbolos del tablero giran con los balones de la carpeta slot`) falla si
 el mapa vuelve a los caramelos, si cambia el orden s1..s9 o si apunta a otra
 carpeta. `ui/` es la fuente: `npm run build:ui` materializa el espejo byte a

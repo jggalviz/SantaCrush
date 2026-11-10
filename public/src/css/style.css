@@ -1455,9 +1455,9 @@ body::after {
    los temas repintan `.tile` con mas especificidad (`html[data-theme] .tile`), y
    desde el pseudo elemento la medalla gana siempre sin pelearse con ellos. El
    pseudo esta recortado al bloque por su propio `border-radius`, asi que los
-   rayos no invaden al vecino. Lo comparten el scatter (`s10`) y el
-   multiplicador (`s11`), que caen con el mismo sello circular de la marca: las
-   dos son piezas de marca y las dos tienen que dominar el tablero. */
+   rayos no invaden al vecino. Lo comparten el scatter (`s10`, el emblema BONO)
+   y el multiplicador (`s11`, el sello del regalo): las dos son piezas de marca
+   con dibujo propio y las dos tienen que dominar el tablero. */
 .tile[data-sym="SC"],
 .tile[data-sym="MX"] {
   --logo-tile-scale: 1.04;
@@ -1501,14 +1501,14 @@ body::after {
   100% { background-position: 160% 50%, 50% 50%, 50% 50%, 50% 50%; }
 }
 
-/* Los dos sellos de marca son el mismo dibujo: el sello circular que genera
-   `npm run build:seals` —moneda, `m`, `Bet` y el texto interior dentro del aro—,
-   1:1 y encajado en el lienzo comun de 335 x 341 px. Como el arte llena el ancho
-   y solo le sobran 3 px de aire arriba y abajo, no hay que recortarle nada ni
-   empujarlo fuera del marco: `object-view-box: inset(0)` deja el sello como
-   viene, `contain` lo ajusta al bloque —en una casilla apaisada manda el alto,
-   asi que el circulo queda entero y centrado— y el 4 % de `--logo-tile-scale`
-   sobre el bloque ya lo saca del hueco, como una pegatina. Un sangrado extra
+/* Las dos piezas de marca llenan su bloque de borde a borde: llegan del
+   `npm run build:slot-art` recortadas al bbox y encajadas en el lienzo comun de
+   335 x 341 px —el emblema BONO deja 3 px de aire arriba y abajo; el sello del
+   regalo, 30 px, porque es redondo—, asi que no hay que recortarles nada ni
+   empujarlas fuera del marco: `object-view-box: inset(0)` deja la pieza como
+   viene, `contain` la ajusta al bloque —en una casilla apaisada manda el alto,
+   asi que la pieza queda entera y centrada— y el 4 % de `--logo-tile-scale`
+   sobre el bloque ya la saca del hueco, como una pegatina. Un sangrado extra
    (`--logo-bleed`) solo comeria el aro contra el filo dorado, asi que va a cero.
    El `overflow` visible deja caer la sombra fuera del bloque, el `z-index`
    mantiene el sello por delante de las pelotas y la flotacion perpetua

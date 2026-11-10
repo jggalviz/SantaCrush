@@ -383,13 +383,15 @@ No es necesario para un despliegue normal: los WebP/WOFF2/PNG ya están versiona
 | `npm run build:bg` | `fondo_desk_meridino_crush.png`, `avenida_fantastica_reino_caramelos.png` | `fondo_desk_meridino_crush.webp`, `avenida_fantastica_reino_caramelos.webp` |
 | `npm run build:logo` | `MeridianoBet Sports Crush Logo.png` | `MERIDIANOBET-CRUSH-LOGO.webp` |
 | `npm run build:symbols` | `symbols/s1.png` … `symbols/s11.png` | `slot/s1.webp` … `slot/s11.webp` |
-| `npm run build:seals` | `MBETN-LOGO@3x.png` | `symbols/s10.png`, `symbols/s11.png` (antes de `build:symbols`) |
+| `npm run build:slot-art -- --source="<carpeta>"` | renders del diseñador (`s1..s9.png` + `Bono ...png` + `Regalo ...png`) | `symbols/s1.png` … `symbols/s11.png` (antes de `build:symbols`) |
+| ~~`npm run build:seals`~~ | histórica: `MBETN-LOGO@3x.png` | ya **no** alimenta el tablero; sobrescribe `symbols/s10.png` y `s11.png` con el sello anterior |
 | `npm run build:win` | `victoria_deportiva.png` | `victoria_deportiva.webp` |
 
 - Requieren `sharp` (ya está en `devDependencies`) y son **idempotentes**.
 - El **GIRAR de escritorio** no está dibujado en `design/d2.png`: el maestro deja esa franja en el verde de la tarjeta y `scripts/lib/girarPlate.js` pinta ahí la placa roja (aro dorado, bisel y sombra, con el rojo de los discos − / + y la geometría de AUTOGIRO/AUTO) **sobre la copia que se publica**, justo dentro de la caja que el CSS reserva al pulsador (9,16 % / 65,84 % / 80,76 % / 16,81 %). No hay que retocar el PNG ni el WebP a mano: `npm run build:desktop-art` recompone la placa cada vez y el resultado es el mismo byte a byte.
-- Los PNG maestros de `design/` **no se publican**: `public/src/assets/` solo contiene lo que descarga el cliente. `design/symbols/` guarda los maestros de origen —los nueve balones y los dos sellos de la marca—; `npm run build:symbols` los convierte a WebP con el canal alfa sin pérdida (1,42 MB → 0,31 MB).
-- Los dos sellos (`s10` scatter y `s11` multiplicador) son **el mismo sello circular** y **no se editan a mano**: `npm run build:seals` los deriva del único maestro `design/MBETN-LOGO@3x.png` convirtiendo en transparencia su fondo blanco opaco y reponiendo el disco interior al 90 % de opacidad (`rgba(255, 255, 255, 0.9)`), para que los rayos dorados de la casilla se filtren por dentro del aro (ver `docs/REBRANDING.md`). El logotipo del planeta anterior vive fuera del build en `design/legacy/s10-planeta.png`.
+- Los PNG maestros de `design/` **no se publican**: `public/src/assets/` solo contiene lo que descarga el cliente. `design/symbols/` guarda los maestros de origen —los nueve motivos navideños y las dos piezas de marca—; `npm run build:symbols` los convierte a WebP con el canal alfa sin pérdida (~1,8 MB → ~0,44 MB).
+- Los maestros del tablero se importan del arte del diseñador con `npm run build:slot-art -- --source="<carpeta>"`, que recorta cada pieza al bbox de sus píxeles visibles y la encaja en el lienzo común de 335 x 341 px: `Bono ...png` → `s10.png` (scatter, SC) y `Regalo ...png` → `s11.png` (multiplicador, MX). Son **dos dibujos distintos**, así que el bono no se confunde con el valor que lo multiplica (ver `docs/REBRANDING.md`).
+- `npm run build:seals` queda como herramienta **histórica** del sello anterior: ya no alimenta el tablero y, si se ejecuta, sobrescribe `symbols/s10.png` y `s11.png`, así que después hay que repetir `build:slot-art` y `build:symbols`.
 - Si regeneras arte, **haz commit de los WebP resultantes** y planifica la invalidación/renombrado correspondiente en CloudFront (§4.7). Los sellos conservan el nombre `s10.webp`/`s11.webp`: invalida esas dos rutas y avisa de una recarga forzada, porque el navegador los guardó con `immutable`.
 
 ### 3.4 Generación de la build final estática
@@ -914,7 +916,7 @@ Asóciala en la consola: *Distribution → Behaviors → Default (*) → Edit �
 | `/`, `/index.html` | `text/html; charset=utf-8` | `no-cache, max-age=0, must-revalidate` | `pana-crush-revalidate` | Cada despliegue debe verse de inmediato |
 | `/ui/**` | `text/javascript; charset=utf-8` | `public, max-age=0, must-revalidate` | `pana-crush-revalidate` | **Sin hash** en el nombre: cachear 1 año dejaría JS viejo tras un deploy |
 | `/src/css/**` | `text/css; charset=utf-8` | `public, max-age=0, must-revalidate` | `pana-crush-revalidate` | Igual que JS |
-| `/src/assets/**/*.webp` | `image/webp` | `public, max-age=31536000, immutable` | `pana-crush-assets-immutable` | Arte estable (incluye `slot/s1..s11.webp`); se renombra o invalida si cambia |
+| `/src/assets/**/*.webp` | `image/webp` | `public, max-age=31536000, immutable` | `pana-crush-assets-immutable` | Arte estable (incluye `slot/s1..s11.webp`, que llevan `?v=N` en la URL para invalidarlos al repintar) |
 | `/src/assets/**/*.mp3` | `audio/mpeg` | `public, max-age=31536000, immutable` | `pana-crush-assets-immutable` | Aplausos de victoria y bucle ambiental versionados |
 | `/src/assets/fonts/*.woff2` | `font/woff2` | `public, max-age=31536000, immutable` | `pana-crush-assets-immutable` | Tipografías versionadas |
 | `/api/*` | `application/json` | Definido por Express | **CachingDisabled** | Saldos y rondas nunca se cachean |

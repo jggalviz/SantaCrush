@@ -1,6 +1,14 @@
 'use strict';
 
 /**
+ * HERRAMIENTA HISTORICA: ya no alimenta el tablero.
+ *
+ * Los maestros publicados se importan con `npm run build:slot-art` desde el arte
+ * del disenador (`s10` = emblema BONO del scatter, `s11` = sello del regalo del
+ * multiplicador). Ejecutar este script sobrescribe los dos maestros con el sello
+ * anterior derivado de `design/MBETN-LOGO@3x.png`, asi que despues habria que
+ * repetir `build:slot-art` y `build:symbols`.
+ *
  * Deriva los dos sellos de marca del tablero desde un unico maestro.
  *
  *   design/MBETN-LOGO@3x.png  ->  design/symbols/s10.png  (scatter, SC)
