@@ -239,6 +239,17 @@ foco en la insignia) abre la hoja **Giros Rapidos**, que es donde se ve el coste
 de cada paquete y sigue siendo el unico mando con `aria-haspopup`; el FEVER avisa
 del saldo insuficiente apagandose cuando no cubre sus 100 apuestas.
 
+En escritorio la insignia se apoya en la mitad baja del caramelo azul (x 64,48-76,88 %
+· y 85,4-88,5 %, con el caramelo en 80,21-88,71 %), **por debajo del centro** del
+pulsador (84,46 %). No es un detalle decorativo: la caja del pill se lleva los clics
+que caen encima, y arrancando en el 84 % tapaba el punto de gravedad del AUTO, asi
+que pulsar el centro del caramelo rodaba el paquete en vez de arrancar el autogiro
+(medido en Edge: `elementFromPoint` del centro devolvia `#btn-auto-pack` y el saldo
+no se movia; habia que acertar en el rotulo). Bajarla a un tercio del alto del
+caramelo libera el centro para el pulsador y deja la pastilla colgando del rotulo,
+como en el arte. `test/feverSheet.test.js` compara las dos geometrias declaradas
+(centro del AUTO contra el borde alto del pill) para que no vuelvan a cruzarse.
+
 En movil (`max-width: 899px`) el panel es `console-mobile.webp`: los discos CRUSH
 (FEVER) · AUTO · GIRAR · − · + y la fila de cuatro capsulas vienen dibujados, asi
 que ahi los mandos son **areas tactiles transparentes** sobre el arte. La capsula

@@ -7560,13 +7560,23 @@ body.is-demo .machine__side .controls .balance::after {
      rojo, con el dorado de las pastillas del arte, y muestra el paquete vigente
      (`x10`) o las tiradas que quedan. Pulsacion corta: rueda x5 -> x10 -> x25
      (la cifra entra desde abajo, ver el bloque del rodillo); pulsacion larga:
-     abre la hoja GIROS RAPIDOS. */
+     abre la hoja GIROS RAPIDOS.
+
+     EL PILL EMPIEZA POR DEBAJO DEL CENTRO DEL CARAMELO (85,4 % > 84,46 %, que es
+     el centro de `#btn-auto`: 80,21 % + 8,5 % / 2). La insignia es hermana del
+     azul, no hija —un boton dentro de otro no es marcado valido—, asi que su
+     caja se lleva los clics que caen encima: si arrancaba en el 84 % tapaba el
+     punto de gravedad del pulsador y pulsar el centro del AUTO rodaba el paquete
+     en vez de arrancar el autogiro (medido: `elementFromPoint` del centro
+     devolvia `#btn-auto-pack` y el saldo no se movia). Bajarla y dejarla en un
+     tercio del alto del caramelo libera el centro y deja el pill, como en el
+     arte, colgando del rotulo. */
   .machine__side .controls #btn-auto-pack {
     position: absolute;
     left: 64.48%;
-    top: 84%;
+    top: 85.4%;
     width: 12.4%;
-    height: 3.8%;
+    height: 3.1%;
     min-width: 0;
     min-height: 0;
     display: flex;

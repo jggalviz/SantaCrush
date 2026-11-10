@@ -1130,6 +1130,33 @@ test('el panel, los mandos del arte y la hoja estan en la fuente y en el minific
     /\.machine__side \.controls #btn-auto-pack \{[^}]*position: absolute;[^}]*left: 64\.48%;/,
     'en escritorio la insignia se apoya en la mitad baja del caramelo azul'
   );
+  /* El centro del caramelo azul tiene que quedar libre. La insignia es hermana
+     del AUTO —no puede ser hija: un boton dentro de otro no es marcado valido—
+     asi que su caja se lleva los clics que caen encima. Con el pill arrancando
+     en el 84 % tapaba el punto de gravedad del pulsador (80,21 % + 8,5 % / 2 =
+     84,46 %): pulsar el centro del AUTO rodaba el paquete en vez de arrancar el
+     autogiro, y habia que acertar en el rotulo. Este test compara las dos
+     geometrias declaradas para que no vuelvan a cruzarse. */
+  const pctOf = (body, prop) => {
+    const hit = body.match(new RegExp(`${prop}:\\s*(-?\\d+(?:\\.\\d+)?)%`));
+    return hit ? Number(hit[1]) : null;
+  };
+  const autoWindow = [...css.matchAll(/\.machine__side \.controls #btn-auto \{([^}]*)\}/g)]
+    .find((match) => match[1].includes('top: 80.21%;'));
+  assert.ok(autoWindow, 'el AUTO declara su ventana en el arte');
+  const packFace = [...css.matchAll(/\.machine__side \.controls #btn-auto-pack \{([^}]*)\}/g)]
+    .find((match) => match[1].includes('left: 64.48%;'));
+  assert.ok(packFace, 'la insignia declara su caja en escritorio');
+  const autoTop = pctOf(autoWindow[1], 'top');
+  const autoHeight = pctOf(autoWindow[1], 'height');
+  const packTop = pctOf(packFace[1], 'top');
+  const packHeight = pctOf(packFace[1], 'height');
+  assert.ok(
+    packTop > autoTop + autoHeight / 2,
+    'la insignia arranca por debajo del centro del caramelo: el centro sigue siendo del AUTO'
+  );
+  assert.ok(packTop + packHeight <= autoTop + autoHeight, 'y la insignia cabe entera dentro del caramelo');
+  assert.ok(packHeight <= autoHeight * 0.4, 'ocupa menos de la mitad del alto: es una pastilla, no un pulsador');
   assert.match(
     css,
     /\.machine__side \.controls #btn-auto-pack \{[^}]*left: 6\.33%;/,
