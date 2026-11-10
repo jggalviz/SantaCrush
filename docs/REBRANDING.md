@@ -327,6 +327,41 @@ Reglas de arquitectura que **no** se deben romper (`test/uiArchitecture.test.js`
 renderers solo pintan el payload del servidor (la cifra final siempre viene del
 backend).
 
+## Paridad funcional con el juego base
+
+El rebranding es **solo presentacion**: ni los eventos, ni los temporizadores, ni
+el estado de autogiro, ni el manejo de saldo pueden separarse del juego de
+referencia (`C:\latinongroup_dev\MeridianoBetCrush`). `test/referenceParity.test.js`
+lo fija y se salta solo si la referencia no esta en la maquina (la ruta se puede
+mover con `SANTA_CRUSH_REFERENCE`).
+
+| Capa | Ficheros | Regla |
+| --- | --- | --- |
+| Mando de la botonera | `ui/components/GameControls.js` | Identico byte a byte |
+| Controlador (estado, autogiro, saldo) | `ui/controllers/GameController.js` | Identico byte a byte |
+| Motor y reglas | `core/**` | Identico byte a byte |
+| Vista | `ui/renderers/GameView.js` | Misma superficie: los 82 metodos de la referencia, sin altas ni bajas |
+| API y sesion | `ui/services/ApiClient.js` | Identico; solo `SessionManager.js` cambia la clave de almacenamiento (`santacrush.session.v1`) |
+| Textos, arte y audio | `ui/renderers/GameView.js`, `ui/lib/format.js`, `ui/config/gameConfig.js`, `ui/audio/sfx.js` | Unica capa libre: nombres de simbolos, tabla de pagos, rutas de assets |
+
+Divergencias deliberadas, todas de presentacion y ninguna de comportamiento:
+
+- `ui/audio/sfx.js` mantiene un canal propio (`SPIN_SOUND_SRC`, techo de voces y
+  los eventos `pageshow`/`focus`/`visibilitychange`) para que la musica entre
+  sin gesto; el juego base tiene solo el canal de la victoria.
+- `ui/main.js` crea `createSfx()` antes de montar la vista para precargar los
+  tres MP3; la referencia lo hace despues. El orden no altera ningun evento.
+- `config/gameConfig.js` y `ui/config/gameConfig.js` solo cambian `name`,
+  `label` y el bloque `assets`: apuestas, `quickSpins` (`5/10/25`), RTP y
+  paytables son los del juego base.
+- `#btn-auto-pack` es hermano de `#btn-auto` (el arte de la consola lo coloca
+  fuera del recorte) y lleva `pointer-events: none`, asi que nunca intercepta el
+  clic; en la referencia es hijo del boton.
+
+Para re-sincronizar tras un cambio en el juego base, copia los ficheros de las
+tres primeras filas de la tabla y vuelve a pintar el tema con `npm run build:ui`,
+`npm run build:css` y `npm run build:index`.
+
 ## Cache y publicacion
 
 - `public/ui/**` es un espejo generado desde `ui/`: tras editar `ui/` ejecuta
