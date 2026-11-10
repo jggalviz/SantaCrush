@@ -46,7 +46,7 @@ que distinguir dos grupos antes de tocar nada:
 | Boton "Fichas de Prueba", capsula de audio, modal, anillo de foco | CSS | **Si** |
 | Marco interior del tablero (`.board`, `.tile`) | Gradientes CSS | **Si** |
 | Consola de mandos (`.controls`: − · + · MAX · FEVER · AUTO) | `console/console-desktop.webp` (escritorio) / `console/console-mobile.webp` (movil) | No: reexportar arte |
-| Pulsador **GIRAR** (el unico mando que el arte no dibuja) | CSS (capsula carmesi y aro dorado) | **Si** |
+| Pulsador **GIRAR** (el unico mando que el arte no dibuja) | CSS (capsula carmesi, aro dorado de 3 px en la capa del borde) | **Si** |
 | Nube del logo (`.machine__hero`, escritorio) | `console/console-desktop.webp` | No: reexportar arte |
 | Marco del tablero (escritorio) | `console/slot-frame.webp` | No: reexportar arte |
 | Marco del tablero (movil) | `console/slot-frame-mobile.webp` | No: reexportar arte |
@@ -211,7 +211,11 @@ encima; al pulsar, el `:active` hunde la ventana. El unico mando que el arte no
 dibuja es el **GIRAR grande** (x 12-88 % · y 67,4-77,6 % del lienzo, la banda verde
 entre la lectura del saldo y la fila del pie): se pinta con su propia capsula rosa
 candy y su aro dorado, y es el que lanza la tirada y, con el bucle en marcha, la
-detiene.
+detiene. El aro es un **borde de 3 px** con el dorado del sistema (`#ffd54a`) en la
+capa `border-box` —el patron de `.gbtn`, no un anillo de `box-shadow`—: asi mide lo
+mismo que el marco que el arte dibuja en FEVER y AUTO, respeta el radio de capsula
+(999 px como las pastillas del pie) y sobrevive a los modos de bajo consumo, que
+reescriben `box-shadow` con `!important` y lo habrian borrado.
 
 Reparto: el caramelo **amarillo** del pie es **FEVER** (compra el bonus por
 `feature.costMultiplier` = 100x la apuesta y publica el precio en la capsula de

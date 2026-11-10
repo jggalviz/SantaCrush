@@ -1104,7 +1104,25 @@ test('el panel, los mandos del arte y la hoja estan en la fuente y en el minific
   assert.match(spin, /top: 67\.4%;/, 'arranca bajo la lectura del saldo');
   assert.match(spin, /width: 76%;/, 'y ocupa el ancho de la banda libre');
   assert.match(spin, /linear-gradient\(180deg, #ff6a5c/, 'capsula roja candy');
-  assert.match(spin, /0 0 0 0\.07em #ffd54a,/, 'con su aro dorado');
+  /* El marco del GIRAR se mide con la misma vara que el resto de mandos: borde
+     de 3 px —el grosor con el que el arte dibuja el aro de FEVER y AUTO— y el
+     radio de capsula (999 px) que comparten las pastillas del pie. Antes era un
+     anillo de `box-shadow`, y los modos de bajo consumo reescriben esa
+     propiedad con `!important`: la capsula grande se quedaba sin marco. */
+  assert.match(spin, /border: 3px solid transparent;/, 'marco de 3 px, el de los caramelos del pie');
+  assert.match(spin, /border-radius: 999px;/, 'capsula: el mismo radio que las pastillas');
+  assert.match(spin, /background-origin: padding-box, border-box;/, 'el oro vive en la capa del borde');
+  assert.match(spin, /background-clip: padding-box, border-box;/, 'y no invade la cara carmesi');
+  assert.match(
+    spin,
+    /linear-gradient\(180deg, #fff8cf 0%, #ffd54a 46%, #c9861a 100%\)/,
+    'el aro usa el dorado del sistema'
+  );
+  assert.doesNotMatch(spin, /0 0 0 0\.07em #ffd54a,/, 'el aro ya no es un anillo de sombra');
+  /* La caja global es `border-box`: los 3 px del marco crecen hacia dentro, asi
+     que la capsula conserva su tamano y su contenido no se mueve (medido en
+     Edge a 1440, 1000 y 900 px de ancho: cero desbordamiento en los tres). */
+  assert.match(css, /\*\s*\{\s*box-sizing:\s*border-box;\s*\}/, 'el marco no altera la caja');
 
   /* Insignia del paquete: hermana del AUTO, en escritorio y en movil. */
   assert.match(

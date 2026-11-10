@@ -7457,10 +7457,19 @@ body.is-demo .machine__side .controls .balance::after {
      La banda verde entre la lectura del saldo y la fila de caramelos es el unico
      hueco libre del lienzo. Como no hay dibujo del que recortar una ventana, la
      capsula se pinta aqui con el mismo lenguaje que los dos caramelos del pie:
-     carmesi candy, aro dorado grueso y los destellos que ya trae el marcado, para
-     que se lea como el mando principal sin desentonar con FEVER y AUTO.
+     carmesi candy, aro dorado de 3 px y los destellos que ya trae el marcado,
+     para que se lea como el mando principal sin desentonar con FEVER y AUTO.
      Los otros cinco pulsadores son ventanas al arte: no se pinta ninguna capsula
-     encima de ellos. */
+     encima de ellos.
+
+     EL MARCO ES UN BORDE, no un anillo de `box-shadow`. Es el mismo patron que
+     usa el sistema de caramelos (`.gbtn`: `border: 3px solid transparent` y el
+     color del filo en la capa `border-box`, ver `--gbtn-*-rim`): asi el oro
+     recorre la curvatura real del radio, no se sale de la capsula y su grosor
+     —3 px, el de FEVER y AUTO en el arte— se mide igual que el del resto de
+     mandos. Ademas sobrevive a los modos de bajo consumo, que reescriben
+     `box-shadow` con `!important` y borrarian cualquier aro pintado ahi (el
+     GIRAR se quedaba sin marco en la banda 900-1023,98 px). */
   .machine__side .controls .btn--spin,
   .machine__side .controls #btn-spin {
     left: 12%;
@@ -7471,15 +7480,20 @@ body.is-demo .machine__side .controls .balance::after {
     flex-direction: row;
     gap: 0.45em;
     padding: 0 4%;
-    border: 0;
+    /* El aro exterior de FEVER y AUTO es el mismo dorado del sistema:
+       `#ffd54a` al centro, crema arriba (la luz que da el arte) y ambar abajo. */
+    border: 3px solid transparent;
     border-radius: 999px;
     color: #fff;
-    background-image: linear-gradient(180deg, #ff6a5c 0%, #e00f26 46%, #8c0512 100%);
+    background-image:
+      linear-gradient(180deg, #ff6a5c 0%, #e00f26 46%, #8c0512 100%),
+      linear-gradient(180deg, #fff8cf 0%, #ffd54a 46%, #c9861a 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
     background-size: auto;
     background-position: 0 0;
     box-shadow:
-      0 0 0 0.07em #ffd54a,
-      0 0 0 0.19em #9d0b17,
+      0 0 0 2px rgba(92, 6, 16, 0.85),
       0 0.35em 0.8em rgba(70, 0, 10, 0.45),
       inset 0 0.12em 0 rgba(255, 255, 255, 0.62),
       inset 0 -0.18em 0 rgba(120, 0, 10, 0.45);
@@ -7498,15 +7512,18 @@ body.is-demo .machine__side .controls .balance::after {
     filter: drop-shadow(0 2px 0 rgba(110, 0, 20, 0.45));
   }
 
-  /* En marcha el mando se apaga, pero sigue siendo la capsula roja: aqui no hay
-     dibujo de recorte que oscurecer. */
+  /* En marcha el mando se apaga, pero sigue siendo la capsula roja con su aro
+     dorado: aqui no hay dibujo de recorte que oscurecer. El filo baja de brillo
+     con la cara (mismo `padding-box`/`border-box` que la regla base, que sigue
+     aplicando porque solo cambia la imagen de fondo). */
   .machine__side .controls .btn--spin.is-busy,
   .machine__side .controls #btn-spin.is-busy {
-    background-image: linear-gradient(180deg, #c9837a 0%, #a52a30 52%, #6d0a12 100%);
+    background-image:
+      linear-gradient(180deg, #c9837a 0%, #a52a30 52%, #6d0a12 100%),
+      linear-gradient(180deg, rgba(255, 248, 207, 0.62) 0%, rgba(255, 213, 74, 0.58) 46%, rgba(201, 134, 26, 0.66) 100%);
     color: rgba(255, 246, 244, 0.86);
     box-shadow:
-      0 0 0 0.07em rgba(255, 213, 74, 0.55),
-      0 0 0 0.19em rgba(110, 8, 18, 0.75),
+      0 0 0 2px rgba(110, 8, 18, 0.75),
       inset 0 0.12em 0 rgba(255, 255, 255, 0.3);
   }
 
