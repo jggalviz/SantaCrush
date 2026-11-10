@@ -98,6 +98,12 @@ function alphaBox(data, width, height, channels, threshold = 8) {
 const kb = (n) => `${(n / 1024).toFixed(1)} kB`;
 const pct = (n, d) => `${((n / d) * 100).toFixed(2)}%`;
 
+/** BBox de los pixeles con alfa visible de un buffer ya decodificado. */
+async function bboxOf(buffer) {
+  const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return alphaBox(data, info.width, info.height, info.channels);
+}
+
 async function build({ name, label, canvas, quality, maxBytes, paint }) {
   const source = path.join(ROOT, 'design', `${name}.png`);
   const target = path.join(ASSETS_DIR, `${name}.webp`);
@@ -108,11 +114,29 @@ async function build({ name, label, canvas, quality, maxBytes, paint }) {
   // El maestro llega en PNG sin perdida; si la pieza declara `paint`, la capa
   // generada se compone aqui y el resto del proceso trabaja sobre esa copia.
   const raw = await sharp(source).ensureAlpha().png().toBuffer();
-  const art = paint ? await paint(raw) : raw;
-
   const meta = await sharp(raw).metadata();
-  const { data, info } = await sharp(art).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const box = alphaBox(data, info.width, info.height, info.channels);
+
+  // El recorte se mide SIEMPRE sobre el maestro. Una capa generada puede anadir
+  // pixeles opacos fuera del dibujo (un aro, una sombra, un halo) y con ello
+  // mover el encuadre que anclan los porcentajes del CSS: el arte se pintaria
+  // desplazado respecto a su caja tactil. Por eso el bbox se toma antes de
+  // pintar y despues se comprueba que la capa no lo ha estirado.
+  const box = await bboxOf(raw);
+  const art = paint ? await paint(raw) : raw;
+  if (paint) {
+    const painted = await bboxOf(art);
+    const drift = ['left', 'top', 'width', 'height'].some(
+      (key) => Math.abs(painted[key] - box[key]) > 1
+    );
+    if (drift) {
+      throw new Error(
+        `${name}: la capa generada mueve el recorte del maestro ` +
+          `(${box.left},${box.top} ${box.width}x${box.height} -> ` +
+          `${painted.left},${painted.top} ${painted.width}x${painted.height}). ` +
+          'La placa debe quedarse dentro de su caja tactil: los anclajes del CSS no se mueven.'
+      );
+    }
+  }
 
   const canvasRatio = canvas.width / canvas.height;
   const ratio = box.width / box.height;

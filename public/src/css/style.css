@@ -6867,8 +6867,20 @@ body.is-demo .machine__side .controls .balance::after {
     border-radius: 26%;
   }
 
-  /* Capsula GIRAR · x 9,16-89,92 % · y 65,84-82,65 % */
-  .machine__side .controls .btn--spin {
+  /* Capsula GIRAR · x 9,16-89,92 % · y 65,84-82,65 %
+     Va por `#btn-spin` a proposito: la regla candy
+     `.machine__side .controls .btn--spin.gbtn` (linea ~4508) suma cuatro clases
+     y gana a cualquier selector de tres, y trae `border-radius: 999px`,
+     `border: 5px solid transparent` y `background-clip: padding-box`. Con eso el
+     trozo de `d2.webp` se recortaba en capsula (78 px de lienzo) y se pintaba
+     sobre el padding box, 10 px mas pequeño que la caja: el aro dorado aparecia
+     mordido en las cuatro esquinas y desplazado respecto al dibujo del padre.
+
+     El velo (`border-radius`) va sincronizado con la placa que pinta
+     `scripts/lib/girarPlate.js`: 7,37 % del ancho y 25 % del alto son 39 px
+     sobre 529 x 156 del lienzo, dos px por fuera del aro de 37 para no morder su
+     filo marron. El test compara este valor con `GIRAR_PLATE.maskCss`. */
+  .machine__side .controls #btn-spin {
     --art-x: 9.16;
     --art-y: 65.84;
     --art-w: 80.76;
@@ -6881,10 +6893,13 @@ body.is-demo .machine__side .controls .balance::after {
     min-height: 0;
     max-height: none;
     gap: 0.55em;
-    padding: 0 4%;
+    padding: 0;
     border: 0;
-    border-radius: 999px;
+    border-radius: 7.37% / 25.00%;
     background-color: transparent;
+    /* Sin esto la copia del lienzo se ancla al padding box y no a la caja. */
+    background-clip: border-box;
+    background-origin: border-box;
     animation: none;
   }
 

@@ -1595,7 +1595,7 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   }
   const bodies = (selector) => [...css.matchAll(new RegExp(`${selector} \\{([^}]*)\\}`, 'g'))]
     .map((match) => match[1]);
-  const spinBodies = bodies('\\.machine__side \\.controls \\.btn--spin');
+  const spinBodies = bodies('\\.machine__side \\.controls (?:\\.btn--spin|#btn-spin)');
   assert.ok(spinBodies.length, 'La capsula GIRAR debe declarar su caja');
   for (const declaration of ['left: 9.16%;', 'top: 65.84%;', 'width: 80.76%;', 'height: 16.81%;']) {
     assert.ok(
@@ -1740,8 +1740,13 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
   );
   assert.match(
     lib,
-    /module\.exports = \{ paintGirarPlate, GIRAR_BOX: BOX \};/,
+    /module\.exports = \{\s*paintGirarPlate,\s*GIRAR_BOX: BOX,/,
     'El modulo publica el pintado y la caja medida'
+  );
+  assert.match(
+    lib,
+    /GIRAR_PLATE: \{/,
+    'El modulo publica la geometria de la placa para sincronizarla con el CSS'
   );
 
   const pipeline = read(path.join(ROOT_DIR, 'scripts', 'build-desktop-art.js'));
@@ -1752,12 +1757,17 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
     /paint: paintGirarPlate,/,
     'd2 se completa con la placa antes de recortar y codificar'
   );
+  assert.match(
+    pipeline,
+    /la capa generada mueve el recorte del maestro/,
+    'El recorte se mide sobre el maestro: si la capa lo mueve, el build falla'
+  );
 
   // Los px de la caja son exactamente los porcentajes que ancla el CSS.
   const css = read(STYLE_PATH);
-  const spinBodies = [...css.matchAll(/\.machine__side \.controls \.btn--spin[^{]*\{([^}]*)\}/g)].map(
-    (match) => match[1]
-  );
+  const spinBodies = [
+    ...css.matchAll(/\.machine__side \.controls (?:#btn-spin|\.btn--spin)[^{]*\{([^}]*)\}/g)
+  ].map((match) => match[1]);
   assert.ok(spinBodies.length, 'La capsula GIRAR debe declarar su caja');
   const anchors = [
     ['left', 60, 655],
@@ -1770,6 +1780,60 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
     assert.ok(
       spinBodies.some((body) => body.includes(declaration)),
       `La placa y el CSS comparten ${declaration}`
+    );
+  }
+
+  // La placa va centrada en la caja tactil y su velo de recorte comparte radio
+  // con ella: con la capsula antigua (`999px` = 78 px sobre una caja de 156) el
+  // `border-radius` del boton recortaba 10 px de cada esquina del aro y el
+  // GIRAR acababa en un corte recto.
+  const { GIRAR_PLATE } = require(libPath);
+  const { box, inset, plate: placa, face, maskRadius, maskCss } = GIRAR_PLATE;
+  assert.equal(
+    placa.w,
+    box.width - inset.x * 2,
+    'La placa deja el mismo aire a izquierda y derecha: comparte centro con la caja tactil'
+  );
+  assert.equal(
+    placa.h,
+    box.height - inset.y * 2,
+    'La placa deja el mismo aire arriba y abajo: comparte centro con la caja tactil'
+  );
+  assert.ok(inset.x >= 2 && inset.y >= 2, 'La placa no toca el borde de la caja tactil');
+  assert.equal(face.r, placa.r - placa.rim, 'La cara es el rectangulo concentrico al aro');
+  assert.equal(face.w, placa.w - placa.rim * 2, 'El aro mide lo mismo en los cuatro lados');
+  assert.equal(face.h, placa.h - placa.rim * 2, 'El aro mide lo mismo en los cuatro lados');
+  assert.ok(
+    maskRadius >= placa.r && maskRadius <= placa.r + 4,
+    `El velo (${maskRadius} px) sigue la curvatura del aro (${placa.r} px) sin morderlo`
+  );
+  assert.equal(
+    maskCss,
+    `${((maskRadius / box.width) * 100).toFixed(2)}% / ${((maskRadius / box.height) * 100).toFixed(2)}%`,
+    'El velo se publica en % de la caja para escalar con el panel'
+  );
+  const girar = spinBodies.find((body) => body.includes('--art-x: 9.16;'));
+  assert.ok(girar, 'La capsula GIRAR debe declarar la caja del dibujo');
+  assert.ok(
+    girar.includes(`border-radius: ${maskCss};`),
+    `El velo del GIRAR debe ser \`border-radius: ${maskCss}\` (el de la placa), no una capsula`
+  );
+  assert.ok(
+    !girar.includes('border-radius: 999px;'),
+    'La capsula de 999px recortaba las esquinas del aro dorado'
+  );
+  // La caja del GIRAR va por id: la regla candy `.btn--spin.gbtn` (cuatro
+  // clases) gana a cualquier selector de tres y repone su capsula, su borde
+  // transparente de 5 px y el `background-clip: padding-box`.
+  assert.match(
+    css,
+    /\.machine__side \.controls #btn-spin \{/,
+    'La caja del GIRAR se declara por id para ganar a la regla candy'
+  );
+  for (const declaration of ['padding: 0;', 'border: 0;', 'background-clip: border-box;', 'background-origin: border-box;']) {
+    assert.ok(
+      girar.includes(declaration),
+      `La copia del lienzo se ancla a la caja del pulsador: falta \`${declaration}\``
     );
   }
 
