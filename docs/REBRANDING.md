@@ -217,18 +217,24 @@ Reparto: el caramelo **amarillo** del pie es **FEVER** (compra el bonus por
 `feature.costMultiplier` = 100x la apuesta y publica el precio en la capsula de
 valor de su caramelo, `100x · 100,00`); el **rojo** es **AUTO** (juega el paquete
 de tiradas rapidas). La **insignia del paquete** es un pulsador hermano del rojo
-—un boton dentro de otro boton no es marcado valido ni enfocable— apoyado en su
-mitad baja: muestra el paquete vigente (o las tiradas que quedan con el bucle en
-marcha) y es el unico mando con `aria-haspopup`, porque abre la hoja **Giros
-Rapidos**, que es donde se elige. No hay chips `x5/x10/x25`: elegir paquete no gira
-ni gasta saldo, y el FEVER avisa del saldo insuficiente apagandose cuando no cubre
-sus 100 apuestas.
+—un boton dentro de otro boton no es marcado valido ni enfocable—: muestra el
+paquete vigente (o las tiradas que quedan con el bucle en marcha) y funciona como
+**rodillo**. Cada pulsacion corta pasa al siguiente paquete publicado
+(`bets.quickSpins`, hoy `x5 → x10 → x25` y vuelta a empezar) y la cifra entra
+desde abajo: `GameView.rollAutoCount_` clona la saliente en `.pill__roll-ghost`
+—solo pintura, `aria-hidden`— y anima la viva con `pack-roll-in/out`. **Rodar el
+paquete no gira ni gasta saldo.** La **pulsacion larga** (o `Shift+Enter` con el
+foco en la insignia) abre la hoja **Giros Rapidos**, que es donde se ve el coste
+de cada paquete y sigue siendo el unico mando con `aria-haspopup`; el FEVER avisa
+del saldo insuficiente apagandose cuando no cubre sus 100 apuestas.
 
 En movil (`max-width: 899px`) el panel es `console-mobile.webp`: los discos CRUSH
 (FEVER) · AUTO · GIRAR · − · + y la fila de cuatro capsulas vienen dibujados, asi
-que ahi los mandos son **areas tactiles transparentes** sobre el arte. La capsula 2
-es la insignia del paquete (`x10`), la 3 el rotulo GIRAR y la 4 la lectura de la
-apuesta con el tramo MAX; la 1 se queda como viene en el arte.
+que ahi los mandos son **areas tactiles transparentes** sobre el arte. La capsula
+**1** es la insignia del paquete (`x10`), colgada del disco `...` como el selector
+de Meridiano (medida sobre el lienzo: x 6,59-18,25 % · y 74,18-81,11 %), la 3 el
+rotulo GIRAR y la 4 la lectura de la apuesta con el tramo MAX; la 2 se queda como
+viene en el arte.
 
 El arte navideño del tema sigue cubriendo las dos maquinas: el taller de juguetes
 de fondo (`bg-desktop.webp` apaisado y `bg-mobile.webp` vertical), el marco de

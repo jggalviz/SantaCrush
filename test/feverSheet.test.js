@@ -90,6 +90,17 @@ function fakeNode(overrides = {}) {
         if (listener.type === 'click') listener.handler({ target: node });
       }
     },
+    /** Dispara los listeners de un tipo (punteros del rodillo, `animationend`...). */
+    emit(type, event = { target: node }) {
+      for (const listener of node.listeners) {
+        if (listener.type === type) listener.handler(event);
+      }
+    },
+    removeEventListener(type, handler) {
+      node.listeners = node.listeners.filter(
+        (listener) => listener.type !== type || listener.handler !== handler
+      );
+    },
     focus() { node.focusCount += 1; },
     querySelector() { return null; }
   };
@@ -299,8 +310,8 @@ test('la hoja lista los paquetes, marca el elegido y calcula su coste', async ()
   );
   assert.equal(
     ui.refs.autoPack.title,
-    'Paquete de 25 tiradas automáticas · cambiar',
-    'el tooltip invita a cambiarlo en la hoja'
+    'Paquete de 25 tiradas automáticas · pulsa para cambiar',
+    'el tooltip invita a rodar el paquete'
   );
 
   ui.openFeverSheet();
@@ -626,6 +637,32 @@ test('pickQuickSpins configura el paquete y cierra la hoja sin gastar', async ()
   assert.equal(game.quickSpinsPick, 25, 'el paquete vigente no cambia');
 });
 
+test('cycleQuickSpins rueda el catalogo y vuelve al primer paquete', async () => {
+  const { game, ui } = await createController();
+  assert.equal(game.quickSpinsPick, 10, 'arranca en el paquete por defecto');
+
+  assert.equal(game.cycleQuickSpins(), 25);
+  assert.equal(game.quickSpinsPick, 25);
+  assert.deepEqual(lastCall(ui, 'setQuickSpins').args, [25]);
+  assert.equal(lastCall(ui, 'setStatus').args[0], 'Automático · paquete de 25 tiradas');
+  assert.equal(game.autoRunning, false, 'rodar el paquete no arranca el bucle');
+  assert.equal(callsNamed(ui, 'closeFeverSheet').length, 0, 'rodar no toca la hoja');
+
+  assert.equal(game.cycleQuickSpins(), 5, 'despues del ultimo vuelve al primero');
+  assert.equal(game.cycleQuickSpins(), 10, 'y sigue dando la vuelta');
+
+  game.busy = true;
+  assert.equal(game.cycleQuickSpins(), null);
+  assert.equal(lastCall(ui, 'toast').args[0], 'Espera a que termine la tirada.');
+  assert.equal(game.quickSpinsPick, 10, 'con el motor ocupado la cifra no se mueve');
+
+  game.busy = false;
+  game.autoRunning = true;
+  assert.equal(game.cycleQuickSpins(), null);
+  assert.match(lastCall(ui, 'toast').args[0], /Detén el automático/);
+  assert.equal(game.quickSpinsPick, 10, 'con la tanda en marcha tampoco');
+});
+
 test('startAuto juega el paquete elegido y descarta cantidades fuera del catalogo', async () => {
   const { game, ui } = await createController();
 
@@ -683,12 +720,13 @@ test('el handler de la hoja configura el paquete sin arrancar el bucle', async (
 
 /* ---------------------------------------------------------------- controles */
 
-test('GameControls: FEVER compra, la insignia abre la hoja y el azul ejecuta', async () => {
+test('GameControls: FEVER compra, la insignia rueda el paquete y el azul ejecuta', async () => {
   const { GameControls } = await loadUiModule('components/GameControls.js');
 
   const calls = [];
   const controller = {
     autoRunning: false,
+    cycleQuickSpins: () => calls.push('cycle'),
     openFeverSheet: () => calls.push('feature'),
     buyFeature: () => calls.push('buy'),
     toggleAuto: () => calls.push('auto'),
@@ -726,30 +764,31 @@ test('GameControls: FEVER compra, la insignia abre la hoja y el azul ejecuta', a
   refs.autoBtn.click();
   assert.deepEqual(
     calls,
-    ['feature', 'buy', 'auto'],
-    'la insignia abre el selector, el FEVER compra el bonus y el azul juega el paquete'
+    ['cycle', 'buy', 'auto'],
+    'la insignia rueda el paquete, el FEVER compra el bonus y el azul juega el paquete'
   );
 
   sheet.hidden = false;
   keydown({ code: 'Space', key: ' ', target: {}, preventDefault() {} });
-  assert.deepEqual(calls, ['feature', 'buy', 'auto'], 'con la hoja abierta no se gira');
+  assert.deepEqual(calls, ['cycle', 'buy', 'auto'], 'con la hoja abierta no se gira');
 
   sheet.hidden = true;
   keydown({ code: 'Space', key: ' ', target: {}, preventDefault() {} });
   assert.deepEqual(
     calls,
-    ['feature', 'buy', 'auto', 'spin'],
+    ['cycle', 'buy', 'auto', 'spin'],
     'al cerrar, la barra espaciadora vuelve a girar'
   );
 });
 
-test('GameControls: la insignia abre el paquete y el GIRAR detiene el autogiro en marcha', async () => {
+test('GameControls: la insignia rueda el paquete y el GIRAR detiene el autogiro en marcha', async () => {
   const { GameControls } = await loadUiModule('components/GameControls.js');
 
   const calls = [];
   const controller = {
     autoRunning: false,
-    openFeverSheet: () => calls.push('feature'),
+    cycleQuickSpins: () => calls.push('cycle'),
+    openFeverSheet: () => calls.push('sheet'),
     buyFeature: () => calls.push('buy'),
     toggleAuto: () => calls.push('auto'),
     spin: () => calls.push('spin'),
@@ -782,14 +821,14 @@ test('GameControls: la insignia abre el paquete y el GIRAR detiene el autogiro e
   new GameControls({ ui: { refs, busy: false, handlers: {} }, controller, documentRef }).mount();
 
   refs.autoPack.click();
-  assert.deepEqual(calls, ['feature'], 'la insignia abre el selector sin girar ni gastar saldo');
+  assert.deepEqual(calls, ['cycle'], 'la insignia rueda el paquete sin girar ni gastar saldo');
 
   /* Con el bucle en marcha el pulsador rojo es la parada rapida. */
   controller.autoRunning = true;
   refs.spinBtn.click();
   assert.deepEqual(
     calls,
-    ['feature', 'stop:Automático detenido'],
+    ['cycle', 'stop:Automático detenido'],
     'el GIRAR detiene la tanda automatica en curso'
   );
 
@@ -797,14 +836,86 @@ test('GameControls: la insignia abre el paquete y el GIRAR detiene el autogiro e
   refs.spinBtn.click();
   assert.deepEqual(
     calls,
-    ['feature', 'stop:Automático detenido', 'spin'],
+    ['cycle', 'stop:Automático detenido', 'spin'],
     'con el bucle parado el GIRAR vuelve a girar'
   );
 
   /* Space sobre la insignia no lanza tirada: el boton ya hace su trabajo. */
   const badge = { closest: (selector) => (selector === '#btn-auto-pack' ? badge : null) };
-  keydown({ code: 'Space', key: ' ', target: badge, preventDefault() {} });
+  keydown({ code: 'Space', key: ' ', target: badge, shiftKey: false, preventDefault() {} });
   assert.deepEqual(calls.at(-1), 'spin', 'la barra espaciadora no gira desde la insignia');
+  assert.ok(!calls.includes('sheet'), 'Space sin Shift no abre la hoja');
+
+  /* Shift+Enter es el atajo de la hoja, sin rueda de por medio. */
+  keydown({ code: 'Enter', key: 'Enter', target: badge, shiftKey: true, preventDefault() {} });
+  assert.equal(calls.at(-1), 'sheet', 'Shift+Enter abre la hoja desde la insignia');
+});
+
+test('GameControls: la pulsacion larga de la insignia abre la hoja y no rueda el paquete', async () => {
+  const { GameControls } = await loadUiModule('components/GameControls.js');
+
+  const calls = [];
+  const controller = {
+    autoRunning: false,
+    cycleQuickSpins: () => calls.push('cycle'),
+    openFeverSheet: () => calls.push('sheet'),
+    buyFeature: () => {},
+    toggleAuto: () => {},
+    spin: () => {},
+    stopAuto: () => {},
+    changeBet: () => {},
+    setMaxBet: () => {},
+    startDemoMode: () => {}
+  };
+
+  const refs = {
+    spinBtn: fakeNode(),
+    featureBtn: fakeNode(),
+    autoPack: fakeNode(),
+    autoBtn: fakeNode(),
+    betUp: fakeNode(),
+    betDown: fakeNode(),
+    betMax: fakeNode(),
+    demoBtn: fakeNode()
+  };
+
+  const documentRef = {
+    addEventListener() {},
+    getElementById: () => null
+  };
+
+  new GameControls({
+    ui: { refs, busy: false, handlers: {} },
+    controller,
+    documentRef,
+    longPressMs: 10
+  }).mount();
+
+  /* Mantener el dedo: la hoja, y el `click` que llega al soltar no rueda. */
+  refs.autoPack.emit('pointerdown');
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  assert.deepEqual(calls, ['sheet'], 'mantener pulsada la insignia abre la hoja');
+
+  refs.autoPack.emit('pointerup');
+  refs.autoPack.click();
+  assert.deepEqual(calls, ['sheet'], 'el click posterior no rueda el paquete');
+
+  /* Toque corto: solo rueda. */
+  refs.autoPack.emit('pointerdown');
+  refs.autoPack.emit('pointerup');
+  refs.autoPack.click();
+  assert.deepEqual(calls, ['sheet', 'cycle'], 'un toque corto solo rueda el paquete');
+
+  /* Salir del pulsador antes del umbral cancela la pulsacion larga. */
+  refs.autoPack.emit('pointerdown');
+  refs.autoPack.emit('pointerleave');
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  assert.deepEqual(calls, ['sheet', 'cycle'], 'salir del pulsador cancela la hoja');
+
+  /* El menu contextual del sistema no debe tapar la capsula. */
+  let prevented = 0;
+  refs.autoPack.emit('contextmenu', { preventDefault: () => { prevented += 1; } });
+  assert.equal(prevented, 1, 'el contextmenu se bloquea sobre la insignia');
 });
 
 test('la insignia del paquete refleja el paquete y se apaga con el motor ocupado', async () => {
@@ -830,6 +941,71 @@ test('la insignia del paquete refleja el paquete y se apaga con el motor ocupado
 
   ui.setAuto(false, 0);
   assert.equal(pack.disabled, false, 'al parar la insignia vuelve a estar viva');
+});
+
+test('paintAutoCount_ rueda la cifra: la saliente sale y la nueva entra desde abajo', async () => {
+  const ui = await createView();
+  const classes = [];
+  const ghosts = [];
+  const attached = [];
+  const host = {
+    offsetWidth: 48,
+    querySelectorAll: () => attached.filter((node) => node.attached),
+    appendChild(node) { node.parentNode = host; node.attached = true; attached.push(node); },
+    removeChild(node) { node.attached = false; }
+  };
+
+  const count = ui.refs.autoCount;
+  count.parentNode = host;
+  count.classList = {
+    add: (name) => classes.push(['add', name]),
+    remove: (name) => classes.push(['remove', name]),
+    toggle() {}
+  };
+  count.addEventListener = () => {};
+  count.textContent = '';
+
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    createElement: (tag) => {
+      const node = fakeNode();
+      node.tagName = tag;
+      node.attached = false;
+      node.parentNode = null;
+      node.remove = () => { node.attached = false; };
+      ghosts.push(node);
+      return node;
+    }
+  };
+
+  try {
+    /* Primer pintado: no hay cifra anterior, asi que no hay tambor. */
+    ui.setQuickSpins(10);
+    assert.equal(count.textContent, 'x10');
+    assert.equal(ghosts.length, 0, 'sin cifra previa el tambor no se pinta');
+
+    /* Segundo paquete: se clona la cifra saliente y la nueva entra desde abajo. */
+    ui.setQuickSpins(25);
+    assert.equal(count.textContent, 'x25');
+    assert.equal(ghosts.length, 1, 'la cifra saliente se clona');
+    assert.equal(ghosts[0].className, 'pill__roll-ghost');
+    assert.equal(ghosts[0].textContent, 'x10', 'el clon lleva la cifra que sale');
+    assert.equal(ghosts[0].getAttribute('aria-hidden'), 'true', 'el clon es solo pintura');
+    assert.deepEqual(
+      classes.slice(-2),
+      [['remove', 'is-roll-in'], ['add', 'is-roll-in']],
+      'la cifra viva reinicia la animacion de entrada'
+    );
+    assert.equal(attached.filter((node) => node.attached).length, 1, 'el tambor vive en el pulsador');
+
+    /* `animationend` retira el clon y la clase de entrada. */
+    ghosts[0].emit('animationend');
+    assert.equal(attached.filter((node) => node.attached).length, 0, 'el clon se retira');
+    assert.deepEqual(classes.at(-1), ['remove', 'is-roll-in'], 'la clase de entrada se limpia');
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
 });
 
 test('el FEVER se apaga cuando el saldo no cubre las 100 apuestas', async () => {
@@ -938,8 +1114,18 @@ test('el panel, los mandos del arte y la hoja estan en la fuente y en el minific
   );
   assert.match(
     css,
-    /\.machine__side \.controls #btn-auto-pack \{[^}]*left: 21\.44%;/,
-    'en movil ocupa la capsula 2 del pie'
+    /\.machine__side \.controls #btn-auto-pack \{[^}]*left: 6\.33%;/,
+    'en movil ocupa la capsula 1 del pie, debajo del disco "..."'
+  );
+  assert.match(
+    css,
+    /#btn-auto-pack \.pill__roll-ghost/,
+    'la cifra saliente del rodillo tiene su capa'
+  );
+  assert.match(
+    css,
+    /#btn-auto-pack #auto-count\.is-roll-in/,
+    'la cifra entrante se anima al cambiar de paquete'
   );
   assert.match(css, /#btn-auto-pack:focus-visible\s*\{/, 'la insignia tiene anillo de foco propio');
   assert.match(css, /#btn-auto-pack:disabled\s*\{/, 'la insignia se apaga con el motor ocupado');

@@ -218,12 +218,16 @@
               <!-- Paquete de tiradas rapidas: pulsador propio y hermano del azul
                    (un boton dentro de otro boton no es marcado valido). Muestra
                    el paquete vigente —y las tiradas que quedan en marcha— y es
-                   el unico mando que abre la hoja GIROS RAPIDOS, donde se elige
-                   entre 5, 10 y 25. `GameView.paintAutoCount_` escribe la cifra
-                   y el nombre accesible; `GameControls` lo enlaza a la hoja. -->
+                   un rodillo: cada pulsacion corta pasa al siguiente paquete del
+                   catalogo (`bets.quickSpins`, hoy x5 -> x10 -> x25) y la cifra
+                   entra desde abajo. La pulsacion larga —o Shift+Enter con el
+                   foco en la insignia— abre la hoja GIROS RAPIDOS, que es donde
+                   se ve el coste de cada paquete. `GameView.paintAutoCount_`
+                   escribe la cifra y el nombre accesible; `GameControls` enlaza
+                   el ciclo y la hoja. -->
               <button class="pill" id="btn-auto-pack" type="button"
                       aria-haspopup="dialog" aria-controls="fever-sheet" aria-expanded="false"
-                      aria-label="Paquete de tiradas automáticas · 10. Pulsa para elegir otro."><span id="auto-count">x10</span></button>
+                      aria-label="Paquete de tiradas automáticas · 10. Pulsa para pasar al siguiente; mantén pulsado para elegir entre 5, 10 o 25."><span id="auto-count">x10</span></button>
             </div>
           </div>
         </div>
@@ -323,11 +327,12 @@
   </div>
 
   <!-- Hoja de configuracion de autogiros: los paquetes del pulsador rojo.
-       La insignia del paquete (`#btn-auto-pack`, la pastilla dorada del
-       caramelo AUTO) la abre y pide cuantas tiradas se quieren; el AUTO las
-       juega. `GameView.renderFeverSheet_` pinta un boton por paquete publicado
-       en `bets.quickSpins` (marcando el vigente) y `GameView.paintAutoCount_`
-       escribe la cifra en la insignia (o las tiradas que quedan). -->
+       La insignia del paquete (`#btn-auto-pack`) la abre con una pulsacion
+       larga —la corta rueda el paquete— y pide cuantas tiradas se quieren; el
+       AUTO las juega. `GameView.renderFeverSheet_` pinta un boton por paquete
+       publicado en `bets.quickSpins` (marcando el vigente) y
+       `GameView.paintAutoCount_` escribe la cifra en la insignia (o las
+       tiradas que quedan). -->
   <div class="fever" id="fever-sheet" hidden>
     <div class="fever__backdrop" id="fever-backdrop" data-close="1"></div>
     <div class="fever__card" role="dialog" aria-modal="true"

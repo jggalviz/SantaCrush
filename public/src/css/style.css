@@ -5562,6 +5562,53 @@ body.is-demo .machine__side .controls .balance::after {
      estado del motor ya no se pinta en el panel (el marcado perdio su barra). */
 }
 
+/* --- Rodillo de la cifra del paquete (`#btn-auto-pack`) --------------------
+   Cada pulsacion cambia de paquete y la cifra sube: la nueva entra desde abajo
+   y la anterior sale por arriba, como el tambor de un selector mecanico.
+   `GameView.rollAutoCount_` deja la cifra viva en `#auto-count` (lectores de
+   pantalla y `aria-label` la leen al instante) y clona la saliente en
+   `.pill__roll-ghost`, que es solo pintura (`aria-hidden`, sin eventos). Solo
+   se animan `transform` y `opacity`, y el recorte del pulsador tapa los
+   extremos del tambor. Con movimiento reducido no se clona nada.
+
+   Vive fuera de las media queries porque el pulsador existe en las dos
+   maquetas: en movil es la capsula 1 del pie y en escritorio la pastilla del
+   caramelo AUTO. */
+.machine__side .controls #btn-auto-pack {
+  overflow: hidden;
+}
+
+.machine__side .controls #btn-auto-pack .pill__roll-ghost {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: pack-roll-out 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.machine__side .controls #btn-auto-pack #auto-count.is-roll-in {
+  animation: pack-roll-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes pack-roll-out {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-115%); opacity: 0; }
+}
+
+@keyframes pack-roll-in {
+  from { transform: translateY(115%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .machine__side .controls #btn-auto-pack .pill__roll-ghost,
+  .machine__side .controls #btn-auto-pack #auto-count.is-roll-in {
+    animation: none;
+  }
+}
+
 /* --------------------------------------------------------------------------
    6) Botones laterales · areas tactiles sobre los discos y las placas
    CRUSH (izquierda, icono "..."), AUTO (izquierda, icono de refresco),
@@ -5594,14 +5641,23 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* --- Insignia del paquete de tiradas rapidas ---------------------------
-     La capsula 2 del pie (x 21,44-33,63 % · y 74,43-81,74 %) llega vacia en el
-     arte y es el unico mando que abre la hoja GIROS RAPIDOS. Cabe entera en la
-     placa (12,2 % del ancho), asi que es un blanco tactil comodo y no hay que
-     pintar una pastilla pequeña sobre el disco. */
+     Cuelga del disco "..." (el primer boton de la fila), como el selector de
+     Meridiano: la capsula 1 del pie —medida sobre `console-mobile.webp`:
+     x 6,59-18,25 % · y 74,18-81,11 %— llega vacia en el arte y es donde el
+     jugador busca la cifra. Pulsacion corta: rueda x5 -> x10 -> x25 con la
+     cifra entrando desde abajo (`.pill__roll-ghost`); pulsacion larga: abre la
+     hoja GIROS RAPIDOS.
+
+     La caja del pulsador se centra en la placa y es ~0,5 % mas ancha que el
+     dibujo: el blanco tactil no queda justo en el filo dorado y la cifra, que
+     va centrada por `flex`, cae en el medio de la capsula. El alto se conserva
+     (7,31 %) y se sube el borde superior a 74,05 % para que el centro del texto
+     coincida con el centro de la placa (77,65 %) y no con el de una caja mas
+     baja que la placa. */
   .machine__side .controls #btn-auto-pack {
     position: absolute;
-    left: 21.44%;
-    top: 74.43%;
+    left: 6.33%;
+    top: 74.05%;
     width: 12.19%;
     height: 7.31%;
     min-width: 0;
@@ -7476,10 +7532,11 @@ body.is-demo .machine__side .controls .balance::after {
       0 0 0.55em rgba(255, 214, 90, 0.6);
   }
 
-  /* La insignia del paquete es el unico mando que abre la hoja GIROS RAPIDOS.
-     Se apoya centrada en la mitad baja del caramelo rojo, con el dorado de las
-     pastillas del arte, y muestra el paquete vigente (`x10`) o las tiradas que
-     quedan. */
+  /* La insignia del paquete se apoya centrada en la mitad baja del caramelo
+     rojo, con el dorado de las pastillas del arte, y muestra el paquete vigente
+     (`x10`) o las tiradas que quedan. Pulsacion corta: rueda x5 -> x10 -> x25
+     (la cifra entra desde abajo, ver el bloque del rodillo); pulsacion larga:
+     abre la hoja GIROS RAPIDOS. */
   .machine__side .controls #btn-auto-pack {
     position: absolute;
     left: 64.48%;

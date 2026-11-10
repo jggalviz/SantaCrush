@@ -431,6 +431,39 @@ export class GameController {
   }
 
   /**
+   * Rueda de paquetes de la insignia (`#btn-auto-pack`): pasa al siguiente
+   * paquete publicado y vuelve al primero al llegar al final del catalogo.
+   *
+   * Es el gesto del selector de Meridiano —una pulsacion, un escalon— y no
+   * lanza nada ni gasta saldo: el paquete queda configurado y lo juega el azul.
+   * Con una ronda en curso o el bucle en marcha no se mueve.
+   *
+   * @returns {number|null} paquete que quedo vigente, o `null` si no se movio
+   */
+  cycleQuickSpins() {
+    if (this.busy) {
+      this.ui.toast('Espera a que termine la tirada.');
+      return null;
+    }
+    if (this.autoRunning) {
+      this.ui.toast('Detén el automático para cambiar de paquete.');
+      return null;
+    }
+
+    const options = this.autoSpinsOptions;
+    if (!options.length) return null;
+
+    const index = options.indexOf(this.quickSpinsPick);
+    const next = options[(index + 1) % options.length];
+
+    this.quickSpinsPick = next;
+    this.ui.setQuickSpins(next);
+    this.sfx.click();
+    this.ui.setStatus(`Automático · paquete de ${next} tiradas`);
+    return next;
+  }
+
+  /**
    * Pulsador azul: con el bucle parado juega el paquete configurado; en marcha lo
    * detiene. El paquete se elige en la hoja del amarillo, nunca aqui.
    *

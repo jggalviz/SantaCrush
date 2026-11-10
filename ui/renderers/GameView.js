@@ -1335,8 +1335,9 @@ export class Ui {
    * En reposo es el paquete configurado en la hoja de giros rapidos; en marcha,
    * las tiradas que quedan de ese paquete. Al parar vuelve al paquete, no al
    * valor por defecto: la configuracion no se pierde al terminar una tanda. La
-   * insignia es ademas el mando que abre la hoja, asi que su nombre accesible
-   * viaja con la cifra.
+   * insignia es ademas un rodillo —cada pulsacion pasa al siguiente paquete— y
+   * la puerta de la hoja con una pulsacion larga, asi que su nombre accesible
+   * viaja con la cifra y explica los dos gestos.
    *
    * @param {boolean} active el bucle esta en marcha
    * @param {number} [remaining] tiradas que faltan
@@ -1344,8 +1345,14 @@ export class Ui {
   paintAutoCount_(active, remaining = 0) {
     const running = Boolean(active);
     const spins = running ? Math.max(0, Number(remaining) || 0) : this.quickSpinsPick;
+    const label = this.quickSpinsLabel_(spins);
 
-    this.setRefText_('autoCount', this.quickSpinsLabel_(spins));
+    const count = this.ref_('autoCount');
+    const previous = count ? String(count.textContent || '') : '';
+    this.setRefText_('autoCount', label);
+    /* Solo rueda cuando la cifra cambia de verdad: repintar la misma tanda (un
+       cambio de apuesta, por ejemplo) no debe mover el tambor. */
+    if (count && previous && previous !== label) this.rollAutoCount_(count, previous);
 
     const pack = this.ref_('autoPack');
     if (!pack) return;
@@ -1356,11 +1363,66 @@ export class Ui {
       running
         ? `Quedan ${left} de ${total} tiradas automáticas`
         : `Paquete de tiradas automáticas · ${left}. ` +
-            `Pulsa para elegir entre ${this.quickSpinsPhrase_()}`
+            'Pulsa para rodar al siguiente; mantén pulsado para elegir entre ' +
+            `${this.quickSpinsPhrase_()}`
     );
     pack.title = running
       ? `Quedan ${left} de ${total} tiradas automáticas`
-      : `Paquete de ${left} tiradas automáticas · cambiar`;
+      : `Paquete de ${left} tiradas automáticas · pulsa para cambiar`;
+  }
+
+  /**
+   * Rodillo de la cifra del paquete: la cifra anterior sale por arriba mientras
+   * la nueva entra desde abajo.
+   *
+   * La cifra viva es la del DOM —los lectores de pantalla y el `aria-label` la
+   * leen al instante—, asi que el clon que sale es solo pintura: va
+   * `aria-hidden`, sin eventos y lo retira `animationend`. Si el navegador pide
+   * movimiento reducido, o no hay DOM, el cambio es instantaneo.
+   *
+   * @param {object} node `#auto-count`
+   * @param {string} previous cifra que acaba de salir
+   * @returns {boolean} true si se pinto el tambor
+   */
+  rollAutoCount_(node, previous) {
+    const host = node ? node.parentNode : null;
+    if (REDUCED_MOTION || !host) return false;
+
+    const doc = typeof document !== 'undefined' ? document : null;
+    if (!doc || typeof doc.createElement !== 'function') return false;
+    if (!node.classList || typeof node.classList.add !== 'function') return false;
+
+    /* Un solo tambor a la vez: con pulsaciones seguidas, el clon anterior ya no
+       representa nada y se retira antes de pintar el nuevo. */
+    if (typeof host.querySelectorAll === 'function') {
+      for (const stale of host.querySelectorAll('.pill__roll-ghost')) {
+        if (stale && typeof stale.remove === 'function') stale.remove();
+        else if (stale && stale.parentNode === host) host.removeChild(stale);
+      }
+    }
+
+    const ghost = doc.createElement('span');
+    ghost.className = 'pill__roll-ghost';
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.textContent = previous;
+
+    /* Reinicia la animacion de entrada aunque el cambio llegue en el mismo
+       fotograma que el anterior. */
+    node.classList.remove('is-roll-in');
+    void host.offsetWidth;
+    node.classList.add('is-roll-in');
+    host.appendChild(ghost);
+
+    const cleanup = () => {
+      if (ghost.parentNode === host) host.removeChild(ghost);
+      node.classList.remove('is-roll-in');
+    };
+    if (typeof ghost.addEventListener === 'function') {
+      ghost.addEventListener('animationend', cleanup, { once: true });
+    } else if (typeof setTimeout === 'function') {
+      setTimeout(cleanup, 400);
+    }
+    return true;
   }
 
   /**

@@ -180,8 +180,8 @@ test('con los nodos montados los helpers si escriben', async () => {
   ui.paintQuickSpinsOptions_();
   assert.match(
     ui.refs.autoPack.getAttribute('aria-label'),
-    /Pulsa para elegir entre 5, 10 o 25/,
-    'la insignia anuncia el catalogo que abre'
+    /Pulsa para rodar al siguiente; mantén pulsado para elegir entre 5, 10 o 25/,
+    'la insignia anuncia el rodillo y la hoja'
   );
   assert.match(ui.refs.autoBtn.getAttribute('aria-label'), /10 tiradas automáticas/);
   assert.equal(ui.refs.autoCount.textContent, 'x10');
