@@ -17,7 +17,7 @@ navegador**.
 | `renderers/RoundAnimator.js` | Reproduce una ronda ya resuelta por el servidor. |
 | `renderers/reels.js`, `renderers/fx.js` | Rodillos y efectos visuales. |
 | `lib/*` | Formato, matemática de rodillos, tiempos y niveles de premio. |
-| `audio/sfx.js` | Efectos de interfaz (WebAudio), MP3 de victoria y del botón GIRAR, y música de fondo en bucle que arranca sola al entrar o recargar (o con el primer gesto si el navegador exige interacción). |
+| `audio/sfx.js` | Efectos locales (WebAudio), aplausos de victoria y música de fondo en bucle que arranca por defecto. |
 | `config/gameConfig.js` | Espejo ESM **generado** desde `config/gameConfig.js`. |
 
 ## Límites de responsabilidad
@@ -51,7 +51,7 @@ Ver `docs/MODO_AUTONOMO.md`.
 La identidad se cambia en `public/src/css/theme.css` (paleta `--brand-*`,
 acentos, superficies y tipografía), nunca en la lógica de `ui/`. `style.css`
 conserva la maqueta y el arte; `theme.css` se carga después y está aislado bajo
-`html[data-theme="santa-crush"]`. Guía completa: `docs/REBRANDING.md`.
+`html[data-theme="meridianobet"]`. Guía completa: `docs/REBRANDING.md`.
 
 Con un endpoint externo hay que:
 

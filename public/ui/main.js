@@ -39,13 +39,6 @@ function bootstrap() {
   setDocumentHidden(documentHidden());
   watchVisibility(setDocumentHidden);
 
-  /* El audio se crea antes de montar la vista: la musica de fondo tiene que
-     sonar sola al entrar o recargar el juego y, si el navegador exige un gesto,
-     queda lista para entrar en cuanto el jugador toque cualquier cosa. Los tres
-     MP3 se piden a la red ya, mientras se pinta el tablero. */
-  const sfx = createSfx();
-  sfx.autostart();
-
   const ui = new GameView();
   ui.mount();
 
@@ -53,6 +46,11 @@ function bootstrap() {
   const api = new ApiClient({ getToken: () => (session ? session.current() : null) });
   session = new SessionManager(api);
 
+  const sfx = createSfx();
+  /* La musica ambiental suena por defecto desde el arranque: `autostart()` la
+     intenta ya y engancha el primer gesto del jugador para los navegadores que
+     exigen interaccion antes de reproducir audio. */
+  sfx.autostart();
   const game = new GameController({ api, ui, sfx, session });
   new GameControls({ ui, controller: game }).mount();
 
