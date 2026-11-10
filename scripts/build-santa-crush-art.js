@@ -76,9 +76,9 @@ const PIECES = [
   {
     name: 'console-desktop',
     label: 'consola de mandos (hero + placas + pulsadores)',
-    source: path.join(ROOT, 'design', 'console_desktop_buttons.png'),
+    source: path.join(ROOT, 'design', 'console_desktop_gold_bells.png'),
     target: path.join(THEME_DIR, 'console', 'console-desktop.webp'),
-    canvas: { width: 1041, height: 1497 },
+    canvas: { width: 1047, height: 1496 },
     quality: 88,
     maxBytes: 620 * 1024
   },

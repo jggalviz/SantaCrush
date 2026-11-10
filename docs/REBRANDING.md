@@ -46,11 +46,11 @@ que distinguir dos grupos antes de tocar nada:
 | Boton "Fichas de Prueba", capsula de audio, modal, anillo de foco | CSS | **Si** |
 | Marco interior del tablero (`.board`, `.tile`) | Gradientes CSS | **Si** |
 | Consola de mandos (`.controls`: − · + · MAX · FEVER · AUTO) | `console/console-desktop.webp` (escritorio) / `console/console-mobile.webp` (movil) | No: reexportar arte |
-| Pulsador **GIRAR** (el unico mando que el arte no dibuja) | CSS (capsula rosa y aro dorado) | **Si** |
+| Pulsador **GIRAR** (el unico mando que el arte no dibuja) | CSS (capsula carmesi y aro dorado) | **Si** |
 | Nube del logo (`.machine__hero`, escritorio) | `console/console-desktop.webp` | No: reexportar arte |
 | Marco del tablero (escritorio) | `console/slot-frame.webp` | No: reexportar arte |
 | Marco del tablero (movil) | `console/slot-frame-mobile.webp` | No: reexportar arte |
-| Fondo de escenario y logotipo | `assets/santa-crush/bg/bg-desktop.webp` (escritorio) / `assets/santa-crush/bg/bg-mobile.webp` (movil), `MERIDIANOBET-CRUSH-LOGO.webp` | No: reexportar arte |
+| Fondo de escenario y logotipo | `assets/santa-crush/bg/bg-desktop.webp` (escritorio) / `assets/santa-crush/bg/bg-mobile.webp` (movil), `SANTA-CRUSH-LOGO.webp` | No: reexportar arte |
 | Simbolos del tablero | `public/src/assets/slot/*.webp` (maestros en `design/symbols/*.png`) | No: reexportar arte |
 
 Las 30 casillas se pintan con el **azul de la consola**: `theme.css` define
@@ -160,16 +160,19 @@ el propio origen.
 3. Cambia solo el `src` (y el `alt`) de:
 
 ```html
-<img class="machine__logo" src="/src/assets/MERIDIANOBET-CRUSH-LOGO.webp"
-     alt="MeridianoBet Crush" width="480" height="240" fetchpriority="high" />
+<img class="machine__logo" src="/src/assets/SANTA-CRUSH-LOGO.webp"
+     alt="Santa Crush" width="480" height="294" fetchpriority="high" />
 ```
 
    El tamano reservado (`width`/`height`) evita saltos de layout y declara la
-   proporcion real del arte, **2:1** (900 x 450, sin margen transparente). En
+   proporcion real del arte, **959:587** (480 x 294, sin margen transparente). En
    movil la caja del logo (`--logo-w` / `--logo-h` en `style.css`) usa esa misma
    proporcion y la imagen la rellena entera; si se cambia el arte por otro de
    distinta relacion hay que actualizar ambos sitios o el `object-fit: contain`
    devolvera el aire dentro de la caja.
+   El archivo servido es un **WebP animado** de 12 fotogramas (el GIF maestro se
+   queda en `design/`), asi que el `<img>` se mueve solo: no hay sprite, JS ni
+   `@keyframes` que mantener.
    La caja movil apunta al **78 % del ancho del marco** con un tope por el cielo
    real (`--logo-sky`): en telefonos altos manda el 78 % y el logo se apoya sobre
    la franja alta del marco (Santa, reno y campanas), justo encima del HUD; en

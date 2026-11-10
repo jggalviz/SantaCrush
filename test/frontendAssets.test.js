@@ -23,8 +23,8 @@ const FORMAT_PATH = path.join(PUBLIC_DIR, 'ui', 'lib', 'format.js');
 const STYLE_PATH = path.join(PUBLIC_DIR, 'src', 'css', 'style.css');
 const THEME_PATH = path.join(PUBLIC_DIR, 'src', 'css', 'theme.css');
 const INDEX_PATH = path.join(PUBLIC_DIR, 'index.html');
-const LOGO_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'MERIDIANOBET-CRUSH-LOGO.webp');
-const LOGO_MASTER_PATH = path.join(ROOT_DIR, 'design', 'MeridianoBet Sports Crush Logo.png');
+const LOGO_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'SANTA-CRUSH-LOGO.webp');
+const LOGO_MASTER_PATH = path.join(ROOT_DIR, 'design', 'SANTA-CRUSH-LOGO-ANIMADO.gif');
 const WIN_ART_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_deportiva.webp');
 const WIN_MASTER_PATH = path.join(ROOT_DIR, 'design', 'victoria_deportiva.png');
 const WIN_SOUND_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'AUDIO-WIN-santa-crush.mp3');
@@ -429,15 +429,15 @@ test('el scatter es el regalo navideño y el multiplicador el bono', async () =>
   }
 });
 
-test('el logotipo de Santa Crush se sirve ligero y con su proporcion 2:1', () => {
+test('el logotipo animado de Santa Crush se sirve ligero y con sus 12 fotogramas', () => {
   const html = read(INDEX_PATH);
 
-  assert.ok(fs.existsSync(LOGO_PATH), 'Falta public/src/assets/MERIDIANOBET-CRUSH-LOGO.webp');
+  assert.ok(fs.existsSync(LOGO_PATH), 'Falta public/src/assets/SANTA-CRUSH-LOGO.webp');
 
-  // El peso es parte del contrato: el maestro PNG pesa 1,8 MB y el WebP servido
-  // queda por debajo de 200 KB. Es un WebP estatico (VP8X + ALPH + VP8): el
-  // logotipo nuevo es un lockup fijo, no la animacion de cinco fotogramas del
-  // tema anterior.
+  // El peso es parte del contrato: el GIF maestro pesa 2,5 MB y el WebP servido
+  // queda por debajo de 280 KB. Es un WebP animado de verdad (VP8X + ANIM + un
+  // ANMF por fotograma) y con alfa, para que el lockup se mueva sobre la nube del
+  // hero sin arrastrar una caja blanca.
   const binary = fs.readFileSync(LOGO_PATH);
   assert.equal(binary.toString('ascii', 0, 4), 'RIFF', 'El logo debe ser un contenedor RIFF/WebP');
   assert.equal(binary.toString('ascii', 8, 12), 'WEBP', 'El logo debe ser un contenedor RIFF/WebP');
@@ -446,53 +446,50 @@ test('el logotipo de Santa Crush se sirve ligero y con su proporcion 2:1', () =>
   assert.equal(chunks[0].fourCC, 'VP8X', 'El logo debe declarar caracteristicas extendidas (VP8X)');
 
   const flags = binary.readUInt8(chunks[0].offset + 8);
-  assert.equal((flags & 0x02) === 0, true, 'El logo no debe declarar animacion (bloque ANIM)');
+  assert.equal((flags & 0x02) !== 0, true, 'El logo debe declarar animacion (bloque ANIM)');
   assert.equal((flags & 0x10) !== 0, true, 'El logo debe declarar canal alfa');
-  assert.ok(
-    chunks.some((chunk) => chunk.fourCC === 'ALPH'),
-    'El logo debe traer el plano alfa como bloque ALPH'
-  );
+  assert.ok(chunks.some((chunk) => chunk.fourCC === 'ANIM'), 'El logo debe traer el bloque ANIM');
   assert.equal(
-    chunks.some((chunk) => chunk.fourCC === 'ANMF'),
-    false,
-    'El logo estatico no debe traer fotogramas ANMF'
+    chunks.filter((chunk) => chunk.fourCC === 'ANMF').length,
+    12,
+    'El logo animado debe conservar los 12 fotogramas del maestro'
   );
 
-  // Lienzo: 900 x 450, la misma proporcion 2:1 del maestro. Se sirve a 240 px de
-  // ancho como maximo, asi que 900 cubre pantallas de alta densidad sin reescalar
-  // en el navegador y sin publicar el PNG completo.
+  // Lienzo: 480 x 294, la misma proporcion 959:587 del maestro. Se sirve a ~390 px
+  // de ancho como maximo, asi que 480 cubre el caso normal sin reescalar de forma
+  // visible y sin publicar el GIF completo.
   const width = binary.readUIntLE(chunks[0].offset + 12, 3) + 1;
   const height = binary.readUIntLE(chunks[0].offset + 15, 3) + 1;
-  assert.equal(width, 900, 'El logo debe servirse a 900 px de ancho');
-  assert.equal(height, 450, 'El logo debe conservar la proporcion 2:1 (900 x 450)');
+  assert.equal(width, 480, 'El logo debe servirse a 480 px de ancho');
+  assert.equal(height, 294, 'El logo debe conservar la proporcion del maestro (480 x 294)');
 
   assert.ok(
-    binary.length < 200 * 1024,
-    `El logo debe pesar menos de 200 KB (pesa ${(binary.length / 1024).toFixed(1)} KB)`
+    binary.length < 280 * 1024,
+    `El logo debe pesar menos de 280 KB (pesa ${(binary.length / 1024).toFixed(1)} KB)`
   );
 
   assert.match(html, /<div class="machine__hero">/);
-  assert.match(html, /src="\/src\/assets\/MERIDIANOBET-CRUSH-LOGO\.webp"/);
+  assert.match(html, /src="\/src\/assets\/SANTA-CRUSH-LOGO\.webp"/);
   assert.match(html, /alt="Santa Crush"/);
-  // La caja reserva la proporcion del archivo: si el HTML dice 1:1 el navegador
-  // aparta el doble de alto del que ocupa el dibujo y el tablero salta al cargar.
-  assert.match(html, /width="480" height="240"/, 'El logo debe reservar 480x240 px (2:1)');
+  // La caja reserva la proporcion del archivo: si el HTML declara 2:1 el navegador
+  // aparta menos alto del que ocupa el dibujo y las placas saltan al cargar.
+  assert.match(html, /width="480" height="294"/, 'El logo debe reservar 480x294 px');
 });
 
 test('el maestro del logo vive fuera de public/ y no viaja al CDN', () => {
-  // El PNG pesa 1,8 MB: si se queda en `public/src`, se publica en cada deploy y
+  // El GIF pesa 2,5 MB: si se queda en `public/src`, se publica en cada deploy y
   // el directorio deja de ser solo lo que consume el cliente.
   assert.ok(
     fs.existsSync(LOGO_MASTER_PATH),
-    'Falta el maestro design/MeridianoBet Sports Crush Logo.png'
+    'Falta el maestro design/SANTA-CRUSH-LOGO-ANIMADO.gif'
   );
   assert.ok(fs.statSync(LOGO_MASTER_PATH).size > 0, 'El maestro del logo esta vacio');
 
-  const signature = fs.readFileSync(LOGO_MASTER_PATH).subarray(0, 8);
-  assert.deepEqual(
-    [...signature],
-    [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
-    'El maestro del logo debe seguir siendo un PNG'
+  const signature = fs.readFileSync(LOGO_MASTER_PATH).subarray(0, 6);
+  assert.equal(
+    signature.toString('ascii'),
+    'GIF89a',
+    'El maestro del logo debe seguir siendo el GIF animado'
   );
 
   const media = /\.(gif|png|jpe?g|webp|avif|psd|tiff?|mp4|mov|webm)$/i;
@@ -1766,7 +1763,7 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   // arte del lockup mide 514,1 px, asi que se sale 50 px por cada lado y tapa el
   // aro en vez de flotar dentro del hueco. Es el techo: al 84 % ya se come la base
   // de la corona y su filo inferior roza la barra del HUD.
-  for (const declaration of ['left: 50%;', 'top: 21.6%;', 'width: 80%;', 'aspect-ratio: 2 / 1;']) {
+  for (const declaration of ['left: 50%;', 'top: 21.6%;', 'width: 80%;', 'aspect-ratio: 959 / 587;']) {
     assert.ok(
       logoBodies.some((body) => body.includes(declaration)),
       `El logo se apoya en la nube de d2 con \`${declaration}\``
@@ -1777,8 +1774,8 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
     'El logo monta sobre el borde dorado de la nube de d2 (80 % del ancho)'
   );
   assert.ok(
-    logoBodies.some((body) => body.includes('width: 54%;') && body.includes('top: 12.8%;')),
-    'En ventanas bajas el logo se encoge al 54 % y mantiene su anclaje en 12,8 %'
+    logoBodies.some((body) => body.includes('width: 48%;') && body.includes('top: 13.4%;')),
+    'En ventanas bajas el logo se encoge al 48 % y mantiene su anclaje en 13,4 %'
   );
   // La respiracion del escritorio va acotada en su propio juego de keyframes
   // (-4 px y 2 %): con los -7 px y el 3 % de la animacion movil el pico del
@@ -2332,8 +2329,8 @@ test('el arte navideño del tema se sirve desde el arbol con su lienzo exacto', 
     {
       name: 'console-desktop',
       target: path.join(themeDir, 'console', 'console-desktop.webp'),
-      master: path.join(ROOT_DIR, 'design', 'console_desktop_buttons.png'),
-      canvas: '1041x1497',
+      master: path.join(ROOT_DIR, 'design', 'console_desktop_gold_bells.png'),
+      canvas: '1047x1496',
       max: 620 * 1024
     },
     {
@@ -2386,13 +2383,13 @@ test('el arte navideño del tema se sirve desde el arbol con su lienzo exacto', 
   }
 
   // El reparto del alto usa las relaciones de los dos recortes nuevos:
-  // 1305/1090 = 1,19725 (marco) y 1041/1497 = 0,69539 (consola).
+  // 1305/1090 = 1,19725 (marco) y 1047/1496 = 0,69987 (consola).
   assert.match(css, /--frame-w: calc\(var\(--frame-h\) \* 1\.19725\)/, 'El marco mide 1305/1090 de su alto');
-  assert.match(css, /--side-w: calc\(var\(--frame-h\) \* 0\.69539\)/, 'La consola mide 1041/1497 de su alto');
+  assert.match(css, /--side-w: calc\(var\(--frame-h\) \* 0\.69987\)/, 'La consola mide 1047/1496 de su alto');
   assert.match(
     css,
-    /--frame-h: min\([\s\S]{0,220}?\/ 1\.89264\)/,
-    'El alto comun descuenta marco y consola (1,19725 + 0,69539)'
+    /--frame-h: min\([\s\S]{0,220}?\/ 1\.89712\)/,
+    'El alto comun descuenta marco y consola (1,19725 + 0,69987)'
   );
 
   // La ventana transparente del marco (x 6,36-93,64 % · y 14,95-91,47 %) se
@@ -2409,7 +2406,7 @@ test('el arte navideño del tema se sirve desde el arbol con su lienzo exacto', 
   const bodies = (selector) => [...css.matchAll(new RegExp(`${selector} \\{([^}]*)\\}`, 'g'))]
     .map((match) => match[1]);
   const hudBodies = bodies('\\.machine__side \\.hud');
-  for (const declaration of ['left: 6.72%;', 'top: 33.2%;', 'width: 85.98%;', 'height: 9.4%;']) {
+  for (const declaration of ['left: 7.25%;', 'top: 33.35%;', 'width: 85.49%;', 'height: 9.47%;']) {
     assert.ok(hudBodies.some((body) => body.includes(declaration)), `El HUD se ancla con \`${declaration}\``);
   }
   const spinBodies = bodies(
@@ -2423,19 +2420,19 @@ test('el arte navideño del tema se sirve desde el arbol con su lienzo exacto', 
   }
 
   // Los dos caramelos grandes del pie siguen siendo ventanas al arte: el amarillo
-  // es el FEVER (compra el bonus) y el rojo, el AUTO. Su recorte es el del dibujo.
+  // es el FEVER (compra el bonus) y el azul, el AUTO. Su recorte es el del dibujo.
   const featureBodies = bodies('\\.machine__side \\.controls #btn-feature');
-  for (const declaration of ['--art-x: 10.18;', '--art-y: 80.09;', 'left: 10.18%;', 'top: 80.09%;']) {
+  for (const declaration of ['--art-x: 10.8;', '--art-y: 80.28;', 'left: 10.8%;', 'top: 80.28%;']) {
     assert.ok(
       featureBodies.some((body) => body.includes(declaration)),
       `El FEVER recorta el caramelo amarillo con \`${declaration}\``
     );
   }
   const autoBodies = bodies('\\.machine__side \\.controls #btn-auto');
-  for (const declaration of ['--art-x: 51.68;', '--art-y: 79.96;', 'left: 51.68%;', 'top: 79.96%;']) {
+  for (const declaration of ['--art-x: 51.96;', '--art-y: 80.21;', 'left: 51.96%;', 'top: 80.21%;']) {
     assert.ok(
       autoBodies.some((body) => body.includes(declaration)),
-      `El AUTO recorta el caramelo rojo con \`${declaration}\``
+      `El AUTO recorta el caramelo azul con \`${declaration}\``
     );
   }
 

@@ -909,12 +909,12 @@ test('el panel, los mandos del arte y la hoja estan en la fuente y en el minific
   );
   assert.match(
     css,
-    /\.machine__side \.controls #btn-auto \{[^}]*--art-x: 51\.68;/,
-    'el AUTO es el caramelo rojo del pie'
+    /\.machine__side \.controls #btn-auto \{[^}]*--art-x: 51\.96;/,
+    'el AUTO es el caramelo azul del pie'
   );
   assert.match(
     css,
-    /\.machine__side \.controls #btn-feature \{[^}]*--art-x: 10\.18;/,
+    /\.machine__side \.controls #btn-feature \{[^}]*--art-x: 10\.8;/,
     'el FEVER es el caramelo amarillo del pie'
   );
 
@@ -927,14 +927,14 @@ test('el panel, los mandos del arte y la hoja estan en la fuente y en el minific
   assert.ok(spin, 'El GIRAR declara su capsula propia');
   assert.match(spin, /top: 67\.4%;/, 'arranca bajo la lectura del saldo');
   assert.match(spin, /width: 76%;/, 'y ocupa el ancho de la banda libre');
-  assert.match(spin, /linear-gradient\(180deg, #ff7ad0/, 'capsula rosa candy');
-  assert.match(spin, /0 0 0 0\.06em #ffd23f,/, 'con su aro dorado');
+  assert.match(spin, /linear-gradient\(180deg, #ff6a5c/, 'capsula roja candy');
+  assert.match(spin, /0 0 0 0\.07em #ffd54a,/, 'con su aro dorado');
 
   /* Insignia del paquete: hermana del AUTO, en escritorio y en movil. */
   assert.match(
     css,
-    /\.machine__side \.controls #btn-auto-pack \{[^}]*position: absolute;[^}]*left: 63\.9%;/,
-    'en escritorio la insignia se apoya en la mitad baja del caramelo rojo'
+    /\.machine__side \.controls #btn-auto-pack \{[^}]*position: absolute;[^}]*left: 64\.48%;/,
+    'en escritorio la insignia se apoya en la mitad baja del caramelo azul'
   );
   assert.match(
     css,

@@ -75,20 +75,20 @@ Medición real de `public/` en este repositorio:
 
 | Tipo | Archivos | Tamaño | Notas |
 | --- | ---: | ---: | --- |
-| WebP de arte (fondos, marcos, consolas, logo, victoria) | 14 | 3,94 MB | Se cachean un año (`immutable`); los fondos y las corazas de `assets/santa-crush/**` son las piezas grandes |
+| WebP de arte (fondos, marcos, consolas, logo, victoria) | 14 | 4,00 MB | Se cachean un año (`immutable`); los fondos y las corazas de `assets/santa-crush/**` son las piezas grandes |
 | WebP de símbolos (`src/assets/slot`) | 11 | 0,49 MB | 335×341 px con alfa sin pérdida, generados con `npm run build:symbols` |
 | WOFF2 (tipografías) | 4 | 0,04 MB | Fredoka y Lilita One, precargadas desde `index.html` |
 | MP3 (victoria + giro + bucle) | 3 | 0,69 MB | `AUDIO-WIN-santa-crush.mp3` (victoria, 2 s, ~28 KB), `AUDIO-SPIN-santa-crush.mp3` (botón GIRAR, 2,4 s a 256 kbps, ~76 KB) y `Santa_Crush_Holiday_Loop_19s_256k.mp3` (fondo en bucle, 19,25 s a 256 kbps CBR, ~602 KB) |
 | JS de la UI (`public/ui/**`) | 16 | 0,19 MB | Espejo ESM de `ui/` (sin minificar: se sirve con gzip/brotli del CDN) |
 | CSS minificado | 2 | 0,16 MB | `style.min.css` + `theme.min.css`; las fuentes legibles (0,32 MB) siguen en el repo, pero el HTML no las enlaza |
 | HTML | 1 | 0,02 MB | `index.html` (las previews internas no viajan en `dist/`) |
-| **Total publicado** | **51** | **5,52 MB** | El audio (0,69 MB) entra al arrancar o con el primer gesto, fuera del primer pintado; quedan ~80 KB de margen sobre el tope de 5,6 MB |
+| **Total publicado** | **51** | **5,63 MB** | El audio (0,69 MB) entra al arrancar o con el primer gesto, fuera del primer pintado; quedan ~270 KB de margen sobre el tope de 5,9 MB |
 
 Características que condicionan el despliegue:
 
 - **La música de fondo arranca sola al entrar o recargar.** `sfx.autostart()` corre antes de montar la vista, intenta el bucle en el acto y lo reintenta en `pageshow`, `focus` y `visibilitychange`. La política de autoplay de Chrome, Safari y Firefox ignora cualquier intento anterior a la primera interacción del usuario con el dominio, así que en una primera visita el bucle entra con el primer toque, clic o tecla (en cualquier parte del juego, no hace falta girar); desde la segunda visita o recarga el navegador ya lo permite. **Si el juego se incrusta en un iframe, la página anfitriona debe declarar `allow="autoplay"`**, porque sin ese permiso el iframe hereda el bloqueo aunque el jugador ya haya interactuado.
-- **Los nombres de archivo no incluyen hash de contenido** (por ejemplo `style.min.css`, `main.js`, `MERIDIANOBET-CRUSH-LOGO.webp`). Por eso JS y CSS se sirven con `Cache-Control: no-cache` y revalidan en cada visita; solo `src/assets/**` (arte, tipografía y audio) va con caché de un año e `immutable`.
-- **El audio es el entregado por el diseñador y va con el nombre versionado.** Los tres MP3 se sirven tal cual: victoria de 2 s (28 KB), efecto del botón GIRAR de 2,4 s a 256 kbps (76 KB) y bucle de fondo de 19,25 s a 256 kbps CBR (602 KB). Como `src/assets/**` se cachea un año con `immutable`, **cambiar el contenido de un MP3 exige cambiar el nombre** (de ahí el sufijo `_19s_256k` del bucle) y la ruta de `ui/audio/sfx.js`: con el mismo nombre, los navegadores que ya lo descargaron no lo volverían a pedir. Si el paquete necesita aire (queda en 5,52 MB sobre un tope de 5,6 MB), esta receta deja el bucle en ~380 KB sin cambiar duración, frecuencia ni canales, y **obliga a renombrarlo** a `_19s_160k`:
+- **Los nombres de archivo no incluyen hash de contenido** (por ejemplo `style.min.css`, `main.js`, `SANTA-CRUSH-LOGO.webp`). Por eso JS y CSS se sirven con `Cache-Control: no-cache` y revalidan en cada visita; solo `src/assets/**` (arte, tipografía y audio) va con caché de un año e `immutable`.
+- **El audio es el entregado por el diseñador y va con el nombre versionado.** Los tres MP3 se sirven tal cual: victoria de 2 s (28 KB), efecto del botón GIRAR de 2,4 s a 256 kbps (76 KB) y bucle de fondo de 19,25 s a 256 kbps CBR (602 KB). Como `src/assets/**` se cachea un año con `immutable`, **cambiar el contenido de un MP3 exige cambiar el nombre** (de ahí el sufijo `_19s_256k` del bucle) y la ruta de `ui/audio/sfx.js`: con el mismo nombre, los navegadores que ya lo descargaron no lo volverían a pedir. Si el paquete necesita aire (queda en 5,63 MB sobre un tope de 5,9 MB), esta receta deja el bucle en ~380 KB sin cambiar duración, frecuencia ni canales, y **obliga a renombrarlo** a `_19s_160k`:
 
   ```bash
   ffmpeg -i Santa_Crush_Holiday_Loop_19s_256k.mp3 -map_metadata -1 \
@@ -387,7 +387,7 @@ No es necesario para un despliegue normal: los WebP/WOFF2/PNG ya están versiona
 | `npm run build:art` | `marco_movil.png`, `consola_movil.png` | `marco_movil.webp`, `consola_movil.webp` |
 | `npm run build:desktop-art` | `d1.png`, `d2.png` | `d1.webp`, `d2.webp` |
 | `npm run build:bg` | `fondo_desk_meridino_crush.png`, `avenida_fantastica_reino_caramelos.png` | `fondo_desk_meridino_crush.webp`, `avenida_fantastica_reino_caramelos.webp` |
-| `npm run build:logo` | `MeridianoBet Sports Crush Logo.png` | `MERIDIANOBET-CRUSH-LOGO.webp` |
+| `npm run build:logo` | `SANTA-CRUSH-LOGO-ANIMADO.gif` | `SANTA-CRUSH-LOGO.webp` |
 | `npm run build:symbols` | `symbols/s1.png` … `symbols/s11.png` | `slot/s1.webp` … `slot/s11.webp` |
 | `npm run build:win` | `victoria_deportiva.png` | `victoria_deportiva.webp` |
 
@@ -590,11 +590,11 @@ Comprobaciones rápidas de objetos:
 aws s3 ls "s3://$BUCKET/"                      # index.html + ui/ + src/
 aws s3api head-object --bucket "$BUCKET" --key "ui/main.js" \
   --query "{type:ContentType,cache:CacheControl,size:ContentLength}"
-aws s3api head-object --bucket "$BUCKET" --key "src/assets/PANA-CRUSH-LOGO.webp" \
+aws s3api head-object --bucket "$BUCKET" --key "src/assets/SANTA-CRUSH-LOGO.webp" \
   --query "{type:ContentType,cache:CacheControl,size:ContentLength}"
 ```
 
-> **S3 distingue mayúsculas/minúsculas.** El HTML referencia `PANA-CRUSH-LOGO.webp` con ese nombre exacto. No renombres archivos al subirlos desde Windows.
+> **S3 distingue mayúsculas/minúsculas.** El HTML referencia `SANTA-CRUSH-LOGO.webp` con ese nombre exacto. No renombres archivos al subirlos desde Windows.
 >
 > Los 9 PNG de símbolos no referenciados (`candy_1`, `candy_7`, `candy_9`, `candy_10`, `candy_12`, `candy_14`, `candy_16`, `candy_17`, `candy_18`) no se descargan, pero ocupan espacio en el bucket. Puedes excluirlos del `sync` si quieres reducir el artefacto a ~6,4 MB.
 
@@ -1043,6 +1043,15 @@ aws cloudfront create-invalidation \
 
 No invalides `/src/assets/*` salvo que hayas reemplazado un asset conservando el nombre. Invalidar todo (`/*`) funciona pero consume cuota y tarda más.
 
+> **Este cambio de arte reutiliza un nombre.** `assets/santa-crush/console/console-desktop.webp` se sustituye conservando la ruta, así que invalida esa ruta concreta: los navegadores que ya la descargaron la guardaron con `immutable` durante un año y seguirían viendo la consola anterior (AUTO rojo y corazón al pie).
+>
+> ```bash
+> aws cloudfront create-invalidation --distribution-id "$DIST_ID" \
+>   --paths "/src/assets/santa-crush/console/console-desktop.webp"
+> ```
+>
+> El logo animado estrena ruta (`/src/assets/SANTA-CRUSH-LOGO.webp`), así que no necesita invalidación; el archivo anterior (`MERIDIANOBET-CRUSH-LOGO.webp`) puede quedarse en el bucket sin coste de descarga, porque ya no lo referencia nadie.
+
 > **Ventana de inconsistencia:** al no haber fingerprinting, entre la subida de JS/CSS y la de `index.html` un usuario puede recibir HTML nuevo con JS viejo (o al revés). Para un lanzamiento congelado, haz el deploy en una ventana de baja audiencia o implementa fingerprinting (§4.7). El `index.html` con `no-cache` reduce la ventana, pero no la elimina.
 
 ---
@@ -1065,7 +1074,7 @@ curl -sSI "$BASE/ui/main.js" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-c
 curl -sSI "$BASE/src/css/style.min.css" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
 
 # 3) Assets: 200, MIME correcto e inmutable
-curl -sSI "$BASE/src/assets/MERIDIANOBET-CRUSH-LOGO.webp" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
+curl -sSI "$BASE/src/assets/SANTA-CRUSH-LOGO.webp" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
 curl -sSI "$BASE/src/assets/fonts/fredoka-latin.woff2" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
 curl -sSI "$BASE/src/assets/slot/s1.webp" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
 ```
@@ -1077,7 +1086,7 @@ $BASE = "https://pana-crush.example.com"
 curl.exe -sSI "$BASE/" | Select-String -Pattern `
   "HTTP/|content-type|cache-control|content-security-policy|strict-transport-security|x-content-type-options"
 curl.exe -sSI "$BASE/ui/main.js" | Select-String -Pattern "HTTP/|content-type|cache-control"
-curl.exe -sSI "$BASE/src/assets/MERIDIANOBET-CRUSH-LOGO.webp" | Select-String -Pattern "HTTP/|content-type|cache-control"
+curl.exe -sSI "$BASE/src/assets/SANTA-CRUSH-LOGO.webp" | Select-String -Pattern "HTTP/|content-type|cache-control"
 ```
 
 Resultados esperados:

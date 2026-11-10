@@ -6439,7 +6439,7 @@ body.is-demo .machine__side .controls .balance::after {
     z-index: 6;
     width: 80%;
     height: auto;
-    aspect-ratio: 2 / 1;
+    aspect-ratio: 959 / 587;
     max-width: none;
     max-height: none;
     margin: 0;
@@ -7193,11 +7193,12 @@ body.is-demo .machine__side .controls .balance::after {
                                             · y 14,95-91,47 % (medida sobre el
                                             alfa del recorte)
      console/console-desktop.webp
-                               1041 x 1497  columna lateral entera: Santa y el
-                                            reno (hero) · tres placas del HUD
-                                            (y 32,87-42,89 %) · fila −/lectura/
-                                            +/MAX (y 51,17-61,06 %) · dos
-                                            pulsadores grandes (y 79,96-88,51 %)
+                               1047 x 1496  columna lateral entera (campanas
+                                            doradas al pie): Santa y el reno
+                                            (hero) · tres placas del HUD
+                                            (y 32,95-43,05 %) · fila −/lectura/
+                                            +/MAX (y 51,27-61,16 %) · dos
+                                            pulsadores grandes (y 79,28-89,64 %)
 
    Las dos piezas de la consola se publican recortadas al bbox de su alfa
    (`npm run build:theme-art`), asi que su lienzo CSS mide exactamente el
@@ -7211,13 +7212,13 @@ body.is-demo .machine__side .controls .balance::after {
 
 @media (min-width: 900px) {
   .machine {
-    /* 1,89264 = 1,19725 (1305/1090 del marco) + 0,69539 (1041/1497 lateral). */
+    /* 1,89712 = 1,19725 (1305/1090 del marco) + 0,69987 (1047/1496 lateral). */
     --frame-h: min(
       calc(100dvh - var(--d-chrome) - var(--d-bleed)),
-      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.89264)
+      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.89712)
     );
     --frame-w: calc(var(--frame-h) * 1.19725);
-    --side-w: calc(var(--frame-h) * 0.69539);
+    --side-w: calc(var(--frame-h) * 0.69987);
   }
 
   /* Marco de caramelos: mismo `100% 100%` que el arte anterior, sobre la caja
@@ -7258,23 +7259,25 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* Bloque 1 · La pegatina del logo flota sobre la franja de Santa y el reno
-     (y 2-25 % del lienzo) sin llegar a la fila de caramelos (31,2 %). */
+     (y 2-25 % del lienzo) sin llegar a la fila de caramelos (32,95 %). El lockup
+     animado mide 959 x 587 (1,634 y no 2:1), asi que se estrecha a 52 % para que
+     su alto (23 % del lienzo) siga cabiendo entero en la franja. */
   .machine__side .machine__logo {
-    top: 12.8%;
-    width: 58%;
+    top: 13.4%;
+    width: 52%;
   }
 
-  /* Bloque 2 · Una celda del HUD por placa roja: x 6,72-32,66 · 36,89-62,73 ·
-     66,28-92,70 % · banda y 32,87-42,89 %. Los tracks van en % del propio
+  /* Bloque 2 · Una celda del HUD por placa roja: x 7,16-33,33 · 36,87-62,94 ·
+     66,38-92,74 % · banda y 32,95-43,05 %. Los tracks van en % del propio
      `.hud` para que cada celda caiga sobre su placa y el texto no se salga del
      borde dorado. */
   .machine__side .hud {
-    left: 6.72%;
-    top: 33.2%;
-    width: 85.98%;
-    height: 9.4%;
-    grid-template-columns: 30.17% 30.05% 30.73%;
-    column-gap: 4.5%;
+    left: 7.25%;
+    top: 33.35%;
+    width: 85.49%;
+    height: 9.47%;
+    grid-template-columns: 30.61% 30.49% 30.82%;
+    column-gap: 4.04%;
   }
 
   /* Sobre el carmesi de las placas nuevas, el rotulo dorado se apaga: tinta
@@ -7306,70 +7309,70 @@ body.is-demo .machine__side .controls .balance::after {
     height: 4.4%;
   }
 
-  /* Disco − · x 8,84-23,44 % · y 51,17-61,06 % */
+  /* Disco − · x 9,36-23,78 % · y 51,27-61,16 % */
   .machine__side .controls__bet #btn-bet-down {
-    --art-x: 8.84;
-    --art-y: 51.17;
-    --art-w: 14.6;
-    --art-h: 9.89;
-    left: 8.84%;
-    top: 51.17%;
-    width: 14.6%;
-    height: 9.89%;
+    --art-x: 9.36;
+    --art-y: 51.27;
+    --art-w: 14.52;
+    --art-h: 9.96;
+    left: 9.36%;
+    top: 51.27%;
+    width: 14.52%;
+    height: 9.96%;
     border-radius: 30%;
   }
 
-  /* Disco + · x 62,82-77,04 % · y 51,17-61,06 % */
+  /* Disco + · x 63,04-77,08 % · y 51,27-61,16 % */
   .machine__side .controls__bet #btn-bet-up {
-    --art-x: 62.82;
-    --art-y: 51.17;
-    --art-w: 14.22;
-    --art-h: 9.89;
-    left: 62.82%;
-    top: 51.17%;
-    width: 14.22%;
-    height: 9.89%;
+    --art-x: 63.04;
+    --art-y: 51.27;
+    --art-w: 14.13;
+    --art-h: 9.96;
+    left: 63.04%;
+    top: 51.27%;
+    width: 14.13%;
+    height: 9.96%;
     border-radius: 30%;
   }
 
-  /* Placa MAX · x 78,00-90,68 % · y 51,24-60,59 % */
+  /* Placa MAX · x 78,12-90,74 % · y 51,41-60,70 % */
   .machine__side .controls__bet #btn-bet-max {
-    --art-x: 78;
-    --art-y: 51.24;
-    --art-w: 12.68;
-    --art-h: 9.35;
-    left: 78%;
-    top: 51.24%;
-    width: 12.68%;
-    height: 9.35%;
+    --art-x: 78.12;
+    --art-y: 51.41;
+    --art-w: 12.62;
+    --art-h: 9.29;
+    left: 78.12%;
+    top: 51.41%;
+    width: 12.62%;
+    height: 9.29%;
     border-radius: 28%;
   }
 
-  /* Lectura de apuesta · placa verde x 24,30-61,96 % · y 51,50-60,79 % */
+  /* Lectura de apuesta · placa verde x 26,46-60,55 % · y 53,07-59,83 % */
   .machine__side .controls .bet-readout,
   .machine__side .controls__bet .bet-readout {
-    left: 24.3%;
-    top: 51.5%;
-    width: 37.66%;
-    height: 9.29%;
+    left: 24.82%;
+    top: 51.66%;
+    width: 37.36%;
+    height: 9.24%;
     border-radius: 12px;
   }
 
-  /* AUTOGIRO · boton amarillo grande x 10,18-47,74 % · y 80,09-88,44 %
+  /* AUTOGIRO · boton amarillo grande x 9,36-49,38 % · y 79,28-89,64 %
      El caramelo se parte en dos mitades. El aire derecho de la caja es lo que
      queda entre el margen izquierdo y el borde del selector, de modo que la caja
      del rotulo termina en 28,10 % y la fila de chips arranca en 28,70 %: el
      texto no puede meterse bajo los pulsadores ni al reves, se mida como se
      mida el navegador. */
   .machine__side .controls #btn-feature {
-    --art-x: 10.18;
-    --art-y: 80.09;
-    --art-w: 37.56;
-    --art-h: 8.35;
-    left: 10.18%;
-    top: 80.09%;
-    width: 37.56%;
-    height: 8.35%;
+    --art-x: 10.8;
+    --art-y: 80.28;
+    --art-w: 37.23;
+    --art-h: 8.43;
+    left: 10.8%;
+    top: 80.28%;
+    width: 37.23%;
+    height: 8.43%;
     gap: 0.3em;
     padding: 0 4%;
     border-radius: 999px;
@@ -7390,8 +7393,9 @@ body.is-demo .machine__side .controls .balance::after {
   /* GIRAR · el pulsador grande que el arte no dibuja (x 12-88 % · y 67,4-77,6 %).
      La banda verde entre la lectura del saldo y la fila de caramelos es el unico
      hueco libre del lienzo. Como no hay dibujo del que recortar una ventana, la
-     capsula se pinta aqui con el lenguaje del tema (rosa candy, aro dorado y los
-     destellos que ya trae el marcado) para que se lea como el mando principal.
+     capsula se pinta aqui con el mismo lenguaje que los dos caramelos del pie:
+     carmesi candy, aro dorado grueso y los destellos que ya trae el marcado, para
+     que se lea como el mando principal sin desentonar con FEVER y AUTO.
      Los otros cinco pulsadores son ventanas al arte: no se pinta ninguna capsula
      encima de ellos. */
   .machine__side .controls .btn--spin,
@@ -7407,55 +7411,55 @@ body.is-demo .machine__side .controls .balance::after {
     border: 0;
     border-radius: 999px;
     color: #fff;
-    background-image: linear-gradient(180deg, #ff7ad0 0%, #ea35a4 46%, #ab0f6a 100%);
+    background-image: linear-gradient(180deg, #ff6a5c 0%, #e00f26 46%, #8c0512 100%);
     background-size: auto;
     background-position: 0 0;
     box-shadow:
-      0 0 0 0.06em #ffd23f,
-      0 0 0 0.16em #8e0638,
-      0 0.35em 0.8em rgba(70, 0, 30, 0.45),
-      inset 0 0.12em 0 rgba(255, 255, 255, 0.55),
-      inset 0 -0.18em 0 rgba(120, 0, 50, 0.45);
-    text-shadow: 0 0.08em 0 rgba(110, 0, 46, 0.5);
+      0 0 0 0.07em #ffd54a,
+      0 0 0 0.19em #9d0b17,
+      0 0.35em 0.8em rgba(70, 0, 10, 0.45),
+      inset 0 0.12em 0 rgba(255, 255, 255, 0.62),
+      inset 0 -0.18em 0 rgba(120, 0, 10, 0.45);
+    text-shadow: 0 0.08em 0 rgba(110, 0, 20, 0.5);
   }
 
   .machine__side .controls .btn--spin .btn__spin-label {
     font-size: clamp(12px, calc(var(--cons-scale) * 0.062), 26px);
     letter-spacing: 0.12em;
-    text-shadow: 0 0.08em 0 rgba(110, 0, 46, 0.5);
+    text-shadow: 0 0.08em 0 rgba(110, 0, 20, 0.5);
   }
 
   .machine__side .controls .btn--spin .btn__spin-icon svg {
     width: clamp(14px, calc(var(--cons-scale) * 0.058), 26px);
     height: clamp(14px, calc(var(--cons-scale) * 0.058), 26px);
-    filter: drop-shadow(0 2px 0 rgba(110, 0, 46, 0.45));
+    filter: drop-shadow(0 2px 0 rgba(110, 0, 20, 0.45));
   }
 
-  /* En marcha el mando se apaga, pero sigue siendo la capsula rosa: aqui no hay
+  /* En marcha el mando se apaga, pero sigue siendo la capsula roja: aqui no hay
      dibujo de recorte que oscurecer. */
   .machine__side .controls .btn--spin.is-busy,
   .machine__side .controls #btn-spin.is-busy {
-    background-image: linear-gradient(180deg, #d98ab8 0%, #b0478a 52%, #7d1e58 100%);
-    color: rgba(255, 246, 252, 0.86);
+    background-image: linear-gradient(180deg, #c9837a 0%, #a52a30 52%, #6d0a12 100%);
+    color: rgba(255, 246, 244, 0.86);
     box-shadow:
-      0 0 0 0.06em rgba(255, 210, 63, 0.55),
-      0 0 0 0.16em rgba(120, 4, 50, 0.75),
+      0 0 0 0.07em rgba(255, 213, 74, 0.55),
+      0 0 0 0.19em rgba(110, 8, 18, 0.75),
       inset 0 0.12em 0 rgba(255, 255, 255, 0.3);
   }
 
-  /* AUTO · caramelo rojo grande x 51,68-89,34 % · y 79,96-88,51 %.
+  /* AUTO · caramelo azul grande x 51,96-89,40 % · y 80,21-88,64 %.
      Tambien es ventana al arte: el pulsador se ve igual que el dibujo y aqui
      solo se reparte el contenido. El rotulo sube a la mitad alta para dejar la
      mitad baja a la insignia del paquete, que es hermana suya (ver abajo). */
   .machine__side .controls #btn-auto {
-    --art-x: 51.68;
-    --art-y: 79.96;
-    --art-w: 37.66;
-    --art-h: 8.55;
-    left: 51.68%;
-    top: 79.96%;
-    width: 37.66%;
-    height: 8.55%;
+    --art-x: 51.96;
+    --art-y: 80.21;
+    --art-w: 37.54;
+    --art-h: 8.5;
+    left: 51.96%;
+    top: 80.21%;
+    width: 37.54%;
+    height: 8.5%;
     justify-content: flex-start;
     gap: 0;
     padding: 1.1% 2% 0;
@@ -7478,8 +7482,8 @@ body.is-demo .machine__side .controls .balance::after {
      quedan. */
   .machine__side .controls #btn-auto-pack {
     position: absolute;
-    left: 63.9%;
-    top: 83.9%;
+    left: 64.48%;
+    top: 84%;
     width: 12.4%;
     height: 3.8%;
     min-width: 0;
@@ -7542,11 +7546,11 @@ body.is-demo .machine__side .controls .balance::after {
 /* --------------------------------------------------------------------------
    Escritorio bajo (≤660 px de alto): el lienzo de la consola se queda en ~340
    px de ancho. El logo mantiene su anclaje sobre la franja de Santa y el reno
-   (12,8 %) y solo se encoge unos puntos para no pisar la fila de caramelos.
+   (13,4 %) y solo se encoge unos puntos para no pisar la fila de caramelos.
    -------------------------------------------------------------------------- */
 @media (min-width: 900px) and (max-height: 660px) {
   .machine__side .machine__hero { display: block; }
-  .machine__side .machine__logo { width: 54%; top: 12.8%; }
+  .machine__side .machine__logo { width: 48%; top: 13.4%; }
 }
 
 /* Ventanas de menos de 470 px de alto: la placa del hero mide ~50 px y el

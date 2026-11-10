@@ -31,9 +31,12 @@ La **versión de escritorio ya sirve el arte navideño** de este árbol:
 `bg/bg-desktop.webp` (taller de juguetes, 1672 x 941), `console/slot-frame.webp`
 (marco de caramelos del tablero, 1305 x 1090) y `console/console-desktop.webp`
 (consola de mandos: Santa y el reno, tres placas del HUD, fila −/lectura/+/MAX y
-los dos pulsadores grandes, 1041 x 1497). Los genera
-`npm run build:theme-art` desde los maestros `design/bg_desktop_toy_workshop.png`,
-`design/frame_desktop_candy.png` y `design/console_desktop_buttons.png`.
+los dos pulsadores grandes —FEVER amarillo y AUTO azul— con las campanas doradas
+al pie, 1047 x 1496). Los genera `npm run build:theme-art` desde los maestros
+`design/bg_desktop_toy_workshop.png`, `design/frame_desktop_candy.png` y
+`design/console_desktop_gold_bells.png`; el lienzo anterior
+(`design/console_desktop_buttons.png`: el mismo panel con el AUTO rojo y el
+corazón al pie) queda archivado en `design/`.
 
 La **versión móvil (< 900 px) también sirve el arte navideño** del árbol:
 `bg/bg-mobile.webp` (taller de juguetes vertical, 941 x 1672, q=76),
@@ -49,7 +52,8 @@ La consola es arte en los dos viewports: cada pulsador del DOM es una ventana al
 recorte del lienzo (`--art-x/--art-y/--art-w/--art-h`), de modo que la tecla se ve
 exactamente como el dibujo y no se pinta ninguna cápsula encima. El único mando
 que ninguno de los dos lienzos dibuja es el **GIRAR grande de escritorio**, que se
-pinta con CSS en la banda verde libre del panel: x 12–88 % · y 67,4–77,6 % del
+pinta con CSS en la banda verde libre del panel —cápsula carmesí con aro dorado,
+el mismo lenguaje que los dos caramelos del pie—: x 12–88 % · y 67,4–77,6 % del
 recorte de `console-desktop.webp`.
 
 El CSS pinta las piezas en uso a sangre sobre cajas con su relación exacta y ancla
@@ -57,7 +61,9 @@ las capas en % del recorte medido (bloques *ESCRITORIO (≥900 px) · ARTE NAVID
 DEL TEMA* y *MARCO Y CONSOLA · la máquina móvil…* de `public/src/css/style.css`).
 
 El resto de piezas siguen siendo las de `public/src/assets/**`
-(`MERIDIANOBET-CRUSH-LOGO.webp`, `slot/s1..s11.webp` y los MP3); las corazas
+(`SANTA-CRUSH-LOGO.webp` —el lockup animado de 12 fotogramas que genera
+`npm run build:logo` desde `design/SANTA-CRUSH-LOGO-ANIMADO.gif`—,
+`slot/s1..s11.webp` y los MP3); las corazas
 anteriores del móvil (`marco_movil.webp`, `consola_movil.webp` y
 `avenida_fantastica_reino_caramelos.webp`) ya no las pinta ninguna regla y sus
 maestros quedan archivados en `design/`.

@@ -184,11 +184,11 @@ test('el paquete de integracion (dist/) omite fuentes y previews', () => {
 
   const total = files.reduce((acc, file) => acc + file.bytes, 0);
   // El arte navideño de los dos viewports (`assets/santa-crush/bg` y `/console`)
-  // suma ~1,83 MB y entra en este paquete, igual que los tres MP3 (0,69 MB): el
-  // tope sube con ellos, no los esconde. Hoy queda en 5,52 MB, a ~80 KB del
-  // limite; README-DEPLOY.md trae la receta para reencodear el bucle si crece.
+  // suma ~1,84 MB y entra en este paquete, igual que los tres MP3 (0,69 MB) y el
+  // logo animado (0,25 MB): el tope sube con ellos, no los esconde. Hoy queda en
+  // 5,63 MB; README-DEPLOY.md trae la receta para reencodear el bucle si crece.
   assert.ok(
-    total < 5.6 * MB,
-    `dist/ pesa ${mb(total)}: el paquete de integracion debe bajar de 5,6 MB (arte + audio)`
+    total < 5.9 * MB,
+    `dist/ pesa ${mb(total)}: el paquete de integracion debe bajar de 5,9 MB (arte + audio)`
   );
 });
