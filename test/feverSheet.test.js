@@ -742,8 +742,13 @@ test('el marcado trae el pulsador de giros rapidos, la pildora del paquete y la 
   assert.match(html, /<span class="btn__title">FEVER<\/span>/, 'rotulo principal del pulsador');
   assert.match(
     html,
-    /<span class="pill">x5 · x10 · x25<\/span>/,
-    'el catalogo se anuncia en la capsula del pulsador'
+    /<span class="pill" id="feature-options">\s*<span class="pill__opt" data-spins="5">x5<\/span>\s*<span class="pill__opt" data-spins="10">x10<\/span>\s*<span class="pill__opt" data-spins="25">x25<\/span>\s*<\/span>/,
+    'el catalogo se anuncia en la capsula del pulsador y cada cifra lleva su data-spins'
+  );
+  assert.match(
+    html,
+    /id="feature-options"/,
+    'el contenedor es `#feature-options`: el nodo que busca `paintQuickSpinsOptions_`'
   );
   assert.match(
     html,

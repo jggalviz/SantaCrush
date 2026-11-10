@@ -4702,6 +4702,31 @@ body.is-demo .machine__side .controls .balance::after {
   letter-spacing: 0;
 }
 
+/* Catalogo del amarillo (`#feature-options`): las tres cifras viven dentro de la
+   capsula del arte, asi que no hay nodo nuevo que colocar. El paquete vigente lo
+   enciende `GameView.paintQuickSpinsOptions_` con `is-active`; los otros dos
+   quedan velados. Los puntos separadores los pone el CSS: el marcado se queda
+   con tres cifras limpias. */
+.machine__side .controls #btn-feature .pill__opt {
+  display: inline-block;
+  opacity: 0.6;
+  transition:
+    opacity 140ms ease,
+    text-shadow 140ms ease;
+}
+
+.machine__side .controls #btn-feature .pill__opt + .pill__opt::before {
+  content: '·';
+  margin: 0 0.28em;
+  opacity: 0.75;
+}
+
+.machine__side .controls #btn-feature .pill__opt.is-active {
+  opacity: 1;
+  font-weight: 900;
+  text-shadow: 0 0 6px rgba(255, 231, 130, 0.9);
+}
+
 /* AUTO activo (aria-pressed): conserva el dorado del estado y su legibilidad. */
 .machine__side .controls .btn--auto[aria-pressed="true"].gbtn {
   background: linear-gradient(180deg, #ffe887, #ffae3f 62%, #ec7f1f) padding-box,

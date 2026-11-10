@@ -183,9 +183,16 @@
                   </svg>
                   <span class="btn__title">FEVER</span>
                 </span>
-                <!-- Los tres paquetes del selector, de un vistazo. Es texto
-                     decorativo: el nombre accesible del boton ya los enumera. -->
-                <span class="pill">x5 · x10 · x25</span>
+                <!-- Los tres paquetes del selector, de un vistazo. El nodo se
+                     llama `#feature-options` y cada cifra lleva su `data-spins`
+                     porque `GameView.paintQuickSpinsOptions_` recorre sus hijos y
+                     enciende el vigente (`is-active`): el jugador ve en el propio
+                     caramelillo que paquete va a jugar sin abrir la hoja. -->
+                <span class="pill" id="feature-options">
+                  <span class="pill__opt" data-spins="5">x5</span>
+                  <span class="pill__opt" data-spins="10">x10</span>
+                  <span class="pill__opt" data-spins="25">x25</span>
+                </span>
                 <i class="shine" aria-hidden="true"></i>
               </button>
 
