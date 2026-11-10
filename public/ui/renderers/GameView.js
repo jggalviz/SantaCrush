@@ -1956,7 +1956,7 @@ export class Ui {
       <p>Reúne <strong>${formatPlain(minPay)} o más</strong> símbolos iguales en cualquier
       posición del tablero de <strong>${grid.cols} × ${grid.rows}</strong>. No hace falta
       que estén conectados ni pegados: cuentan todos los que aparezcan en pantalla.</p>
-      <p>Los símbolos premiados se eliminan y dejan caer balones nuevos, así que una misma
+      <p>Los símbolos premiados se eliminan y dejan caer símbolos nuevos, así que una misma
       tirada puede encadenar varias cascadas y volver a pagar en cada una.</p>
 
       <h3>Tabla de pagos (× apuesta)</h3>
@@ -1964,14 +1964,14 @@ export class Ui {
 
       <h3>Comodines y símbolos especiales</h3>
       <p>Santa Crush no tiene comodín (wild) que sustituya a otros símbolos: cada
-      balón paga por sí mismo. Los especiales son estos dos:</p>
+      símbolo paga por sí mismo. Los especiales son estos dos:</p>
 
       <p><strong>Logo Santa Crush · scatter (SC)</strong>: paga solo en la tirada inicial,
       esté donde esté, y no se elimina con las cascadas.</p>
       ${payTable(`<th scope="col">Logos (scatter)</th>${scatterHeader}`, `<tr><th scope="row">Pago × apuesta</th>${scatterCells}</tr>`)}
 
-      <p><strong>Sello multiplicador (MX · moneda de dólar)</strong>: se queda en el tablero
-      hasta el final de la ronda y cada logo vale ${bombRange}. Al terminar la ronda se
+      <p><strong>Bono navideño (MX)</strong>: se queda en el tablero
+      hasta el final de la ronda y cada uno vale ${bombRange}. Al terminar la ronda se
       suman todos y multiplican el premio ganado.</p>
       ${bombChips}
       <p>${bombRule}</p>

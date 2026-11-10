@@ -9,45 +9,46 @@ import { GRID } from '../config/gameConfig.js';
  * Mapa visual de los 11 simbolos del motor sobre los assets de SANTA CRUSH. El
  * tablero usa tres motivos de la marca:
  *
- *   - Las nueve pelotas deportivas (`s1.webp` .. `s9.webp`), de la que menos
- *     paga a la que mas: el numero del archivo coincide con el tramo de la
- *     tabla de pagos.
+ *   - Los nueve simbolos navideños (`s1.webp` .. `s9.webp`), del que menos paga
+ *     al que mas: el numero del archivo coincide con el tramo de la tabla de
+ *     pagos (`s1` es la cara de Santa, el mas comun, y `s9` la casa de
+ *     jengibre, el mas raro).
  *   - El sello circular de la marca (`s10.webp`), que cae como scatter (SC), el
  *     simbolo que mejor paga: moneda, `m`, `Bet` y el texto interior dentro del
  *     aro rojo, sin el planeta del logo anterior.
- *   - El mismo sello (`s11.webp`) como multiplicador (`MX`), que se pinta con su
- *     valor encima (2x .. 250x) y sobrevive a las cascadas. Los dos sellos
- *     comparten dibujo: lo que distingue a `MX` es la etiqueta, no el arte.
+ *   - El bono navideño (`s11.webp`) como multiplicador (`MX`), el regalo con el
+ *     lazo que se pinta con su valor encima (2x .. 250x) y sobrevive a las
+ *     cascadas.
  *
  * `image` es la fuente principal de la casilla; `glyph` queda como fallback
  * accesible si la imagen no llega a cargar.
  *
  * Los once WebP se generan desde `design/symbols/*.png` con
  * `npm run build:symbols` (alfa sin perdida y 335 x 341 px de lienzo): pesan
- * ~25 KB cada uno frente a los ~170 KB del PNG de origen. Los dos sellos de
- * marca no se editan a mano: `npm run build:seals` los deriva del unico maestro
+ * ~43 KB cada uno frente a los ~190 KB del PNG de origen. El sello del scatter
+ * no se edita a mano: `npm run build:seals` lo deriva del unico maestro
  * `design/MBETN-LOGO@3x.png` quitandole el fondo blanco y reponiendo el disco
  * interior al 90 % de opacidad (`rgba(255, 255, 255, 0.9)`).
  */
 const SYMBOL_IMAGE_PATH = '/src/assets/slot/';
 const BRAND_LOGO_IMAGE = `${SYMBOL_IMAGE_PATH}s10.webp`;
-/* El multiplicador cae con el mismo sello circular que el scatter (`s11.webp` es
-   copia del `s10.webp`): el tablero tiene un unico sello de marca y la etiqueta
-   del valor es lo que separa a `MX` del scatter. */
+/* El multiplicador cae con el arte del bono navideño (`s11.webp`): el regalo
+   dibujado, sin sello de marca, y la etiqueta del valor encima es lo que anuncia
+   cuanto multiplica. */
 const MULTIPLIER_IMAGE = `${SYMBOL_IMAGE_PATH}s11.webp`;
 
 export const SYMBOLS = Object.freeze({
-  S1: { glyph: '⚾', name: 'Béisbol', image: `${SYMBOL_IMAGE_PATH}s1.webp` },
-  S2: { glyph: '⚽', name: 'Balón de fútbol', image: `${SYMBOL_IMAGE_PATH}s2.webp` },
-  S3: { glyph: '🎾', name: 'Pelota de tenis', image: `${SYMBOL_IMAGE_PATH}s3.webp` },
-  S4: { glyph: '🏈', name: 'Balón de fútbol americano', image: `${SYMBOL_IMAGE_PATH}s4.webp` },
-  S5: { glyph: '🏀', name: 'Balón de básquet', image: `${SYMBOL_IMAGE_PATH}s5.webp` },
-  S6: { glyph: '⛳', name: 'Pelota de golf', image: `${SYMBOL_IMAGE_PATH}s6.webp` },
-  S7: { glyph: '🏐', name: 'Balón de vóley', image: `${SYMBOL_IMAGE_PATH}s7.webp` },
-  S8: { glyph: '🎱', name: 'Bola 8', image: `${SYMBOL_IMAGE_PATH}s8.webp` },
-  S9: { glyph: '🎳', name: 'Bola de bolos', image: `${SYMBOL_IMAGE_PATH}s9.webp` },
+  S1: { glyph: '🎅', name: 'Papá Noel', image: `${SYMBOL_IMAGE_PATH}s1.webp` },
+  S2: { glyph: '🦌', name: 'Reno', image: `${SYMBOL_IMAGE_PATH}s2.webp` },
+  S3: { glyph: '❄️', name: 'Adorno de Navidad', image: `${SYMBOL_IMAGE_PATH}s3.webp` },
+  S4: { glyph: '🍭', name: 'Piruleta', image: `${SYMBOL_IMAGE_PATH}s4.webp` },
+  S5: { glyph: '💂', name: 'Cascanueces', image: `${SYMBOL_IMAGE_PATH}s5.webp` },
+  S6: { glyph: '🧦', name: 'Calcetín', image: `${SYMBOL_IMAGE_PATH}s6.webp` },
+  S7: { glyph: '⛄', name: 'Bola de nieve', image: `${SYMBOL_IMAGE_PATH}s7.webp` },
+  S8: { glyph: '🚂', name: 'Tren de juguete', image: `${SYMBOL_IMAGE_PATH}s8.webp` },
+  S9: { glyph: '🏠', name: 'Casa de jengibre', image: `${SYMBOL_IMAGE_PATH}s9.webp` },
   SC: { glyph: '✨', name: 'Logo Santa Crush (scatter)', image: BRAND_LOGO_IMAGE },
-  MX: { glyph: '💠', name: 'Moneda Santa Crush (multiplicador)', image: MULTIPLIER_IMAGE }
+  MX: { glyph: '🎁', name: 'Bono navideño (multiplicador)', image: MULTIPLIER_IMAGE }
 });
 
 export const SYMBOL_KEYS = Object.freeze(['S9', 'S8', 'S7', 'S6', 'S5', 'S4', 'S3', 'S2', 'S1']);

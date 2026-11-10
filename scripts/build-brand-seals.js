@@ -1,10 +1,9 @@
 'use strict';
 
 /**
- * Deriva los dos sellos de marca del tablero desde un unico maestro.
+ * Deriva el sello de marca que cae como scatter (SC).
  *
  *   design/MBETN-LOGO@3x.png  ->  design/symbols/s10.png  (scatter, SC)
- *                             ->  design/symbols/s11.png  (multiplicador, MX)
  *
  * El maestro llega como PNG cuadrado con **fondo blanco opaco**: el aro, el
  * logotipo y la moneda estan dibujados sobre un lienzo blanco, no sobre alfa.
@@ -21,24 +20,19 @@
  * del aro sin que el logotipo pierda legibilidad. Fuera del circulo el lienzo
  * sigue transparente, asi que el sello se recorta redondo sobre la medalla.
  *
- * Los dos derivados son **el mismo sello circular** —moneda, `m`, `Bet` y el
- * texto interior dentro del aro— y se encajan 1:1 en el lienzo comun de
- * 335 x 341 px, sin sangrado ni recorte de aire (`--logo-bleed: 0%` y
- * `object-view-box: inset(0)` en `style.css`):
+ * El derivado se encaja 1:1 en el lienzo comun de 335 x 341 px, sin sangrado ni
+ * recorte de aire (`--logo-bleed: 0%` y `object-view-box: inset(0)` en
+ * `style.css`), y es el simbolo que mejor paga (`SC`).
  *
- *   - `s10.png` (scatter, SC): el simbolo que mejor paga.
- *   - `s11.png` (multiplicador, MX): el mismo sello, con la etiqueta del valor
- *     (`2x` .. `250x`) que pinta el motor encima.
+ *   npm run build:seals     # reescribe el maestro s10.png
+ *   npm run build:symbols   # lo convierte a WebP (el que se publica)
  *
- * Comparten dibujo a proposito: el tablero tiene un unico sello de marca y lo
- * que distingue a `MX` es la etiqueta del multiplicador, no el arte.
- *
- *   npm run build:seals     # reescribe los dos maestros
- *   npm run build:symbols   # los convierte a WebP (el que se publica)
- *
- * El planeta del logo anterior se conserva fuera del flujo del build en
- * `design/legacy/s10-planeta.png` (los maestros publicables son los `s*.png` de
- * `design/symbols`), para poder volver atras sin tocar el historial de git.
+ * El multiplicador (`MX`) ya no usa este sello: cae con el arte del bono
+ * navideño (`design/symbols/s11.png`), que se entrega dibujado y por eso este
+ * script no lo escribe. El planeta del logo anterior se conserva fuera del flujo
+ * del build en `design/legacy/s10-planeta.png` (los maestros publicables son los
+ * `s*.png` de `design/symbols`), para poder volver atras sin tocar el historial
+ * de git.
  */
 
 const fs = require('node:fs');
@@ -236,19 +230,19 @@ async function main() {
     'sello'
   );
 
-  /* Los dos simbolos de marca caen con el mismo sello circular: se escribe una
-     vez y se copia, para que `s10.png` y `s11.png` no puedan divergir. */
-  const bytes = await writePng(seal.canvas, path.join(SYMBOLS_DIR, 's11.png'));
-  fs.writeFileSync(path.join(SYMBOLS_DIR, 's10.png'), bytes);
+  /* El scatter es el unico sello derivado: el multiplicador cae con el arte del
+     bono (`s11.png`), que se publica tal cual y este script no debe pisar. */
+  const bytes = await writePng(seal.canvas, path.join(SYMBOLS_DIR, 's10.png'));
 
-  const rows = [
-    ['s10.png (scatter)', `${seal.artWidth}x${seal.artHeight} de tinta`, `${(bytes.length / 1024).toFixed(1)} KB`],
-    ['s11.png (multiplicador)', `${seal.artWidth}x${seal.artHeight} de tinta`, `${(bytes.length / 1024).toFixed(1)} KB`]
+  const row = [
+    's10.png (scatter)',
+    `${seal.artWidth}x${seal.artHeight} de tinta`,
+    `${(bytes.length / 1024).toFixed(1)} KB`
   ];
-  for (const row of rows) {
-    // eslint-disable-next-line no-console
-    console.log(`${row[0].padEnd(24)} ${row[1].padEnd(20)} ${row[2].padStart(9)}  sello circular al ${SEAL_FILL_OPACITY * 100} %`);
-  }
+  // eslint-disable-next-line no-console
+  console.log(
+    `${row[0].padEnd(24)} ${row[1].padEnd(20)} ${row[2].padStart(9)}  sello circular al ${SEAL_FILL_OPACITY * 100} %`
+  );
 }
 
 if (require.main === module) {

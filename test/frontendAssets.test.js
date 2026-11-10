@@ -4,9 +4,10 @@
  * Contrato de assets del frontend.
  *
  * El tablero usa tres motivos de la marca: los once WebP de
- * `public/src/assets/slot` (nueve balones y los dos sellos de la marca) y el motor de 11 simbolos (nueve regulares, el scatter y el
- * multiplicador). `format.js` es la unica fuente de verdad de su imagen. Esta
- * prueba evita que un renombrado o una ruta rota llegue a produccion.
+ * `public/src/assets/slot` (nueve simbolos navideños, el sello del scatter y el
+ * bono del multiplicador) y el motor de 11 simbolos (nueve regulares, el scatter
+ * y el multiplicador). `format.js` es la unica fuente de verdad de su imagen.
+ * Esta prueba evita que un renombrado o una ruta rota llegue a produccion.
  */
 
 const test = require('node:test');
@@ -142,8 +143,8 @@ const webpChunks = (buffer) => {
   return chunks;
 };
 
-test('los diez balones de las casillas viven en public/src/assets/slot', () => {
-  for (let index = 1; index <= 10; index += 1) {
+test('los once simbolos de las casillas viven en public/src/assets/slot', () => {
+  for (let index = 1; index <= 11; index += 1) {
     const file = path.join(SLOT_DIR, `s${index}.webp`);
     assert.ok(fs.existsSync(file), `Falta ${path.relative(ROOT_DIR, file)}`);
     assert.ok(fs.statSync(file).size > 0, `${path.basename(file)} esta vacio`);
@@ -154,7 +155,7 @@ test('los 11 simbolos del motor apuntan a imagenes existentes', () => {
   const source = read(FORMAT_PATH);
   const slotMatches = [...source.matchAll(/image:\s*`\$\{SYMBOL_IMAGE_PATH\}([^`]+)`/g)];
 
-  assert.equal(slotMatches.length, 9, 'format.js debe mapear S1-S9 sobre los balones');
+  assert.equal(slotMatches.length, 9, 'format.js debe mapear S1-S9 sobre los simbolos navideños');
   assert.equal(
     (source.match(/image:\s*BRAND_LOGO_IMAGE/g) || []).length,
     1,
@@ -163,7 +164,7 @@ test('los 11 simbolos del motor apuntan a imagenes existentes', () => {
   assert.equal(
     (source.match(/image:\s*MULTIPLIER_IMAGE/g) || []).length,
     1,
-    'El multiplicador usa su propio sello, no el logotipo del scatter'
+    'El multiplicador usa el bono, no el logotipo del scatter'
   );
   assert.match(
     source,
@@ -173,7 +174,7 @@ test('los 11 simbolos del motor apuntan a imagenes existentes', () => {
   assert.match(
     source,
     /const MULTIPLIER_IMAGE = `\$\{SYMBOL_IMAGE_PATH\}s11\.webp`;/,
-    'El sello del multiplicador es s11.webp'
+    'El bono del multiplicador es s11.webp'
   );
 
   for (const [, fileName] of slotMatches) {
@@ -188,12 +189,12 @@ test('los 11 simbolos del motor apuntan a imagenes existentes', () => {
   }
 });
 
-test('el tablero solo usa balones y los dos sellos de Santa Crush', () => {
-  // La cuadricula dejo de usar los caramelos: los nueve regulares son los
-  // balones deportivos de `public/src/assets/slot` (s1 = S1 ... s9 = S9), el
-  // logotipo s10.webp cae como scatter (SC) y el sello circular s11.webp es el
-  // multiplicador (MX), que se pinta con su valor encima. Ya no queda ninguna
-  // pieza de caramelo en el tablero.
+test('el tablero solo usa los simbolos navideños, el sello y el bono', () => {
+  // La cuadricula usa el set navideño de `public/src/assets/slot` (s1 = S1 ...
+  // s9 = S9, en el mismo orden que la tabla de pagos), el logotipo s10.webp cae
+  // como scatter (SC) y el bono navideño s11.webp es el multiplicador (MX), que
+  // se pinta con su valor encima. Ya no queda ninguna pieza de caramelo en el
+  // tablero.
   const source = read(FORMAT_PATH);
   const start = source.indexOf('export const SYMBOLS');
   const end = source.indexOf('export const SYMBOL_KEYS');
@@ -202,7 +203,7 @@ test('el tablero solo usa balones y los dos sellos de Santa Crush', () => {
   assert.match(
     source,
     /const SYMBOL_IMAGE_PATH = '\/src\/assets\/slot\/';/,
-    'Los balones se sirven desde /src/assets/slot/'
+    'Los simbolos se sirven desde /src/assets/slot/'
   );
 
   const block = source.slice(start, end);
@@ -219,21 +220,21 @@ test('el tablero solo usa balones y los dos sellos de Santa Crush', () => {
   });
 
   assert.match(block, /SC: [^\n]*BRAND_LOGO_IMAGE/, 'El scatter es el logo s10.webp');
-  assert.match(block, /MX: [^\n]*MULTIPLIER_IMAGE/, 'El multiplicador tiene su sello s11.webp');
+  assert.match(block, /MX: [^\n]*MULTIPLIER_IMAGE/, 'El multiplicador cae con el bono s11.webp');
   assert.doesNotMatch(block, /candy_/, 'Ninguna casilla del mapa vuelve a los caramelos');
   assert.doesNotMatch(source, /candy_4\.png|BOMB_IMAGE_PATH/, 'format.js ya no sirve el caramelo de la bomba');
 });
 
-test('las nueve pelotas comparten bloque y el sello tiene el suyo', () => {
+test('los nueve simbolos comparten bloque y el especial tiene el suyo', () => {
   const css = read(STYLE_PATH);
   const theme = read(THEME_PATH);
 
-  // Ninguna pelota tiene bloque propio: ya no hay regla por simbolo regular, asi
-  // que las nueve se pintan con el mismo vidrio.
-  assert.doesNotMatch(css, /\.tile\[data-sym="S[1-9]"\]/, 'Ninguna pelota se pinta con bloque propio');
-  assert.doesNotMatch(theme, /\.tile\[data-sym="S[1-9]"\]/, 'El tema tampoco pinta pelotas distintas');
+  // Ningun regular tiene bloque propio: ya no hay regla por simbolo, asi que los
+  // nueve se pintan con el mismo vidrio.
+  assert.doesNotMatch(css, /\.tile\[data-sym="S[1-9]"\]/, 'Ningun simbolo regular se pinta con bloque propio');
+  assert.doesNotMatch(theme, /\.tile\[data-sym="S[1-9]"\]/, 'El tema tampoco pinta simbolos distintos');
 
-  // El bloque del sello (scatter + multiplicador) es el unico con estilo propio:
+  // El bloque especial (scatter + multiplicador) es el unico con estilo propio:
   // filo de oro, halo calido y la casilla dibujada un 4 % mas grande que su hueco,
   // para que sobresalga de la rejilla sin llegar a pisar al vecino.
   const logoBlock = css.match(
@@ -272,11 +273,11 @@ test('las nueve pelotas comparten bloque y el sello tiene el suyo', () => {
     'El tema repinta el bloque del logo (scatter y multiplicador) en oro'
   );
 
-  // Los dos sellos llenan su bloque de borde a borde: el arte es el sello circular
-  // 1:1 de `npm run build:seals`, encajado en el lienzo de 335 x 341 (335 x 335 de
-  // tinta, o sea 3 px de aire arriba y abajo), asi que `object-view-box` no tiene
-  // nada que recortar y `contain` lo ajusta por el alto: en la casilla apaisada
-  // del movil (52 x 29) el circulo queda centrado y entero.
+  // El scatter y el bono llenan su bloque de borde a borde: el arte del sello es
+  // el circulo 1:1 de `npm run build:seals` y el del bono ocupa su lienzo, los dos
+  // encajados en 335 x 341, asi que `object-view-box` no tiene nada que recortar y
+  // `contain` los ajusta por el alto: en la casilla apaisada del movil (52 x 29)
+  // quedan centrados y enteros.
   assert.match(
     css,
     /\.tile\[data-sym="SC"\],\r?\n\.tile\[data-sym="MX"\] \{\r?\n  --logo-bleed: 0%;\r?\n  overflow: visible;\r?\n  z-index: 3;\r?\n\}/,
@@ -302,11 +303,11 @@ test('las nueve pelotas comparten bloque y el sello tiene el suyo', () => {
   }
 });
 
-test('los dos sellos comparten el sello circular y el lienzo comun', () => {
+test('el bono del multiplicador viaja en el lienzo comun de las casillas', () => {
   const css = read(STYLE_PATH);
   const file = path.join(SLOT_DIR, 's11.webp');
 
-  // El sello viaja como WebP estatico con alfa y en el mismo lienzo de 335 x 341
+  // El bono viaja como WebP estatico con alfa y en el mismo lienzo de 335 x 341
   // que el resto de piezas: el build los genera todos con el mismo contrato.
   assert.ok(fs.existsSync(file), 'Falta public/src/assets/slot/s11.webp');
   const binary = fs.readFileSync(file);
@@ -317,30 +318,30 @@ test('los dos sellos comparten el sello circular y el lienzo comun', () => {
   assert.equal(chunks[0].fourCC, 'VP8X', 's11.webp debe declarar caracteristicas extendidas (VP8X)');
   assert.ok(
     chunks.some((chunk) => chunk.fourCC === 'ALPH'),
-    'El sello del multiplicador debe conservar el canal alfa'
+    'El bono del multiplicador debe conservar el canal alfa'
   );
   assert.equal(
     chunks.some((chunk) => chunk.fourCC === 'ANMF'),
     false,
-    'El sello estatico no debe traer fotogramas ANMF'
+    'El bono estatico no debe traer fotogramas ANMF'
   );
 
   const width = binary.readUIntLE(chunks[0].offset + 12, 3) + 1;
   const height = binary.readUIntLE(chunks[0].offset + 15, 3) + 1;
-  assert.equal(width, 335, 'El sello del multiplicador mide 335 px de ancho');
-  assert.equal(height, 341, 'El sello del multiplicador mide 341 px de alto');
+  assert.equal(width, 335, 'El bono del multiplicador mide 335 px de ancho');
+  assert.equal(height, 341, 'El bono del multiplicador mide 341 px de alto');
   assert.ok(
-    binary.length < 48 * 1024,
+    binary.length < 60 * 1024,
     `s11.webp pesa ${(binary.length / 1024).toFixed(1)} KB: ejecuta npm run build:symbols`
   );
 
-  // El sello es 1:1 y llena su lienzo, asi que no necesita recorte de aire
+  // La pieza llena su lienzo, asi que no necesita recorte de aire
   // (`object-view-box`) ni sangrado (`--logo-bleed`): el bloque compartido ya los
   // declara neutros y ningun simbolo debe reajustarlos por su cuenta.
   assert.match(
     css,
     /\.tile\[data-sym="SC"\],\r?\n\.tile\[data-sym="MX"\] \{\r?\n  --logo-bleed: 0%;/,
-    'El sello ocupa la casilla entera, sin sangrado'
+    'La casilla del especial ocupa la casilla entera, sin sangrado'
   );
   assert.deepEqual(
     [...css.matchAll(/--logo-bleed: ([^;]+);/g)].map((match) => match[1]),
@@ -349,24 +350,26 @@ test('los dos sellos comparten el sello circular y el lienzo comun', () => {
   );
 });
 
-test('los dos sellos son el mismo circulo con el relleno blanco al 90 %', async () => {
-  // Los dos maestros se derivan de `design/MBETN-LOGO@3x.png` con
-  // `npm run build:seals`, que convierte en alfa el fondo blanco del maestro y
-  // repone el disco interior al 90 % de opacidad. El contrato se mide sobre los
-  // pixeles servidos: alfa de verdad fuera del circulo y, por dentro, el relleno
-  // blanco exacto en vez del parche opaco que tapaba la medalla de la casilla.
+test('el scatter es el sello de marca y el multiplicador el bono navideño', async () => {
+  // `s10` se deriva de `design/MBETN-LOGO@3x.png` con `npm run build:seals`, que
+  // convierte en alfa el fondo blanco del maestro y repone el disco interior al
+  // 90 % de opacidad. El contrato del sello se mide sobre los pixeles servidos:
+  // alfa de verdad fuera del circulo y, por dentro, el relleno blanco exacto en
+  // vez del parche opaco que tapaba la medalla de la casilla.
+  //
+  // `s11` ya no es copia del sello: el multiplicador cae con el arte del bono
+  // navideño, asi que se mide como arte propio (alfa real, sin fondo opaco).
   const { SEAL_FILL_OPACITY } = require('../scripts/build-brand-seals.js');
   const expectedAlpha = Math.round(255 * SEAL_FILL_OPACITY);
   const scatter = path.join(SLOT_DIR, 's10.webp');
   const multiplier = path.join(SLOT_DIR, 's11.webp');
 
-  // Un solo sello en el tablero: SC y MX caen con el mismo dibujo.
   assert.ok(
-    fs.readFileSync(scatter).equals(fs.readFileSync(multiplier)),
-    's10.webp y s11.webp deben caer con el mismo sello circular (npm run build:seals)'
+    !fs.readFileSync(scatter).equals(fs.readFileSync(multiplier)),
+    'El multiplicador no vuelve a caer con el sello del scatter: su arte es el bono'
   );
 
-  for (const file of [scatter, multiplier]) {
+  for (const file of [scatter]) {
     const fileName = path.basename(file);
     const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     const total = info.width * info.height;
@@ -410,8 +413,30 @@ test('los dos sellos son el mismo circulo con el relleno blanco al 90 %', async 
     );
   }
 
+  /* El bono del multiplicador: arte dibujado sobre alfa, con el lazo rojo y el
+     oro del regalo por debajo de la etiqueta del valor que pinta el motor. */
+  const bonus = await sharp(multiplier).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const bonusTotal = bonus.info.width * bonus.info.height;
+  let bonusClear = 0;
+  let bonusRed = 0;
+  let bonusGold = 0;
+  for (let i = 0; i < bonus.data.length; i += 4) {
+    const [r, g, b, a] = [bonus.data[i], bonus.data[i + 1], bonus.data[i + 2], bonus.data[i + 3]];
+    if (a === 0) bonusClear += 1;
+    if (a > 200 && r > 150 && g < 110 && b < 110) bonusRed += 1;
+    if (a > 200 && r > 200 && g > 140 && b < 120) bonusGold += 1;
+  }
+
+  const bonusClearRatio = bonusClear / bonusTotal;
+  assert.ok(
+    bonusClearRatio > 0.2 && bonusClearRatio < 0.45,
+    `s11.webp debe recortarse sobre alfa (${(bonusClearRatio * 100).toFixed(1)} % transparente)`
+  );
+  assert.ok(bonusRed / bonusTotal > 0.08, 's11.webp debe traer el lazo rojo del bono');
+  assert.ok(bonusGold / bonusTotal > 0.08, 's11.webp debe traer el oro del bono');
+
   // El tablero, la tabla de pagos y las animaciones de `MX` leen `SYMBOLS[..].image`,
-  // asi que la unica mencion valida de los dos sellos es la declaracion de
+  // asi que la unica mencion valida de los dos especiales es la declaracion de
   // `lib/format.js`: si otro modulo clava la ruta a mano, puede quedarse con el
   // arte viejo mientras el mapa ya apunta al nuevo.
   const uiDir = path.join(PUBLIC_DIR, 'ui');
@@ -760,14 +785,14 @@ test('el cartel de victoria se sirve en WebP con alfa y el maestro queda fuera d
   );
 });
 
-test('la victoria llueve los balones del tablero en lugar de caramelos', () => {
+test('la victoria llueve los simbolos del tablero en lugar de caramelos', () => {
   const fx = read(path.join(PUBLIC_DIR, 'ui', 'renderers', 'fx.js'));
   const css = read(STYLE_PATH);
   const ui = read(path.join(PUBLIC_DIR, 'ui', 'renderers', 'GameView.js'));
 
-  // La municion sale del mapa de simbolos: los nueve balones de `assets/slot`,
+  // La municion sale del mapa de simbolos: los nueve regulares de `assets/slot`,
   // que son los mismos WebP que el jugador acaba de ver en la rejilla. Los dos
-  // sellos de la marca (s10 scatter, s11 multiplicador) no caen: no son pelota.
+  // especiales (s10 scatter, s11 bono) no caen: son premios, no simbolos.
   assert.match(
     fx,
     /import \{ SYMBOLS \} from '\.\.\/lib\/format\.js';/,
@@ -777,11 +802,11 @@ test('la victoria llueve los balones del tablero en lugar de caramelos', () => {
   assert.match(
     fx,
     /\['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'\]/,
-    'La lluvia debe usar los nueve balones regulares'
+    'La lluvia debe usar los nueve simbolos regulares'
   );
   assert.match(fx, /\.map\(\(key\) => SYMBOLS\[key\]\)\);/);
 
-  // Cada particula es una imagen de balon con su glifo como respaldo.
+  // Cada particula es una imagen de simbolo con su glifo como respaldo.
   assert.match(fx, /function ballRain\(/);
   assert.match(fx, /const face = pick\(BALL_FACES\);/);
   assert.match(fx, /img\.src = face\.image;/);

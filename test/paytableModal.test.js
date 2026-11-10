@@ -161,7 +161,7 @@ test('la tabla de pagos cubre los nueve simbolos y los tres tramos', async () =>
     order,
     'del que mejor paga (S9) al que menos (S1)'
   );
-  assert.match(html, /Bola de bolos/, 'los nombres salen de `SYMBOLS`, no de una lista paralela');
+  assert.match(html, /Casa de jengibre/, 'los nombres salen de `SYMBOLS`, no de una lista paralela');
 });
 
 test('los especiales publican scatter, rango de bombas y ganancia maxima', async () => {
@@ -177,10 +177,10 @@ test('los especiales publican scatter, rango de bombas y ganancia maxima', async
     );
   }
 
-  assert.match(html, /Sello multiplicador \(MX · moneda de dólar\)/);
+  assert.match(html, /Bono navideño \(MX\)/);
   assert.ok(
     html.includes(
-      `cada logo vale entre <strong>${formatMultiplier(GAME_INFO.multiplier.min)}</strong> y <strong>${formatMultiplier(GAME_INFO.multiplier.max)}</strong>`
+      `cada uno vale entre <strong>${formatMultiplier(GAME_INFO.multiplier.min)}</strong> y <strong>${formatMultiplier(GAME_INFO.multiplier.max)}</strong>`
     ),
     'el rango sale de /api/game (2x .. 250x)'
   );

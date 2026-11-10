@@ -227,30 +227,34 @@ que ahi los mandos son **areas tactiles transparentes** sobre el arte. La capsul
 es la insignia del paquete (`x10`), la 3 el rotulo GIRAR y la 4 la lectura de la
 apuesta con el tramo MAX; la 1 se queda como viene en el arte.
 
-Pendiente de arte (ver la tabla de alcance): los simbolos del tablero. El arte
-navideño del tema cubre las dos maquetas: el taller de juguetes de fondo
-(`bg-desktop.webp` apaisado y `bg-mobile.webp` vertical), el marco de caramelos del
-escritorio (`slot-frame.webp`), el marco de campanas doradas del movil
-(`slot-frame-mobile.webp`), la consola de escritorio (`console-desktop.webp`, que
-funde a Santa y el reno con las tres placas del HUD y los cinco pulsadores) y la
-consola movil (`console-mobile.webp`, el panel con Santa y reno de los cinco discos
-y las cuatro capsulas del pie).
-Los simbolos siguen siendo los deportivos originales.
+El arte navideño del tema sigue cubriendo las dos maquinas: el taller de juguetes
+de fondo (`bg-desktop.webp` apaisado y `bg-mobile.webp` vertical), el marco de
+caramelos del escritorio (`slot-frame.webp`), el marco de campanas doradas del
+movil (`slot-frame-mobile.webp`), la consola de escritorio
+(`console-desktop.webp`) y la consola movil (`console-mobile.webp`).
+
+
+Los simbolos del tablero **ya son el set navideño**: la cara de Santa, el reno,
+el adorno, la piruleta, el cascanueces, el calcetin, la bola de nieve, el tren de
+juguete y la casa de jengibre, con el bono como multiplicador.
 
 Los simbolos del tablero (once WebP en `public/src/assets/slot/`) se mapean en
 `ui/lib/format.js` (`SYMBOL_IMAGE_PATH`). `s1.webp` .. `s9.webp` son los nueve
 regulares, en el mismo orden que los tramos de la tabla de pagos (s1 = S1, el
 mas comun, ... s9 = S9, el mas raro); `s10.webp` cae como scatter (SC) y
-`s11.webp` como multiplicador (MX), y los dos son **el mismo sello circular de la
-marca**. Si se sustituyen por otra iconografia, hay que conservar los nombres
-`s*.webp` o actualizar ese mapeo; `test/frontendAssets.test.js` valida que las 11
-imagenes existan.
+`s11.webp` como multiplicador (MX), con el arte del bono navideño. Si se
+sustituyen por otra iconografia, hay que conservar los nombres `s*.webp` o
+actualizar ese mapeo; `test/frontendAssets.test.js` valida que las 11 imagenes
+existan.
 
 Los PNG maestros viven en `design/symbols/` y `npm run build:symbols` los
-convierte a WebP (alfa sin perdida, mismo lienzo de 335 x 341 px): 1,42 MB de
-PNG pasan a 0,31 MB sin tocar el dibujo ni la geometria de las casillas.
+convierte a WebP (alfa sin perdida, mismo lienzo de 335 x 341 px): 1,90 MB de
+PNG pasan a 0,47 MB sin tocar el dibujo ni la geometria de las casillas. El set
+navideño pesa mas que los balones planos que sustituyo (cada pieza llega a
+~55 KB frente a los ~25 KB de antes), asi que el tope por pieza subio a 60 KB y
+el presupuesto de `public/src/assets` a 3,5 MB.
 
-Los dos sellos de marca (`s10.png` y `s11.png`) no se editan a mano: los deriva
+El sello del scatter (`s10.png`) no se edita a mano: lo deriva
 `npm run build:seals` del unico maestro `design/MBETN-LOGO@3x.png`. Ese PNG trae
 **fondo blanco opaco** (el arte se dibujo sobre blanco, no sobre alfa), asi que
 el script lo convierte en transparencia con el inverso del alpha blending
@@ -261,36 +265,36 @@ un `source-over`, de modo que los rayos dorados de la casilla
 (`logo-tile-sheen`) se filtran un 10 % por dentro del aro sin perder
 legibilidad; fuera del circulo el lienzo sigue transparente.
 
-* `s10.png` (scatter) y `s11.png` (multiplicador): **el mismo sello circular**,
-  con la moneda, la `m`, el `Bet` y el texto interior (`JUEGA | GANA |
-  #COBRASEGURO`) dentro del aro rojo, y **sin el planeta del logo anterior**.
-  Sale 1:1 en el lienzo de 335 x 341 (335 x 335 de tinta, 3 px de aire arriba y
-  abajo), sin sangrado ni recorte de aire: `--logo-bleed: 0%` y
-  `object-view-box: inset(0)` en `style.css`. El build escribe el sello una vez y
-  copia el mismo PNG a los dos maestros, asi que no pueden divergir; lo que
-  distingue a `MX` en el tablero es la etiqueta del valor (2x .. 250x), no el
-  arte.
+* `s10.png` (scatter): el **sello circular** de la marca, con la moneda, la `m`,
+  el `Bet` y el texto interior (`JUEGA | GANA | #COBRASEGURO`) dentro del aro
+  rojo, y **sin el planeta del logo anterior**. Sale 1:1 en el lienzo de
+  335 x 341 (335 x 335 de tinta, 3 px de aire arriba y abajo), sin sangrado ni
+  recorte de aire: `--logo-bleed: 0%` y `object-view-box: inset(0)` en
+  `style.css`.
+* `s11.png` (multiplicador): el **bono navideño** dibujado (regalo rojo con lazo
+  dorado), encajado en el mismo lienzo de 335 x 341. `build:seals` no lo escribe:
+  se publica tal cual y lo que anuncia su valor es la etiqueta que pinta el motor
+  encima (2x .. 250x).
 
 El logotipo del planeta (`s10-planeta.png`) se conserva fuera del flujo del
 build en `design/legacy/` (los maestros publicables son los `s*.png` de
 `design/symbols`), y `test/frontendAssets.test.js` mide sobre los WebP servidos
-que los dos sellos sean identicos, que las esquinas sigan transparentes, que el
-disco blanco llegue al 90 % de opacidad, que no quede fondo blanco opaco ni un
-solo pixel del globo terraqueo.
+que el scatter siga siendo el sello (esquinas transparentes, disco blanco al
+90 % de opacidad, sin fondo blanco opaco ni un solo pixel del globo terraqueo) y
+que el multiplicador caiga con el bono (alfa real, lazo rojo y oro, y un dibujo
+distinto al del scatter).
 
-El multiplicador (MX) ya no usa el caramelo de `symbols/candy_4.png` ni un arte
-propio: cae con el mismo sello de marca (`s11.png`, derivado de
-`design/MBETN-LOGO@3x.png`) y se pinta con su valor encima (2x .. 250x). El set
-de caramelos se retiro de `public/` para no publicar ~7 MB que el cliente nunca
-descargaba.
+El multiplicador (MX) ya no usa el caramelo de `symbols/candy_4.png` ni el sello
+de la marca: cae con el arte del bono (`s11.png`) y se pinta con su valor encima
+(2x .. 250x). El set de caramelos se retiro de `public/` para no publicar ~7 MB
+que el cliente nunca descargaba.
 
-Ese set **si es deportivo**, igual que el marco (`d1`/`d2`) y los fondos:
-balones de beisbol, futbol, tenis, futbol americano, basquet, golf, voley, la
-bola 8, la bola de bolos y los dos sellos de la marca (el mismo sello circular). Un test
-(`los simbolos del tablero giran con los balones de la carpeta slot`) falla si
-el mapa vuelve a los caramelos, si cambia el orden s1..s9 o si apunta a otra
-carpeta. `ui/` es la fuente: `npm run build:ui` materializa el espejo byte a
-byte de `public/ui/`.
+Ese set **es navideño**, igual que el marco (`d1`/`d2`) y los fondos: nueve
+simbolos de Navidad, el sello de la marca como scatter y el bono como
+multiplicador. Un test (`los 11 simbolos del motor apuntan a imagenes
+existentes`) falla si el mapa vuelve a los caramelos, si cambia el orden s1..s9 o
+si apunta a otra carpeta. `ui/` es la fuente: `npm run build:ui` materializa el
+espejo byte a byte de `public/ui/`.
 
 ## Textos y componentes
 

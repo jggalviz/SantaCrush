@@ -62,6 +62,14 @@ anteriores del móvil (`marco_movil.webp`, `consola_movil.webp` y
 `avenida_fantastica_reino_caramelos.webp`) ya no las pinta ninguna regla y sus
 maestros quedan archivados en `design/`.
 
+Los **símbolos del tablero** son el set navideño de `public/src/assets/slot/`:
+`slot/s1.webp` (Papá Noel) a `slot/s9.webp` (casa de jengibre), en el mismo orden
+que los tramos de la tabla de pagos; `slot/s10.webp` es el sello de la marca que
+cae como scatter (SC) y `slot/s11.webp` el bono navideño que cae como
+multiplicador (MX). Los maestros están en `design/symbols/` (lienzo común de
+335 x 341 px) y se publican con `npm run build:symbols`; el sello del scatter lo
+deriva `npm run build:seals` del máster de la marca.
+
 ## Cómo cambiar el arte
 
 1. Dejar los maestros (PNG/JPG grandes) en `design/`, **nunca** en `public/`:
@@ -92,8 +100,9 @@ npm test
   de nombre, se actualiza ahí y se corren los tests.
 - **WebP con alfa** para todo lo que se pinta sobre el fondo; los fondos van
   opacos y sin recortes (el CSS los pinta con `cover` + `center`).
-- **Presupuesto**: `public/src/assets/**` no pasa de 3 MB y cada símbolo de
-  48 KB (`test/assetBudget.test.js`). El árbol nuevo hereda esos topes.
+- **Presupuesto**: `public/src/assets/**` no pasa de 3,5 MB y cada símbolo de
+  60 KB (`test/assetBudget.test.js`). El árbol nuevo hereda esos topes: el set
+  navideño tiene volumen y brillos, así que pesa más que los balones planos.
 - **Caché**: `/assets/(.*)` y `/src/assets/(.*)` se sirven un año con
   `immutable` (CDN y servidor local); por eso el nombre de un asset no puede
   cambiar de contenido sin cambiar de nombre.

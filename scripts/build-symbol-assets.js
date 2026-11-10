@@ -38,8 +38,10 @@ const TARGET_DIR = path.join(ROOT, 'public', 'src', 'assets', 'slot');
 const QUALITY = Number(process.env.SYMBOL_QUALITY || 90);
 
 /* Tope por pieza: si un simbolo se pasa, el build falla y hay que revisar el
-   arte en vez de publicar un tablero pesado sin enterarse. */
-const MAX_BYTES = Number(process.env.SYMBOL_MAX_BYTES || 48 * 1024);
+   arte en vez de publicar un tablero pesado sin enterarse. El set navideño
+   (s1..s9 y el bono) tiene volumen, brillos y sombras suaves, asi que pesa mas
+   que los balones planos que sustituyo: el tope es 60 KB por pieza. */
+const MAX_BYTES = Number(process.env.SYMBOL_MAX_BYTES || 60 * 1024);
 
 function kb(bytes) {
   return `${(bytes / 1024).toFixed(1)} KB`;
