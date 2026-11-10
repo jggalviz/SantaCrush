@@ -230,11 +230,18 @@ test('la victoria, el boton GIRAR y el fondo suenan con los MP3 del tema', async
       'El mute no debe reproducir el giro'
     );
 
-    /* Al reactivar el sonido el bucle ambiental vuelve solo. */
+    /* Al reactivar el sonido el bucle ambiental vuelve solo y de forma
+       sincrona: el buffer ya esta decodificado y iOS/Safari exige que la
+       reproduccion ocurra dentro del propio gesto. */
     sfx.setMuted(false);
-    await wait();
     const musicAfterUnmute = calls.starts.filter((source) => source.loop === true);
-    assert.equal(musicAfterUnmute.length, 2, 'Al quitar el mute debe volver el bucle ambiental');
+    assert.equal(
+      musicAfterUnmute.length,
+      2,
+      'Con el buffer en cache el bucle debe volver sin esperar a una promesa'
+    );
+    await wait();
+    assert.equal(musicAfterUnmute.length, 2, 'El mute no debe encadenar una segunda voz');
     assert.ok(musicAfterUnmute[1].stopped !== true, 'La nueva voz del bucle debe quedar sonando');
 
     /* El techo de voces protege la salida sin bloquear los premios nuevos. */
@@ -302,8 +309,8 @@ test('la musica arranca por defecto y el primer gesto de la pagina la desbloquea
     /* Enganche unico del primer gesto, en captura para adelantarse a los controles. */
     assert.deepEqual(
       listeners.map((entry) => entry.type).sort(),
-      ['click', 'keydown', 'pointerdown', 'touchend', 'touchstart'],
-      'autostart debe enganchar los gestos habituales una sola vez'
+      ['click', 'keydown', 'keyup', 'mousedown', 'pointerdown', 'pointerup', 'touchend', 'touchstart'],
+      'autostart debe enganchar los gestos que liberan el audio una sola vez'
     );
     assert.ok(
       listeners.every((entry) => entry.options && entry.options.capture === true),
@@ -318,6 +325,90 @@ test('la musica arranca por defecto y el primer gesto de la pagina la desbloquea
     assert.equal(calls.decoded, 3, 'El primer gesto decodifica tambien la victoria y el giro');
     assert.equal(musicStarts().length, 1, 'El gesto no debe duplicar la voz del bucle');
     assert.deepEqual(listeners, [], 'El enganche se retira tras el primer gesto');
+  } finally {
+    globalThis.window = originalWindow;
+    globalThis.fetch = originalFetch;
+    if (originalDocument === undefined) {
+      delete globalThis.document;
+    } else {
+      globalThis.document = originalDocument;
+    }
+  }
+});
+
+test('la musica se reintenta sola al recargar o volver a la pestana, sin gesto', async () => {
+  const { calls, FakeAudioContext, decodedBuffer } = createAudioHarness({ failDecodes: 1 });
+  const originalWindow = globalThis.window;
+  const originalFetch = globalThis.fetch;
+  const originalDocument = globalThis.document;
+  const windowListeners = [];
+  const bytes = new Uint8Array([0x49, 0x44, 0x33, 0x04, 0x00]);
+  const musicStarts = () => calls.starts.filter((source) => source.loop === true);
+
+  globalThis.document = {
+    hidden: false,
+    addEventListener() {},
+    removeEventListener() {}
+  };
+  globalThis.window = {
+    AudioContext: FakeAudioContext,
+    addEventListener(type, handler) {
+      windowListeners.push({ type, handler });
+    },
+    removeEventListener() {}
+  };
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    arrayBuffer: async () => bytes.buffer
+  });
+
+  try {
+    const { createSfx } = await import(SFX_URL);
+    const sfx = createSfx();
+
+    sfx.autostart();
+    sfx.autostart();
+    await wait();
+
+    /* Un unico enganche, en `window`, para los avisos del ciclo de vida. */
+    assert.deepEqual(
+      windowListeners.map((entry) => entry.type).sort(),
+      ['focus', 'pageshow', 'visibilitychange'],
+      'autostart debe escuchar recarga, foco y visibilidad una sola vez'
+    );
+
+    /* El primer intento no encontro audio utilizable: el navegador aun no lo
+       libera sin interaccion (es el caso normal de una primera visita). */
+    assert.equal(calls.decoded, 1, 'El arranque intenta decodificar el bucle');
+    assert.equal(musicStarts().length, 0, 'Sin audio liberado no debe quedar una voz muda');
+
+    /* Al recargar o volver a la pestana el navegador ya permite el autoplay. */
+    const lifecycle = windowListeners.find((entry) => entry.type === 'pageshow');
+    lifecycle.handler({ type: 'pageshow' });
+    await wait();
+
+    assert.equal(calls.decoded, 2, 'El aviso del ciclo de vida reintenta la decodificacion');
+    assert.equal(musicStarts().length, 1, 'La musica debe arrancar sin ningun gesto del jugador');
+    assert.equal(musicStarts()[0].buffer, decodedBuffer, 'El bucle debe sonar con su buffer');
+
+    /* En segundo plano no se gasta trabajo: se reintenta al volver. */
+    globalThis.document.hidden = true;
+    lifecycle.handler({ type: 'visibilitychange' });
+    await wait();
+    assert.equal(calls.decoded, 2, 'Con el documento oculto no se reintenta');
+    assert.deepEqual(
+      windowListeners.map((entry) => entry.type).sort(),
+      ['focus', 'pageshow', 'visibilitychange'],
+      'autostart no debe duplicar los enganches del ciclo de vida'
+    );
+
+    /* Con el sonido silenciado los reintentos no deben sonar. */
+    globalThis.document.hidden = false;
+    sfx.setMuted(true);
+    lifecycle.handler({ type: 'focus' });
+    await wait();
+    assert.equal(musicStarts().length, 1, 'En mute el reintento no debe arrancar el bucle');
   } finally {
     globalThis.window = originalWindow;
     globalThis.fetch = originalFetch;

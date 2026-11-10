@@ -20,9 +20,12 @@
  * (`default-src 'self'` / `connect-src 'self'`). Todo fallo de audio se ignora
  * en silencio: el juego nunca depende del sonido.
  *
- * La musica ambiental es la politica por defecto: `autostart()` la deja sonando
- * al cargar la pagina y, si el navegador bloquea el autoplay, el primer toque,
- * clic o tecla en cualquier parte del juego la arranca (no hace falta girar).
+ * La musica ambiental es la politica por defecto y suena sola al entrar o
+ * recargar el juego: `autostart()` la intenta en el acto, la reintenta en cada
+ * aviso del ciclo de vida (`pageshow`, `focus`, `visibilitychange`) y, cuando el
+ * navegador exige un gesto para liberar el audio (politica de autoplay de
+ * Chrome, Safari y Firefox), la arranca el primer toque, clic o tecla en
+ * cualquier parte del juego (no hace falta girar).
  */
 
 export const WIN_SOUND_SRC = '/src/assets/AUDIO-WIN-santa-crush.mp3';
@@ -49,8 +52,27 @@ const MAX_WIN_VOICES = 3;
 const MAX_SPIN_VOICES = 1;
 
 /* Gestos que desbloquean el audio en cualquier navegador. El primero que ocurra
-   arranca la musica ambiental, sin obligar al jugador a girar. */
-const FIRST_GESTURES = ['pointerdown', 'touchstart', 'touchend', 'keydown', 'click'];
+   arranca la musica ambiental, sin obligar al jugador a girar: se cubren todos
+   los eventos que Chrome, Safari y Firefox aceptan como activacion del usuario.
+   `pointerdown`/`mousedown`/`touchstart` llegan antes que `click` en el mismo
+   toque, asi que la musica entra sin esperar a que el dedo se levante. */
+const FIRST_GESTURES = [
+  'pointerdown',
+  'pointerup',
+  'mousedown',
+  'touchstart',
+  'touchend',
+  'keydown',
+  'keyup',
+  'click'
+];
+
+/* Avisos del ciclo de vida que reintentan el arranque sin gesto nuevo: una
+   recarga, volver a la pestana o recuperar el foco pueden encontrar el permiso
+   de autoplay ya concedido para el sitio (y despiertan el AudioContext si el
+   sistema lo suspendio en segundo plano). Se escuchan en `window` porque
+   `visibilitychange` burbujea desde `document`. */
+const AUTOPLAY_EVENTS = ['pageshow', 'focus', 'visibilitychange'];
 
 export function createSfx({ muted = false } = {}) {
   let context = null;
@@ -65,6 +87,10 @@ export function createSfx({ muted = false } = {}) {
   /* Enganche del primer gesto de la pagina; se retira en cuanto se usa. */
   let gestureBound = false;
   let firstGestureHandler = null;
+  /* Enganche de los avisos de ciclo de vida que reintentan el autoplay. Vive
+     mientras dure la pagina: es lo que devuelve la musica al volver a la
+     pestana despues de que el sistema suspenda el AudioContext. */
+  let autoplayBound = false;
 
   /* Cache por URL: cada MP3 se descarga y se decodifica una sola vez. */
   const audioData = new Map();
@@ -319,9 +345,20 @@ export function createSfx({ muted = false } = {}) {
     }
   }
 
-  /** Decodifica el bucle y lo deja sonando (idempotente y silencioso al fallar). */
+  /**
+   * Decodifica el bucle y lo deja sonando (idempotente y silencioso al fallar).
+   *
+   * Con el buffer ya decodificado arranca en el acto, sin esperar a una promesa:
+   * iOS/Safari solo permite la primera reproduccion dentro del propio gesto, y
+   * una microtarea de mas la dejaria fuera de la ventana.
+   */
   function ensureMusic(ctx) {
     if (!ctx || isMuted) return Promise.resolve(null);
+    const ready = decodedBuffers.get(MUSIC_SOUND_SRC);
+    if (ready) {
+      startMusic(ctx, ready);
+      return Promise.resolve(ready);
+    }
     return decodeSound(ctx, MUSIC_SOUND_SRC).then((buffer) => {
       startMusic(ctx, buffer);
       return buffer;
@@ -381,6 +418,46 @@ export function createSfx({ muted = false } = {}) {
     }
   }
 
+  /**
+   * Intenta dejar la musica sonando ahora mismo, sin gesto del jugador.
+   *
+   * Es el camino automatico del arranque y de cada recarga: si el navegador ya
+   * tiene permiso de autoplay para el sitio (visitado antes, PWA, kiosco o un
+   * iframe con `allow="autoplay"`) el AudioContext nace activo y el bucle entra
+   * solo. Si aun no lo tiene, `ensureContext()` reanuda el contexto, la voz del
+   * bucle se programa igual y suena en cuanto el navegador libere el audio; los
+   * reintentos cubren ademas el caso en que la decodificacion fallo antes del
+   * desbloqueo (algunos navegadores la rechazan en un contexto suspendido).
+   */
+  function tryAutoplay() {
+    if (isMuted) return;
+    /* `ensureContext` reanuda el contexto suspendido: al volver a la pestana
+       tambien despierta un bucle que el sistema habia congelado. */
+    const ctx = ensureContext();
+    if (!ctx || musicSource) return;
+    void ensureMusic(ctx);
+  }
+
+  /**
+   * Reintenta el arranque automatico en los avisos del ciclo de vida: al
+   * recargar o restaurar desde `bfcache` (`pageshow`), al recuperar el foco
+   * (`focus`) y al volver a la pestana visible (`visibilitychange`). Es
+   * idempotente y no duplica el enganche; sin DOM (tests en Node) no hace nada.
+   */
+  function bindAutoplayRetries() {
+    if (autoplayBound) return;
+    autoplayBound = true;
+    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
+
+    const onLifecycle = () => {
+      /* En segundo plano no se gasta decodificacion: al volver se reintenta. */
+      if (typeof document !== 'undefined' && document.hidden === true) return;
+      tryAutoplay();
+    };
+
+    for (const type of AUTOPLAY_EVENTS) window.addEventListener(type, onLifecycle);
+  }
+
   function tone({ freq = 440, toFreq = null, duration = 0.12, type = 'sine', volume = 0.06, delay = 0 }) {
     const ctx = ensureContext();
     if (!ctx) return;
@@ -404,8 +481,10 @@ export function createSfx({ muted = false } = {}) {
   }
 
   /* La red se precarga en cuanto se crea el reproductor: `autostart()` solo
-     tiene que decodificar y soltar los tres audios. La decodificacion espera al
-     gesto cuando el navegador no permite crear el AudioContext antes. */
+     tiene que decodificar y soltar los tres audios. La decodificacion se intenta
+     de inmediato (el AudioContext nace suspendido si el navegador aun no permite
+     el autoplay) y se repite en los avisos del ciclo de vida y en el primer
+     gesto, que son los momentos en los que el navegador libera el audio. */
   void preloadSound(WIN_SOUND_SRC);
   void preloadSound(SPIN_SOUND_SRC);
   void preloadSound(MUSIC_SOUND_SRC);
@@ -414,18 +493,18 @@ export function createSfx({ muted = false } = {}) {
     /**
      * Arranque por defecto del audio del juego.
      *
-     * Intenta poner la musica en marcha ya (navegadores/PWA que permiten el
-     * autoplay) y engancha el primer gesto de la pagina para completar el
-     * desbloqueo cuando el navegador lo exige. Es idempotente.
+     * La musica suena sola al entrar o recargar: se intenta en el acto, se
+     * reintenta en los avisos del ciclo de vida y, si el navegador exige
+     * interaccion, queda enganchado el primer gesto de la pagina para
+     * desbloquearla. Es idempotente.
      */
     autostart() {
       bindFirstGesture();
+      bindAutoplayRetries();
       void preloadSound(WIN_SOUND_SRC);
       void preloadSound(SPIN_SOUND_SRC);
       void preloadSound(MUSIC_SOUND_SRC);
-      const ctx = ensureContext();
-      if (!ctx) return;
-      void ensureMusic(ctx);
+      tryAutoplay();
     },
     unlock() {
       startAudio();

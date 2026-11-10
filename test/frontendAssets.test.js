@@ -969,11 +969,22 @@ test('la victoria, el giro y el fondo usan los MP3 del tema', () => {
     'La musica ambiental debe fijar su propio volumen'
   );
 
-  /* Politica por defecto: la musica suena al empezar, sin esperar a girar. */
+  /* Politica por defecto: la musica suena al entrar o recargar, sin esperar a
+     girar. Si el navegador exige interaccion, el primer gesto la desbloquea. */
+  const gestureBlock = sfx.match(/const FIRST_GESTURES = \[([\s\S]*?)\];/);
+  assert.ok(
+    gestureBlock,
+    'sfx.js debe enganchar el primer gesto de la pagina para desbloquear el audio'
+  );
+  assert.deepEqual(
+    gestureBlock[1].match(/'[a-z]+'/g).map((entry) => entry.replace(/'/g, '')),
+    ['pointerdown', 'pointerup', 'mousedown', 'touchstart', 'touchend', 'keydown', 'keyup', 'click'],
+    'El enganche debe cubrir los gestos que los navegadores aceptan como activacion'
+  );
   assert.match(
     sfx,
-    /const FIRST_GESTURES = \['pointerdown', 'touchstart', 'touchend', 'keydown', 'click'\];/,
-    'sfx.js debe enganchar el primer gesto de la pagina para desbloquear el audio'
+    /const AUTOPLAY_EVENTS = \['pageshow', 'focus', 'visibilitychange'\];/,
+    'El arranque automatico debe reintentarse al recargar, al recuperar foco y al volver a la pestana'
   );
   assert.match(
     sfx,
@@ -982,7 +993,17 @@ test('la victoria, el giro y el fondo usan los MP3 del tema', () => {
   );
   assert.match(
     sfx,
-    /autostart\(\)\s*{[\s\S]{0,320}void ensureMusic\(ctx\);/,
+    /function bindAutoplayRetries\(\)/,
+    'Los reintentos del autoplay necesitan su propio enganche'
+  );
+  assert.match(
+    sfx,
+    /function tryAutoplay\(\)/,
+    'La musica debe intentar sonar sin gesto del jugador'
+  );
+  assert.match(
+    sfx,
+    /autostart\(\)\s*{[\s\S]{0,320}tryAutoplay\(\);/,
     'autostart debe intentar arrancar la musica de inmediato'
   );
 

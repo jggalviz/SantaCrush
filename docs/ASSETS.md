@@ -87,6 +87,18 @@ siguen sintetizándose con WebAudio. Los volúmenes de la mezcla son
 `MUSIC_VOLUME 0.2 < SPIN_SOUND_VOLUME 0.5 < WIN_SOUND_VOLUME 0.62`: el fondo
 nunca tapa el remate de una ronda.
 
+La música de fondo **suena sola al entrar o recargar el juego**: `autostart()`
+la intenta en el acto, la reintenta en los avisos del ciclo de vida (`pageshow`
+al recargar o restaurar desde `bfcache`, `focus`, y `visibilitychange` al volver
+a la pestaña) y, si el navegador exige un gesto —política de autoplay de Chrome,
+Safari y Firefox, que ignora cualquier intento anterior a la primera interacción
+del usuario en el sitio— la arranca el primer toque, clic o tecla en cualquier
+parte del juego, sin obligar a girar. Los mismos avisos recuperan el bucle si el
+sistema suspende el `AudioContext` en segundo plano. Si el juego se incrusta en
+un iframe, la página anfitriona debe declarar `allow="autoplay"` para que el
+navegador permita el arranque automático; en una pestaña propia basta con que el
+jugador ya haya interactuado antes con el dominio (o con instalar la PWA).
+
 La carpeta `public/assets/santa-crush/audio/` sigue existiendo solo como destino
 declarado en `GAME_CONFIG.assets.audio` (`bgm-holiday.mp3`, `win-applause.mp3`,
 `click.mp3`) para cuando el arte y el audio se sirvan desde el CDN del tema; hoy
