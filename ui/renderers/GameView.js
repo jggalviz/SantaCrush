@@ -25,16 +25,9 @@ import { createReels } from './reels.js';
 import { TIMING, sleep } from '../lib/timing.js';
 import { LEVEL_LABEL } from '../lib/winLevel.js';
 
-/* Preferencia leida al cargar. Es solo el valor de partida: `motionReduced_()`
-   la vuelve a consultar en el momento de animar, porque el jugador puede
-   activarla con la pagina abierta y el CSS la aplica en vivo. */
 const REDUCED_MOTION = typeof window !== 'undefined'
   && typeof window.matchMedia === 'function'
   && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-/* Vida del clon del rodillo del paquete. La animacion dura 280 ms; el margen
-   cubre un fotograma lento y deja sitio al `animationend`. */
-const PACK_ROLL_CLEANUP_MS = 420;
 
 /**
  * Cascada de caida: cada columna arranca `DROP_STAGGER` ms despues de la
@@ -104,15 +97,14 @@ const WIN_LOW_MIN_RATIO_BALLS = 0.2;
 /**
  * Rotulos hablados de los dos pulsadores de giros.
  *
- * La consola tiene tres mandos de accion: `FEVER` compra el bonus (100x la
- * apuesta), el `AUTO` juega el paquete de tiradas rapidas y la insignia de ese
- * mismo caramelo (`#btn-auto-pack`) muestra el paquete vigente y abre la hoja
- * donde se elige. `FEATURE.label` (hoy "Santa Crush") sigue nombrando al bonus
- * en el motor y en `/info`. El texto visible va en mayusculas en el marcado,
- * como `MAX`; aqui se guardan las formas habladas, que son las que leen los
- * lectores de pantalla.
+ * El amarillo ya no compra el bonus: configura el paquete de tiradas y lo
+ * anuncia con rotulo propio (`AUTOGIRO x5 x10 x25`), mientras el azul ejecuta
+ * ese paquete. `FEATURE.label` (hoy "Santa Crush") sigue nombrando al bonus en
+ * el motor y en `/info`, pero no se pinta en la consola. El texto visible va en
+ * mayusculas en el marcado, como `MAX`; aqui se guardan las formas habladas,
+ * que son las que leen los lectores de pantalla.
  */
-const FEATURE_BUTTON_LABEL = 'Fever';
+const FEATURE_BUTTON_LABEL = 'Autogiro';
 const AUTO_BUTTON_LABEL = 'Auto';
 
 export class Ui {
@@ -145,11 +137,8 @@ export class Ui {
       : this.quickSpins[0];
     /* Tiradas que le quedan al bucle en curso: la pildora azul las muestra. */
     this.autoRemaining = 0;
-    /* Vida del clon que sale por arriba en el rodillo de la insignia. Es una
-       propiedad y no una constante para que las pruebas no esperen 420 ms. */
-    this.rollCleanupMs = PACK_ROLL_CLEANUP_MS;
-    /* El autogiro manda: con el bucle en marcha la insignia del paquete no
-       reconfigura nada, igual que el resto de controles de apuesta. */
+    /* El autogiro manda: con el bucle en marcha el boton amarillo no configura
+       paquetes, igual que el resto de controles de apuesta. */
     this.autoActive = false;
     /* `onAutoSpins` lo dispara la opcion elegida en la hoja. La vista no compra
        ni gira: solo avisa al controlador. */
@@ -184,10 +173,8 @@ export class Ui {
   mount() {
     const byId = (id) => document.getElementById(id);
 
-    /* Mapa de nodos vivos. `featureCost` es el subtitulo del FEVER (`100x ·
-       1,00`): lo escribe `paintFeatureCost_` con la apuesta viva. Si una copia
-       antigua del HTML no lo trae, o si el marcado cambia y un nodo falta,
-       `ref_` devuelve `null` y los helpers `setRefText_`/`setRefAttr_`/
+    /* Mapa de nodos vivos. Si el marcado cambia y un nodo falta, `ref_`
+       devuelve `null` y los helpers `setRefText_`/`setRefAttr_`/
        `toggleRefClass_`/`addRefListener_` no hacen nada: nunca se lee
        `null.textContent`. */
     this.refs = {
@@ -207,8 +194,7 @@ export class Ui {
       spinBtn: byId('btn-spin'),
       spinLabel: byId('spin-label'),
       featureBtn: byId('btn-feature'),
-      featureCost: byId('feature-cost'),
-      autoPack: byId('btn-auto-pack'),
+      featureOptions: byId('feature-options'),
       autoBtn: byId('btn-auto'),
       autoCount: byId('auto-count'),
       betUp: byId('btn-bet-up'),
@@ -286,9 +272,8 @@ export class Ui {
     this.renderPlaceholderGrid();
     this.renderHistoryEmpty();
     this.preloadWinArt_();
-    /* El coste del FEVER y la insignia del paquete se pintan desde el primer
-       fotograma: `x10` (el de `bets.autoSpins`) y `100x · 1,00`. */
-    this.paintFeatureCost_();
+    /* El catalogo del amarillo se marca con el paquete vigente desde el primer
+       fotograma (`x10`, el de `bets.autoSpins`). */
     this.paintQuickSpinsOptions_();
   }
 
@@ -408,7 +393,7 @@ export class Ui {
   closeFeverSheet() {
     const sheet = this.ref_('feverSheet');
     const wasOpen = this.isFeverSheetOpen();
-    const trigger = this.ref_('autoPack');
+    const trigger = this.ref_('featureBtn');
 
     if (sheet) sheet.hidden = true;
     this.setFeverExpanded_(false);
@@ -421,13 +406,13 @@ export class Ui {
   }
 
   /**
-   * Marca `aria-expanded` en la insignia del paquete: es el unico mando con
-   * `aria-haspopup` (el azul ejecuta el paquete y el FEVER compra el bonus).
+   * Marca `aria-expanded` en el pulsador amarillo: es el unico que abre la hoja
+   * (el azul la ejecuta y no tiene `aria-haspopup`).
    *
    * @param {boolean} open
    */
   setFeverExpanded_(open) {
-    const node = this.ref_('autoPack');
+    const node = this.ref_('featureBtn');
     if (node) node.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
@@ -554,25 +539,45 @@ export class Ui {
   }
 
   /**
-   * Insignia del paquete del azul (`x5` / `x10` / `x25`).
+   * Paquetes del boton amarillo (`AUTOGIRO x5 x10 x25`) y pildora del azul
+   * (`x5`, `x10`, `x25`).
    *
-   * El paquete se elige en la hoja de giros rapidos; la consola solo publica el
-   * vigente en la insignia pegada al azul —o las tiradas que quedan con el bucle
-   * en marcha— y refresca el candado, para que hoja e insignia nunca se
-   * contradigan.
+   * El amarillo configura y el azul ejecuta, pero el numero es uno solo: aqui se
+   * escribe la cifra en la pildora del azul y se refresca el nombre accesible de
+   * los dos, para que la hoja y la pildora nunca se contradigan.
    */
   paintQuickSpinsOptions_() {
-    /* La cifra de la insignia es el paquete vigente mientras el bucle esta
-       parado. Se reafirma aqui —y no leyendo `aria-pressed` del DOM— para que
-       un atributo pegado no deje la pastilla con el valor anterior: el estado
-       que manda es `autoActive`. Con el bucle en marcha manda el progreso que
-       pinta `setAuto` y no se pisa. */
-    if (!this.autoActive) {
-      this.paintAutoCount_(false, 0);
-      this.paintAutoLabel_(false, 0);
+    const pick = this.quickSpinsPick;
+    const box = this.ref_('featureOptions');
+
+    /* El catalogo del marcado (si lo trae) solo se marca; no se reescriben
+       textos ni se crean nodos. */
+    if (box) {
+      for (const chip of box.children) {
+        chip.classList.toggle('is-active', Number(chip.dataset.spins) === pick);
+      }
     }
 
-    this.refreshQuickSpinsAvailability_();
+    /* El azul repite el numero en su pildora, pero con el bucle en marcha manda
+       el progreso que pinta `setAuto`: no se pisa. */
+    const autoBtn = this.ref_('autoBtn');
+    if (autoBtn && autoBtn.getAttribute('aria-pressed') !== 'true') {
+      this.paintAutoCount_();
+      this.paintAutoLabel_(false);
+    }
+
+    const featureBtn = this.ref_('featureBtn');
+    if (!featureBtn) return;
+
+    /* El rotulo visible del amarillo es decorativo; lo que se mueve con el
+       paquete es el nombre accesible y el tooltip. */
+    featureBtn.setAttribute(
+      'aria-label',
+      `${FEATURE_BUTTON_LABEL} · paquetes de ${this.quickSpinsPhrase_()} tiradas ` +
+        'automáticas. Pulsa para elegir paquete.'
+    );
+    featureBtn.title =
+      `${FEATURE_BUTTON_LABEL} · paquete de ${formatPlain(pick)} tiradas automáticas`;
   }
 
   /**
@@ -1290,9 +1295,8 @@ export class Ui {
     this.currency = currency || 'EUR';
     this.setRefText_('balanceCurrency', this.currency);
     this.setRefText_('winCurrency', this.currency);
-    /* La hoja de giros rapidos escribe el coste de cada paquete y el subtitulo del
-       FEVER, el de la compra del bonus: ambos con la moneda de la sesion. */
-    this.paintFeatureCost_();
+    /* La hoja de giros rapidos escribe el coste de cada paquete con la moneda de
+       la sesion: se repinta si esta abierta. */
     this.syncFeverSheet_();
   }
 
@@ -1342,126 +1346,19 @@ export class Ui {
   }
 
   /**
-   * Numero de la insignia del pulsador azul.
+   * Numero de la pildora del pulsador azul.
    *
-   * En reposo es el paquete configurado en la hoja de giros rapidos; en marcha,
-   * las tiradas que quedan de ese paquete. Al parar vuelve al paquete, no al
-   * valor por defecto: la configuracion no se pierde al terminar una tanda. La
-   * insignia es ademas un rodillo —cada pulsacion pasa al siguiente paquete— y
-   * la puerta de la hoja con una pulsacion larga, asi que su nombre accesible
-   * viaja con la cifra y explica los dos gestos.
+   * En reposo es el paquete configurado en el boton amarillo; en marcha, las
+   * tiradas que quedan de ese paquete. Al parar vuelve al paquete, no al valor
+   * por defecto: la configuracion no se pierde al terminar una tanda.
    *
    * @param {boolean} active el bucle esta en marcha
    * @param {number} [remaining] tiradas que faltan
    */
   paintAutoCount_(active, remaining = 0) {
-    const running = Boolean(active);
-    const spins = running ? Math.max(0, Number(remaining) || 0) : this.quickSpinsPick;
-    const label = this.quickSpinsLabel_(spins);
-
-    const count = this.ref_('autoCount');
-    const previous = count ? String(count.textContent || '') : '';
-    this.setRefText_('autoCount', label);
-    /* Solo rueda cuando la cifra cambia de verdad: repintar la misma tanda (un
-       cambio de apuesta, por ejemplo) no debe mover el tambor. */
-    if (count && previous && previous !== label) this.rollAutoCount_(count, previous);
-
-    const pack = this.ref_('autoPack');
-    if (!pack) return;
-    const total = formatPlain(this.quickSpinsPick);
-    const left = formatPlain(spins);
-    pack.setAttribute(
-      'aria-label',
-      running
-        ? `Quedan ${left} de ${total} tiradas automáticas`
-        : `Paquete de tiradas automáticas · ${left}. ` +
-            'Pulsa para rodar al siguiente; mantén pulsado para elegir entre ' +
-            `${this.quickSpinsPhrase_()}`
-    );
-    pack.title = running
-      ? `Quedan ${left} de ${total} tiradas automáticas`
-      : `Paquete de ${left} tiradas automáticas · pulsa para cambiar`;
-  }
-
-  /**
-   * true si el sistema pide movimiento reducido.
-   *
-   * Se consulta EN EL MOMENTO, no al cargar el modulo: la preferencia se puede
-   * activar con la pagina abierta y el CSS deja de animar en vivo. Si aqui se
-   * dijera que si se puede animar, la animacion no correria nunca, no llegaria
-   * el `animationend` y el clon del rodillo se quedaria encima de la cifra
-   * nueva mostrando la vieja.
-   *
-   * @returns {boolean}
-   */
-  motionReduced_() {
-    if (REDUCED_MOTION) return true;
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-    try {
-      return Boolean(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    } catch (err) {
-      /* Un `matchMedia` que lanza (WebView antiguo) no debe impedir el cambio. */
-      return false;
-    }
-  }
-
-  /**
-   * Rodillo de la cifra del paquete: la cifra anterior sale por arriba mientras
-   * la nueva entra desde abajo.
-   *
-   * La cifra viva es la del DOM —los lectores de pantalla y el `aria-label` la
-   * leen al instante—, asi que el clon que sale es solo pintura: va
-   * `aria-hidden`, sin eventos y lo retira `animationend`... o el temporizador
-   * de seguridad, porque el evento no siempre llega (pestaña en segundo plano,
-   * animaciones desactivadas con la pagina abierta, navegadores que no lo
-   * emiten). Sin ese respaldo el clon taparia la cifra nueva para siempre. Si
-   * el sistema pide movimiento reducido no se clona nada.
-   *
-   * @param {object} node `#auto-count`
-   * @param {string} previous cifra que acaba de salir
-   * @returns {boolean} true si se pinto el tambor
-   */
-  rollAutoCount_(node, previous) {
-    const host = node ? node.parentNode : null;
-    if (!host || this.motionReduced_()) return false;
-
-    const doc = typeof document !== 'undefined' ? document : null;
-    if (!doc || typeof doc.createElement !== 'function') return false;
-    if (!node.classList || typeof node.classList.add !== 'function') return false;
-
-    /* Un solo tambor a la vez: con pulsaciones seguidas, el clon anterior ya no
-       representa nada y se retira antes de pintar el nuevo. */
-    if (typeof host.querySelectorAll === 'function') {
-      for (const stale of host.querySelectorAll('.pill__roll-ghost')) {
-        if (stale && typeof stale.remove === 'function') stale.remove();
-        else if (stale && stale.parentNode === host) host.removeChild(stale);
-      }
-    }
-
-    const ghost = doc.createElement('span');
-    ghost.className = 'pill__roll-ghost';
-    ghost.setAttribute('aria-hidden', 'true');
-    ghost.textContent = previous;
-
-    /* Reinicia la animacion de entrada aunque el cambio llegue en el mismo
-       fotograma que el anterior. */
-    node.classList.remove('is-roll-in');
-    void host.offsetWidth;
-    node.classList.add('is-roll-in');
-    host.appendChild(ghost);
-
-    let cleaned = false;
-    const cleanup = () => {
-      if (cleaned) return;
-      cleaned = true;
-      if (ghost.parentNode === host) host.removeChild(ghost);
-      node.classList.remove('is-roll-in');
-    };
-    if (typeof ghost.addEventListener === 'function') {
-      ghost.addEventListener('animationend', cleanup, { once: true });
-    }
-    if (typeof setTimeout === 'function') setTimeout(cleanup, this.rollCleanupMs);
-    return true;
+    const node = this.ref_('autoCount');
+    if (!node) return;
+    node.textContent = this.quickSpinsLabel_(active ? remaining : this.quickSpinsPick);
   }
 
   /**
@@ -1491,69 +1388,14 @@ export class Ui {
   }
 
   /**
-   * El FEVER gasta saldo: se apaga con el motor ocupado, con el bucle en marcha y
-   * cuando el saldo confirmado no cubre sus 100 apuestas. El precio lo publica
-   * `paintFeatureCost_` en el subtitulo.
+   * El amarillo configura paquetes, no gasta saldo: solo se apaga mientras el
+   * motor resuelve una ronda o el autogiro esta en marcha (no se reconfigura a
+   * mitad de una tanda).
    */
   refreshFeatureAvailability_() {
     const button = this.ref_('featureBtn');
-    if (button) {
-      button.disabled = Boolean(this.busy || this.autoActive || !this.coversFeature_());
-    }
-    /* La insignia del paquete viaja con su propio candado. */
-    this.refreshQuickSpinsAvailability_();
-  }
-
-  /** El saldo confirmado cubre el coste del bonus (sin saldo se deja intentar). */
-  coversFeature_() {
-    const balance = Number(this.balanceCents);
-    if (this.balanceCents === null || this.balanceCents === undefined || !Number.isFinite(balance)) {
-      return true;
-    }
-    return balance >= this.featureCostCents_;
-  }
-
-  /** Coste del bonus en centimos: apuesta viva x multiplicador publicado. */
-  get featureCostCents_() {
-    const betCents = Math.round((Number(this.currentBetCredits) || 0) * 100);
-    const multiplier = Number(this.featureCostMultiplier) || FEATURE.costMultiplier;
-    return betCents * multiplier;
-  }
-
-  /**
-   * Subtitulo del FEVER (`100x · 1,00`): multiplicador publicado y coste total con
-   * la apuesta viva, mas el nombre accesible con la moneda de la sesion.
-   */
-  paintFeatureCost_() {
-    const multiplier = Number(this.featureCostMultiplier) || FEATURE.costMultiplier;
-    const cost = formatCents(this.featureCostCents_);
-    const mult = formatPlain(multiplier);
-
-    this.setRefText_('featureCost', `${mult}x · ${cost}`);
-
-    const button = this.ref_('featureBtn');
-    if (button) {
-      const spins = formatPlain(this.featureSpins);
-      button.setAttribute(
-        'aria-label',
-        `${FEATURE_BUTTON_LABEL} · compra el bonus de ${spins} giros por ` +
-          `${mult} veces la apuesta (${cost} ${this.currency}).`
-      );
-      button.title = `${FEATURE_BUTTON_LABEL} · ${mult}x = ${cost} ${this.currency}`;
-    }
-
-    /* El candado depende del saldo y del precio: se recalcula al pintarlo. */
-    this.refreshFeatureAvailability_();
-  }
-
-  /**
-   * Apaga la insignia del paquete mientras el motor resuelve una ronda o el bucle
-   * corre. A mitad de tanda el paquete esta comprometido: cambiarlo dejaria la
-   * insignia contradiciendo las tiradas que quedan.
-   */
-  refreshQuickSpinsAvailability_() {
-    const pack = this.ref_('autoPack');
-    if (pack && 'disabled' in pack) pack.disabled = Boolean(this.busy || this.autoActive);
+    if (!button) return;
+    button.disabled = Boolean(this.busy || this.autoActive);
   }
 
   setBet(credits) {
@@ -1561,9 +1403,9 @@ export class Ui {
     this.currentBetCredits = Number.isFinite(value) ? value : BETS.defaultCredits;
     this.setRefText_('betValue', formatCredits(this.currentBetCredits));
     this.setRefText_('betReadout', formatCredits(this.currentBetCredits));
-    /* El subtitulo del FEVER y las tarjetas de la hoja derivan de la apuesta viva:
-       se repintan con el cambio. */
-    this.paintFeatureCost_();
+    /* Los chips y la pildora no llevan importe, pero la hoja si: sus tarjetas
+       recalculan el coste total con la apuesta nueva. */
+    this.paintQuickSpinsOptions_();
     this.syncFeverSheet_();
   }
 
@@ -1682,15 +1524,14 @@ export class Ui {
   updateAffordability(balanceCents, betCents) {
     this.balanceCents = Number(balanceCents) || 0;
     this.syncFeverSheet_();
-    /* El candado del FEVER depende del saldo: se pinta antes del corte para que al
-       terminar la ronda ya este al dia. */
-    this.paintFeatureCost_();
     if (this.busy) return;
 
     const balance = Number(balanceCents) || 0;
     const bet = Number(betCents) || 0;
     const spinBtn = this.ref_('spinBtn');
     if (spinBtn) spinBtn.disabled = balance < bet;
+    /* El amarillo no gasta: su disponibilidad depende del motor, no del saldo. */
+    this.refreshFeatureAvailability_();
   }
 
   /**
@@ -1718,12 +1559,7 @@ export class Ui {
 
   /**
    * Fija el paquete de tiradas automaticas elegido en la hoja. No gira ni
-   * gasta: mueve el chip resaltado del amarillo y la pildora del azul.
-   *
-   * La pastilla se repinta aqui mismo —cifra, rodillo y nombre accesible— y no
-   * como efecto lateral de la hoja: es la ruta que usan el toque corto, la
-   * eleccion de una tarjeta y el arranque del bucle, y ninguna puede quedarse
-   * con el valor anterior.
+   * gasta: mueve la pildora del azul.
    *
    * @param {number} spins debe pertenecer a `bets.quickSpins`
    * @returns {boolean} true si el paquete es valido
@@ -1733,12 +1569,8 @@ export class Ui {
     if (!Number.isInteger(value) || !this.quickSpins.includes(value)) return false;
 
     this.quickSpinsPick = value;
-    /* Con el bucle en marcha la insignia cuenta las que quedan, no el paquete
-       nuevo; en reposo, el paquete elegido. En los dos casos se pinta ya. */
-    this.paintAutoCount_(this.autoActive, this.autoRemaining);
-    this.paintAutoLabel_(this.autoActive, this.autoRemaining);
-    /* El chip resaltado, la pildora y el nombre accesible siguen al paquete
-       elegido; con el bucle en marcha siguen mostrando las que quedan. */
+    /* La pildora y el nombre accesible siguen al paquete elegido; con el bucle
+       en marcha siguen mostrando las que quedan. */
     this.paintQuickSpinsOptions_();
     this.syncFeverSheet_();
     return true;
@@ -1856,8 +1688,6 @@ export class Ui {
       : FEATURE.costMultiplier;
     this.featureSpins = Number.isFinite(feature.spins) ? feature.spins : FEATURE.spins;
     this.featureLabel = feature.label || FEATURE.label;
-    /* El precio del FEVER sale de `/api/game`: se publica en cuanto llega. */
-    this.paintFeatureCost_();
 
     const rtp = (info && info.certifiedRtp) || {};
     this.setRefText_('infoRtpBase', formatPercent(rtp.base));
@@ -1866,9 +1696,8 @@ export class Ui {
       'infoCap',
       `${formatPlain((info && info.maxExposureMultiplier) || LIMITS.maxExposureMultiplier)}×`
     );
-    /* `featureLabel` (hoy "Santa Crush") nombra al bonus en el motor y en la
-       tabla de pagos; el rotulo visible del pulsador es `FEVER` y su precio lo
-       publica `paintFeatureCost_`. */
+    /* El rotulo visible del amarillo es de la vista (`AUTOGIRO`), no del bonus:
+       `featureLabel` solo alimenta la tabla de pagos y el aviso de la ronda. */
     this.setEngineText(
       info ? `${info.code} · v${info.engineVersion} · ${info.paytableVersion}` : ''
     );

@@ -6,28 +6,17 @@
  * a intenciones (`onSpin`, `onBuyFeature`, `onChangeBet`...).
  */
 
-/** Umbral de la pulsacion larga de la insignia del paquete (ms). */
-const PACK_LONG_PRESS_MS = 550;
-
 export class GameControls {
   /**
    * @param {object} options
    * @param {object} options.ui       renderer con `refs` del DOM
    * @param {object} options.controller `GameController`
    * @param {object} [options.documentRef]
-   * @param {number} [options.longPressMs] umbral de la pulsacion larga (ms)
    */
-  constructor({ ui, controller, documentRef = document, longPressMs = PACK_LONG_PRESS_MS }) {
+  constructor({ ui, controller, documentRef = document }) {
     this.ui = ui;
     this.controller = controller;
     this.document = documentRef;
-    /* La pulsacion larga de la insignia del paquete abre la hoja GIROS RAPIDOS;
-       la corta rueda el catalogo. El umbral se puede acortar en las pruebas. */
-    this.longPressMs = Number.isFinite(Number(longPressMs)) && Number(longPressMs) >= 0
-      ? Number(longPressMs)
-      : PACK_LONG_PRESS_MS;
-    this.packPressTimer = null;
-    this.packLongPressFired = false;
     this.bound = false;
     this.listeners = [];
   }
@@ -37,36 +26,15 @@ export class GameControls {
 
     const refs = this.ui.refs;
     this.bind(refs.spinBtn, 'click', () => {
-      /* Con el bucle en marcha el GIRAR es la parada rapida: el mismo gesto que el
-         azul, sin tener que buscar el otro pulsador. Con el motor quieto gira. */
-      if (this.controller.autoRunning) {
-        this.controller.stopAuto('Automático detenido');
-        return;
-      }
+      if (this.controller.autoRunning) return;
       void this.controller.spin();
     });
 
     this.bind(refs.featureBtn, 'click', () => {
-      /* FEVER compra el bonus completo (100x la apuesta, 10 giros). El precio y
-         la disponibilidad los valida el controlador contra el saldo autoritativo;
-         aqui solo se pide la compra. Corta el automatico si estaba en marcha. */
-      void this.controller.buyFeature();
+      /* El pulsador amarillo abre la hoja de giros rapidos: no gira ni cobra
+         hasta que el jugador elige un paquete, y elegirlo tampoco gasta. */
+      this.controller.openFeverSheet();
     });
-
-    /* Insignia del paquete (x5 · x10 · x25), debajo del disco "..." en movil.
-       Pulsacion corta: rueda al siguiente paquete publicado —la cifra entra
-       desde abajo—, sin girar ni gastar saldo. Pulsacion larga: abre la hoja
-       GIROS RAPIDOS, que es donde se ve el coste de cada paquete. */
-    this.bind(refs.autoPack, 'click', () => {
-      /* El `click` llega tambien despues de una pulsacion larga: ya la resolvio
-         la hoja, asi que no se rueda el paquete por detras. */
-      if (this.packLongPressFired) {
-        this.packLongPressFired = false;
-        return;
-      }
-      this.controller.cycleQuickSpins();
-    });
-    this.bindPackPress_(refs.autoPack);
 
     /* El pulsador azul juega el paquete configurado o detiene el bucle. */
     this.bind(refs.autoBtn, 'click', () => this.controller.toggleAuto());
@@ -86,7 +54,6 @@ export class GameControls {
   }
 
   destroy() {
-    this.resetPackPress_();
     for (const { target, type, handler } of this.listeners) {
       if (target && typeof target.removeEventListener === 'function') {
         target.removeEventListener(type, handler);
@@ -102,78 +69,12 @@ export class GameControls {
     this.listeners.push({ target, type, handler });
   }
 
-  /**
-   * Pulsacion larga en la insignia del paquete: abre la hoja GIROS RAPIDOS.
-   *
-   * La corta rueda el paquete, asi que la hoja se pide manteniendo el dedo (o
-   * con Shift+Enter). Se arma con `pointerdown` y se cancela al soltar, al
-   * salir del pulsador o si el navegador corta el gesto. El `contextmenu` se
-   * bloquea para que en movil no aparezca el menu del sistema encima de la
-   * capsula mientras se mantiene pulsada.
-   *
-   * @param {object} node `#btn-auto-pack`
-   */
-  bindPackPress_(node) {
-    if (!node || typeof node.addEventListener !== 'function') return;
-    this.bind(node, 'pointerdown', () => this.armPackPress_());
-    this.bind(node, 'pointerup', () => this.clearPackPressTimer_());
-    this.bind(node, 'pointerleave', () => this.clearPackPressTimer_());
-    this.bind(node, 'pointercancel', () => this.clearPackPressTimer_());
-    this.bind(node, 'contextmenu', (event) => {
-      if (event && typeof event.preventDefault === 'function') event.preventDefault();
-    });
-  }
-
-  /** Arranca el temporizador de la pulsacion larga (idempotente). */
-  armPackPress_() {
-    this.resetPackPress_();
-    this.packPressTimer = setTimeout(() => {
-      this.packPressTimer = null;
-      /* La marca sobrevive al `pointerup` a proposito: el `click` que llega
-         despues debe saber que el gesto ya lo resolvio la hoja y no rodar el
-         paquete por detras. */
-      this.packLongPressFired = true;
-      /* Con una ronda en curso o el bucle en marcha el controlador contesta con
-         su aviso: aqui no se filtra nada para no duplicar el mensaje. */
-      this.controller.openFeverSheet();
-    }, this.longPressMs);
-  }
-
-  /** Cancela el temporizador pendiente sin olvidar que ya se disparo. */
-  clearPackPressTimer_() {
-    if (this.packPressTimer !== null) {
-      clearTimeout(this.packPressTimer);
-      this.packPressTimer = null;
-    }
-  }
-
-  /** Cancela el temporizador y olvida la marca del gesto anterior. */
-  resetPackPress_() {
-    this.clearPackPressTimer_();
-    this.packLongPressFired = false;
-  }
-
   onKeyDown(event) {
     const target = event.target;
     const isFormField = typeof HTMLElement !== 'undefined'
       && target instanceof HTMLElement
       && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
     if (isFormField) return;
-
-    /* La insignia del paquete ya es un boton: su Space/Enter no debe ademas
-       lanzar una tirada. Se mira el ancestro porque el foco puede estar en el
-       texto de la insignia. `Shift` es el atajo de la hoja: sin el, el boton
-       rueda el paquete con su propio `click`. */
-    const isPackBadge = Boolean(target)
-      && typeof target.closest === 'function'
-      && target.closest('#btn-auto-pack') !== null;
-    if (isPackBadge) {
-      if (event.shiftKey && (event.code === 'Space' || event.key === 'Enter')) {
-        event.preventDefault();
-        this.controller.openFeverSheet();
-      }
-      return;
-    }
 
     const modal = this.document.getElementById('modal');
     if (modal && !modal.hidden) return;

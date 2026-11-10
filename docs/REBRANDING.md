@@ -210,53 +210,40 @@ tecla coincide pixel a pixel con el dibujo, asi que no hay ninguna capsula pinta
 encima; al pulsar, el `:active` hunde la ventana. El unico mando que el arte no
 dibuja es el **GIRAR grande** (x 12-88 % · y 67,4-77,6 % del lienzo, la banda verde
 entre la lectura del saldo y la fila del pie): se pinta con su propia capsula rosa
-candy y su aro dorado, y es el que lanza la tirada y, con el bucle en marcha, la
-detiene. El aro es un **borde de 3 px** con el dorado del sistema (`#ffd54a`) en la
+candy y su aro dorado, y es el que lanza la tirada. Durante el autogiro el clic se
+ignora: el bucle se para con el **AUTO**, igual que en el juego base. El aro es un
+**borde de 3 px** con el dorado del sistema (`#ffd54a`) en la
 capa `border-box` —el patron de `.gbtn`, no un anillo de `box-shadow`—: asi mide lo
 mismo que el marco que el arte dibuja en FEVER y AUTO, respeta el radio de capsula
 (999 px como las pastillas del pie) y sobrevive a los modos de bajo consumo, que
 reescriben `box-shadow` con `!important` y lo habrian borrado.
 
-Reparto: el caramelo **amarillo** del pie es **FEVER** (compra el bonus por
-`feature.costMultiplier` = 100x la apuesta y publica el precio en la capsula de
-valor de su caramelo, `100x · 100,00`); el **rojo** es **AUTO** (juega el paquete
-de tiradas rapidas). La **insignia del paquete** es un pulsador hermano del rojo
-—un boton dentro de otro boton no es marcado valido ni enfocable—: muestra el
-paquete vigente (o las tiradas que quedan con el bucle en marcha) y funciona como
-**rodillo**. Cada pulsacion corta pasa al siguiente paquete publicado
-(`bets.quickSpins`, hoy `x5 → x10 → x25` y vuelta a empezar) y la cifra entra
-desde abajo: `GameView.rollAutoCount_` clona la saliente en `.pill__roll-ghost`
-—solo pintura, `aria-hidden`— y anima la viva con `pack-roll-in/out`. El clon lo
-retira `animationend` **y** un temporizador de seguridad: el evento no llega si
-la pestaña esta en segundo plano o si el sistema pide movimiento reducido con la
-pagina abierta, y un clon huerfano taparia la cifra nueva con la vieja (la
-insignia parecia congelada). `GameView.setQuickSpins` repinta cifra, nombre
-accesible y chip en la misma llamada, sin depender de `aria-pressed` del DOM, asi
-que el toque corto, la tarjeta de la hoja y el arranque del bucle nunca dejan la
-pastilla con el valor anterior. **Rodar el
-paquete no gira ni gasta saldo.** La **pulsacion larga** (o `Shift+Enter` con el
-foco en la insignia) abre la hoja **Giros Rapidos**, que es donde se ve el coste
-de cada paquete y sigue siendo el unico mando con `aria-haspopup`; el FEVER avisa
-del saldo insuficiente apagandose cuando no cubre sus 100 apuestas.
+Reparto: el caramelo **amarillo** del pie es **FEVER** y abre la hoja **Giros
+Rápidos**, donde se elige cuantas tiradas automaticas se quieren (su capsula anuncia
+el catalogo, `x5 · x10 · x25`); el **rojo** es **AUTO** y juega el paquete
+configurado, o detiene el bucle si ya esta en marcha. La **pildora del paquete**
+(`#btn-auto-pack`) es texto, no un pulsador: reproduce el paquete vigente —y las
+tiradas que quedan con el bucle en marcha— junto al caramelo azul, y lleva
+`pointer-events: none` para que su caja nunca se lleve un clic del AUTO. El paquete
+se cambia solo en la hoja, asi que **elegirlo no gira ni gasta saldo**. Es la logica
+de eventos del juego base, sin gestos propios: `GameControls` enlaza el `click` de
+cada boton con su intencion y `GameView.paintQuickSpinsOptions_` mantiene
+coherentes la pildora, el nombre accesible del amarillo y las tarjetas de la hoja.
 
-En escritorio la insignia se apoya en la mitad baja del caramelo azul (x 64,48-76,88 %
+En escritorio la pildora se apoya en la mitad baja del caramelo azul (x 64,48-76,88 %
 · y 85,4-88,5 %, con el caramelo en 80,21-88,71 %), **por debajo del centro** del
-pulsador (84,46 %). No es un detalle decorativo: la caja del pill se lleva los clics
-que caen encima, y arrancando en el 84 % tapaba el punto de gravedad del AUTO, asi
-que pulsar el centro del caramelo rodaba el paquete en vez de arrancar el autogiro
-(medido en Edge: `elementFromPoint` del centro devolvia `#btn-auto-pack` y el saldo
-no se movia; habia que acertar en el rotulo). Bajarla a un tercio del alto del
-caramelo libera el centro para el pulsador y deja la pastilla colgando del rotulo,
-como en el arte. `test/feverSheet.test.js` compara las dos geometrias declaradas
-(centro del AUTO contra el borde alto del pill) para que no vuelvan a cruzarse.
+pulsador (84,46 %), para que el centro del caramelo siga siendo del AUTO y la
+pastilla cuelgue del rotulo, como en el arte. `test/feverSheet.test.js` compara las
+dos geometrias declaradas (centro del AUTO contra el borde alto de la pildora) para
+que no vuelvan a cruzarse.
 
 En movil (`max-width: 899px`) el panel es `console-mobile.webp`: los discos CRUSH
 (FEVER) · AUTO · GIRAR · − · + y la fila de cuatro capsulas vienen dibujados, asi
 que ahi los mandos son **areas tactiles transparentes** sobre el arte. La capsula
-**1** es la insignia del paquete (`x10`), colgada del disco `...` como el selector
-de Meridiano (medida sobre el lienzo: x 6,59-18,25 % · y 74,18-81,11 %), la 3 el
-rotulo GIRAR y la 4 la lectura de la apuesta con el tramo MAX; la 2 se queda como
-viene en el arte.
+**1** es la cifra del paquete (`x10`), colgada del disco `...` como el contador del
+selector de Meridiano (medida sobre el lienzo: x 6,59-18,25 % · y 74,18-81,11 %), la
+3 el rotulo GIRAR y la 4 la lectura de la apuesta con el tramo MAX; la 2 se queda
+como viene en el arte.
 
 El arte navideño del tema sigue cubriendo las dos maquinas: el taller de juguetes
 de fondo (`bg-desktop.webp` apaisado y `bg-mobile.webp` vertical), el marco de

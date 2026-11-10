@@ -90,17 +90,6 @@ function fakeNode(overrides = {}) {
         if (listener.type === 'click') listener.handler({ target: node });
       }
     },
-    /** Dispara los listeners de un tipo (punteros del rodillo, `animationend`...). */
-    emit(type, event = { target: node }) {
-      for (const listener of node.listeners) {
-        if (listener.type === type) listener.handler(event);
-      }
-    },
-    removeEventListener(type, handler) {
-      node.listeners = node.listeners.filter(
-        (listener) => listener.type !== type || listener.handler !== handler
-      );
-    },
     focus() { node.focusCount += 1; },
     querySelector() { return null; }
   };
@@ -197,8 +186,7 @@ async function createView({ balanceCents = 100000, betCredits = 1 } = {}) {
     feverSummary: fakeNode(),
     feverClose: fakeNode(),
     featureBtn: fakeNode(),
-    featureCost: fakeNode(),
-    autoPack: fakeNode(),
+    featureOptions: fakeChipsNode(),
     autoBtn: fakeNode(),
     autoCount: fakeNode(),
     spinBtn: fakeNode(),
@@ -220,7 +208,7 @@ const callNames = (calls) => calls.map((call) => call.name);
 
 /* ------------------------------------------------------------------- vista */
 
-test('la insignia del paquete abre los giros rapidos con el catalogo y el coste vivos', async () => {
+test('el pulsador amarillo abre los giros rapidos con el catalogo y el coste vivos', async () => {
   const { formatCents, formatCredits } = await getFormatters();
   const ui = await createView({ betCredits: 1, balanceCents: 100000 });
 
@@ -232,11 +220,11 @@ test('la insignia del paquete abre los giros rapidos con el catalogo y el coste 
 
   assert.equal(opened, true);
   assert.equal(ui.refs.feverSheet.hidden, false);
-  assert.equal(ui.refs.autoPack.getAttribute('aria-expanded'), 'true');
+  assert.equal(ui.refs.featureBtn.getAttribute('aria-expanded'), 'true');
   assert.equal(
-    ui.refs.featureBtn.getAttribute('aria-expanded'),
+    ui.refs.autoBtn.getAttribute('aria-expanded'),
     null,
-    'el FEVER compra el bonus: no es un disparador de dialogo'
+    'el azul no es un disparador de dialogo: no lleva aria-expanded'
   );
   assert.match(
     ui.refs.feverLead.textContent,
@@ -298,24 +286,24 @@ test('la hoja lista los paquetes, marca el elegido y calcula su coste', async ()
   const { formatCents, formatCredits } = await getFormatters();
   const ui = await createView({ betCredits: 1, balanceCents: 100000 });
   assert.equal(ui.setQuickSpins(25), true);
-  assert.equal(ui.refs.autoCount.textContent, 'x25', 'la insignia anuncia el paquete configurado');
+  assert.equal(ui.refs.autoCount.textContent, 'x25', 'la pildora anuncia el paquete configurado');
   assert.equal(
     ui.refs.autoBtn.getAttribute('aria-label'),
     'Auto · 25 tiradas automáticas. Pulsa para jugarlas seguidas.'
   );
   assert.match(
-    ui.refs.autoPack.getAttribute('aria-label'),
-    /Paquete de tiradas automáticas · 25\./,
-    'la insignia del azul anuncia el paquete vigente'
+    ui.refs.featureBtn.getAttribute('aria-label'),
+    /Autogiro · paquetes de 5, 10 o 25 tiradas automáticas\. Pulsa para elegir paquete\./,
+    'el amarillo anuncia el catalogo de paquetes'
   );
   assert.equal(
-    ui.refs.autoPack.title,
-    'Paquete de 25 tiradas automáticas · pulsa para cambiar',
-    'el tooltip invita a rodar el paquete'
+    ui.refs.featureBtn.title,
+    'Autogiro · paquete de 25 tiradas automáticas',
+    'el tooltip sigue al paquete vigente'
   );
 
   ui.openFeverSheet();
-  assert.equal(ui.refs.autoPack.getAttribute('aria-expanded'), 'true');
+  assert.equal(ui.refs.featureBtn.getAttribute('aria-expanded'), 'true');
   assert.equal(ui.refs.autoBtn.getAttribute('aria-expanded'), null);
 
   const options = ui.refs.feverOptions.children;
@@ -362,14 +350,14 @@ test('un paquete sin saldo se pinta apagado y no dispara el autogiro', async () 
   assert.deepEqual(picked, [], 'una opcion deshabilitada no arranca nada');
 });
 
-test('cerrar la hoja devuelve el foco a la insignia del paquete', async () => {
+test('cerrar la hoja devuelve el foco al pulsador amarillo', async () => {
   const ui = await createView();
   ui.openFeverSheet();
   assert.equal(withDocument(null, () => ui.closeFeverSheet()), true);
 
   assert.equal(ui.refs.feverSheet.hidden, true);
-  assert.equal(ui.refs.autoPack.getAttribute('aria-expanded'), 'false');
-  assert.equal(ui.refs.autoPack.focusCount, 1, 'el foco vuelve a la insignia del paquete');
+  assert.equal(ui.refs.featureBtn.getAttribute('aria-expanded'), 'false');
+  assert.equal(ui.refs.featureBtn.focusCount, 1, 'el foco vuelve al pulsador amarillo');
   assert.equal(ui.isFeverSheetOpen(), false);
 });
 
@@ -477,7 +465,7 @@ test('con el bucle en marcha la pildora azul cuenta las tiradas que quedan', asy
   assert.equal(ui.refs.featureBtn.disabled, false, 'al parar, el amarillo vuelve a estar activo');
 });
 
-test('el precio del FEVER sale de /api/game y no del paquete de autogiro', async () => {
+test('el bonus del motor no toca el rotulo del pulsador amarillo', async () => {
   const ui = await createView({ betCredits: 2, balanceCents: 1000000 });
   ui.refs.infoRtpBase = fakeNode();
   ui.refs.infoRtpFeature = fakeNode();
@@ -486,7 +474,7 @@ test('el precio del FEVER sale de /api/game y no del paquete de autogiro', async
 
   withDocument(null, () => {
     ui.setGameInfo({
-      code: 'SANTA_CRUSH_GRID_6X5_95_10K',
+      code: 'MERIDIANO_GRID_6X5_95_10K',
       engineVersion: '1.1.0',
       paytableVersion: 'MB65-95-10K-v2',
       feature: { costMultiplier: 50, spins: 8, label: 'Crush Pro' }
@@ -495,20 +483,14 @@ test('el precio del FEVER sale de /api/game y no del paquete de autogiro', async
 
   assert.equal(ui.featureLabel, 'Crush Pro', 'el bonus sigue disponible en la tabla de pagos');
   assert.equal(
-    ui.refs.featureCost.textContent,
-    '50x · 100,00',
-    'el subtitulo publica multiplicador publicado por la apuesta viva (2,00 x 50)'
+    ui.refs.featureBtn.title,
+    'Autogiro · paquete de 10 tiradas automáticas',
+    'el amarillo anuncia paquetes, no la compra del bonus'
   );
-  assert.match(
-    ui.refs.featureBtn.getAttribute('aria-label'),
-    /compra el bonus de 8 giros por 50 veces la apuesta \(100,00 EUR\)/,
-    'el nombre accesible del FEVER anuncia la compra con su precio'
-  );
-  assert.equal(ui.refs.featureBtn.title, 'Fever · 50x = 100,00 EUR');
   assert.doesNotMatch(
-    ui.refs.featureCost.textContent,
-    /x5|x10|x25/,
-    'el paquete de tiradas rapidas no se cuela en el precio del bonus'
+    ui.refs.featureBtn.getAttribute('aria-label'),
+    /Crush Pro|comprar/i,
+    'el nombre accesible del amarillo no promete una compra'
   );
 });
 
@@ -637,32 +619,6 @@ test('pickQuickSpins configura el paquete y cierra la hoja sin gastar', async ()
   assert.equal(game.quickSpinsPick, 25, 'el paquete vigente no cambia');
 });
 
-test('cycleQuickSpins rueda el catalogo y vuelve al primer paquete', async () => {
-  const { game, ui } = await createController();
-  assert.equal(game.quickSpinsPick, 10, 'arranca en el paquete por defecto');
-
-  assert.equal(game.cycleQuickSpins(), 25);
-  assert.equal(game.quickSpinsPick, 25);
-  assert.deepEqual(lastCall(ui, 'setQuickSpins').args, [25]);
-  assert.equal(lastCall(ui, 'setStatus').args[0], 'Automático · paquete de 25 tiradas');
-  assert.equal(game.autoRunning, false, 'rodar el paquete no arranca el bucle');
-  assert.equal(callsNamed(ui, 'closeFeverSheet').length, 0, 'rodar no toca la hoja');
-
-  assert.equal(game.cycleQuickSpins(), 5, 'despues del ultimo vuelve al primero');
-  assert.equal(game.cycleQuickSpins(), 10, 'y sigue dando la vuelta');
-
-  game.busy = true;
-  assert.equal(game.cycleQuickSpins(), null);
-  assert.equal(lastCall(ui, 'toast').args[0], 'Espera a que termine la tirada.');
-  assert.equal(game.quickSpinsPick, 10, 'con el motor ocupado la cifra no se mueve');
-
-  game.busy = false;
-  game.autoRunning = true;
-  assert.equal(game.cycleQuickSpins(), null);
-  assert.match(lastCall(ui, 'toast').args[0], /Detén el automático/);
-  assert.equal(game.quickSpinsPick, 10, 'con la tanda en marcha tampoco');
-});
-
 test('startAuto juega el paquete elegido y descarta cantidades fuera del catalogo', async () => {
   const { game, ui } = await createController();
 
@@ -720,15 +676,13 @@ test('el handler de la hoja configura el paquete sin arrancar el bucle', async (
 
 /* ---------------------------------------------------------------- controles */
 
-test('GameControls: FEVER compra, la insignia rueda el paquete y el azul ejecuta', async () => {
+test('GameControls: el amarillo abre la hoja, el azul ejecuta y el teclado no gira con la hoja abierta', async () => {
   const { GameControls } = await loadUiModule('components/GameControls.js');
 
   const calls = [];
   const controller = {
     autoRunning: false,
-    cycleQuickSpins: () => calls.push('cycle'),
     openFeverSheet: () => calls.push('feature'),
-    buyFeature: () => calls.push('buy'),
     toggleAuto: () => calls.push('auto'),
     spin: () => calls.push('spin'),
     stopAuto: () => calls.push('stopAuto'),
@@ -740,7 +694,6 @@ test('GameControls: FEVER compra, la insignia rueda el paquete y el azul ejecuta
   const refs = {
     spinBtn: fakeNode(),
     featureBtn: fakeNode(),
-    autoPack: fakeNode(),
     autoBtn: fakeNode(),
     betUp: fakeNode(),
     betDown: fakeNode(),
@@ -759,296 +712,49 @@ test('GameControls: FEVER compra, la insignia rueda el paquete y el azul ejecuta
 
   new GameControls({ ui: { refs, busy: false, handlers: {} }, controller, documentRef }).mount();
 
-  refs.autoPack.click();
   refs.featureBtn.click();
   refs.autoBtn.click();
-  assert.deepEqual(
-    calls,
-    ['cycle', 'buy', 'auto'],
-    'la insignia rueda el paquete, el FEVER compra el bonus y el azul juega el paquete'
-  );
+  assert.deepEqual(calls, ['feature', 'auto'], 'ninguno de los dos gira por su cuenta');
 
   sheet.hidden = false;
   keydown({ code: 'Space', key: ' ', target: {}, preventDefault() {} });
-  assert.deepEqual(calls, ['cycle', 'buy', 'auto'], 'con la hoja abierta no se gira');
+  assert.deepEqual(calls, ['feature', 'auto'], 'con la hoja abierta no se gira');
 
   sheet.hidden = true;
   keydown({ code: 'Space', key: ' ', target: {}, preventDefault() {} });
   assert.deepEqual(
     calls,
-    ['cycle', 'buy', 'auto', 'spin'],
+    ['feature', 'auto', 'spin'],
     'al cerrar, la barra espaciadora vuelve a girar'
   );
 });
 
-test('GameControls: la insignia rueda el paquete y el GIRAR detiene el autogiro en marcha', async () => {
-  const { GameControls } = await loadUiModule('components/GameControls.js');
-
-  const calls = [];
-  const controller = {
-    autoRunning: false,
-    cycleQuickSpins: () => calls.push('cycle'),
-    openFeverSheet: () => calls.push('sheet'),
-    buyFeature: () => calls.push('buy'),
-    toggleAuto: () => calls.push('auto'),
-    spin: () => calls.push('spin'),
-    stopAuto: (message) => calls.push(`stop:${message}`),
-    changeBet: () => calls.push('bet'),
-    setMaxBet: () => calls.push('max'),
-    startDemoMode: () => calls.push('demo')
-  };
-
-  const refs = {
-    spinBtn: fakeNode(),
-    featureBtn: fakeNode(),
-    autoPack: fakeNode(),
-    autoBtn: fakeNode(),
-    betUp: fakeNode(),
-    betDown: fakeNode(),
-    betMax: fakeNode(),
-    demoBtn: fakeNode()
-  };
-
-  const sheet = fakeNode({ hidden: true });
-  let keydown = null;
-  const documentRef = {
-    addEventListener: (type, handler) => {
-      if (type === 'keydown') keydown = handler;
-    },
-    getElementById: () => sheet
-  };
-
-  new GameControls({ ui: { refs, busy: false, handlers: {} }, controller, documentRef }).mount();
-
-  refs.autoPack.click();
-  assert.deepEqual(calls, ['cycle'], 'la insignia rueda el paquete sin girar ni gastar saldo');
-
-  /* Con el bucle en marcha el pulsador rojo es la parada rapida. */
-  controller.autoRunning = true;
-  refs.spinBtn.click();
-  assert.deepEqual(
-    calls,
-    ['cycle', 'stop:Automático detenido'],
-    'el GIRAR detiene la tanda automatica en curso'
-  );
-
-  controller.autoRunning = false;
-  refs.spinBtn.click();
-  assert.deepEqual(
-    calls,
-    ['cycle', 'stop:Automático detenido', 'spin'],
-    'con el bucle parado el GIRAR vuelve a girar'
-  );
-
-  /* Space sobre la insignia no lanza tirada: el boton ya hace su trabajo. */
-  const badge = { closest: (selector) => (selector === '#btn-auto-pack' ? badge : null) };
-  keydown({ code: 'Space', key: ' ', target: badge, shiftKey: false, preventDefault() {} });
-  assert.deepEqual(calls.at(-1), 'spin', 'la barra espaciadora no gira desde la insignia');
-  assert.ok(!calls.includes('sheet'), 'Space sin Shift no abre la hoja');
-
-  /* Shift+Enter es el atajo de la hoja, sin rueda de por medio. */
-  keydown({ code: 'Enter', key: 'Enter', target: badge, shiftKey: true, preventDefault() {} });
-  assert.equal(calls.at(-1), 'sheet', 'Shift+Enter abre la hoja desde la insignia');
-});
-
-test('GameControls: la pulsacion larga de la insignia abre la hoja y no rueda el paquete', async () => {
-  const { GameControls } = await loadUiModule('components/GameControls.js');
-
-  const calls = [];
-  const controller = {
-    autoRunning: false,
-    cycleQuickSpins: () => calls.push('cycle'),
-    openFeverSheet: () => calls.push('sheet'),
-    buyFeature: () => {},
-    toggleAuto: () => {},
-    spin: () => {},
-    stopAuto: () => {},
-    changeBet: () => {},
-    setMaxBet: () => {},
-    startDemoMode: () => {}
-  };
-
-  const refs = {
-    spinBtn: fakeNode(),
-    featureBtn: fakeNode(),
-    autoPack: fakeNode(),
-    autoBtn: fakeNode(),
-    betUp: fakeNode(),
-    betDown: fakeNode(),
-    betMax: fakeNode(),
-    demoBtn: fakeNode()
-  };
-
-  const documentRef = {
-    addEventListener() {},
-    getElementById: () => null
-  };
-
-  new GameControls({
-    ui: { refs, busy: false, handlers: {} },
-    controller,
-    documentRef,
-    longPressMs: 10
-  }).mount();
-
-  /* Mantener el dedo: la hoja, y el `click` que llega al soltar no rueda. */
-  refs.autoPack.emit('pointerdown');
-  await new Promise((resolve) => setTimeout(resolve, 40));
-  assert.deepEqual(calls, ['sheet'], 'mantener pulsada la insignia abre la hoja');
-
-  refs.autoPack.emit('pointerup');
-  refs.autoPack.click();
-  assert.deepEqual(calls, ['sheet'], 'el click posterior no rueda el paquete');
-
-  /* Toque corto: solo rueda. */
-  refs.autoPack.emit('pointerdown');
-  refs.autoPack.emit('pointerup');
-  refs.autoPack.click();
-  assert.deepEqual(calls, ['sheet', 'cycle'], 'un toque corto solo rueda el paquete');
-
-  /* Salir del pulsador antes del umbral cancela la pulsacion larga. */
-  refs.autoPack.emit('pointerdown');
-  refs.autoPack.emit('pointerleave');
-  await new Promise((resolve) => setTimeout(resolve, 40));
-  assert.deepEqual(calls, ['sheet', 'cycle'], 'salir del pulsador cancela la hoja');
-
-  /* El menu contextual del sistema no debe tapar la capsula. */
-  let prevented = 0;
-  refs.autoPack.emit('contextmenu', { preventDefault: () => { prevented += 1; } });
-  assert.equal(prevented, 1, 'el contextmenu se bloquea sobre la insignia');
-});
-
-test('la insignia del paquete refleja el paquete y se apaga con el motor ocupado', async () => {
-  const ui = await createView();
-  const pack = ui.refs.autoPack;
-
-  assert.equal(ui.setQuickSpins(10), true);
-  assert.match(
-    pack.getAttribute('aria-label'),
-    /Paquete de tiradas automáticas · 10\./,
-    'el paquete vigente viaja en el nombre accesible, no solo en la cifra'
-  );
-  assert.equal(ui.refs.autoCount.textContent, 'x10');
-  assert.equal(pack.disabled, false, 'en reposo se cambia de paquete');
-
-  ui.setBusy(true);
-  assert.equal(pack.disabled, true, 'con una ronda en curso el paquete esta comprometido');
-
-  ui.setBusy(false);
-  ui.setAuto(true, 10);
-  assert.equal(pack.disabled, true, 'con el bucle en marcha tampoco se reconfigura');
-  assert.equal(ui.refs.autoCount.textContent, 'x10', 'la insignia sigue contando la tanda');
-
-  ui.setAuto(false, 0);
-  assert.equal(pack.disabled, false, 'al parar la insignia vuelve a estar viva');
-});
-
-test('paintAutoCount_ rueda la cifra: la saliente sale y la nueva entra desde abajo', async () => {
-  const ui = await createView();
-  const classes = [];
-  const ghosts = [];
-  const attached = [];
-  const host = {
-    offsetWidth: 48,
-    querySelectorAll: () => attached.filter((node) => node.attached),
-    appendChild(node) { node.parentNode = host; node.attached = true; attached.push(node); },
-    removeChild(node) { node.attached = false; }
-  };
-
-  const count = ui.refs.autoCount;
-  count.parentNode = host;
-  count.classList = {
-    add: (name) => classes.push(['add', name]),
-    remove: (name) => classes.push(['remove', name]),
-    toggle() {}
-  };
-  count.addEventListener = () => {};
-  count.textContent = '';
-
-  const previousDocument = globalThis.document;
-  globalThis.document = {
-    createElement: (tag) => {
-      const node = fakeNode();
-      node.tagName = tag;
-      node.attached = false;
-      node.parentNode = null;
-      node.remove = () => { node.attached = false; };
-      ghosts.push(node);
-      return node;
-    }
-  };
-
-  try {
-    /* Primer pintado: no hay cifra anterior, asi que no hay tambor. */
-    ui.setQuickSpins(10);
-    assert.equal(count.textContent, 'x10');
-    assert.equal(ghosts.length, 0, 'sin cifra previa el tambor no se pinta');
-
-    /* Segundo paquete: se clona la cifra saliente y la nueva entra desde abajo. */
-    ui.setQuickSpins(25);
-    assert.equal(count.textContent, 'x25');
-    assert.equal(ghosts.length, 1, 'la cifra saliente se clona');
-    assert.equal(ghosts[0].className, 'pill__roll-ghost');
-    assert.equal(ghosts[0].textContent, 'x10', 'el clon lleva la cifra que sale');
-    assert.equal(ghosts[0].getAttribute('aria-hidden'), 'true', 'el clon es solo pintura');
-    assert.deepEqual(
-      classes.slice(-2),
-      [['remove', 'is-roll-in'], ['add', 'is-roll-in']],
-      'la cifra viva reinicia la animacion de entrada'
-    );
-    assert.equal(attached.filter((node) => node.attached).length, 1, 'el tambor vive en el pulsador');
-
-    /* `animationend` retira el clon y la clase de entrada. */
-    ghosts[0].emit('animationend');
-    assert.equal(attached.filter((node) => node.attached).length, 0, 'el clon se retira');
-    assert.deepEqual(classes.at(-1), ['remove', 'is-roll-in'], 'la clase de entrada se limpia');
-  } finally {
-    if (previousDocument === undefined) delete globalThis.document;
-    else globalThis.document = previousDocument;
-  }
-});
-
-test('el FEVER se apaga cuando el saldo no cubre las 100 apuestas', async () => {
-  const rich = await createView({ betCredits: 1, balanceCents: 100000 });
-  assert.equal(rich.refs.featureBtn.disabled, false, '100,00 de bonus caben en 1.000,00');
-
-  rich.setBet(100);
-  rich.updateAffordability(100000, 10000);
-  assert.equal(
-    rich.refs.featureBtn.disabled,
-    true,
-    'con 100,00 de apuesta el bonus cuesta 10.000,00 y el saldo no llega'
-  );
-  assert.equal(rich.refs.featureCost.textContent, '100x · 10.000,00', 'el subtitulo publica el precio real');
-});
-
 /* ------------------------------------------------------- marcado y estilos */
 
-test('el marcado trae FEVER, la insignia del paquete y la hoja GIROS RAPIDOS', () => {
+test('el marcado trae el pulsador de giros rapidos, la pildora del paquete y la hoja', () => {
   const html = fs.readFileSync(path.join(ROOT_DIR, 'public', 'index.html'), 'utf8');
 
   assert.match(
     html,
-    /id="btn-auto-pack"[^>]*aria-haspopup="dialog"[^>]*aria-controls="fever-sheet"/,
-    'la insignia del paquete es el disparador de la hoja'
+    /id="btn-feature"[^>]*aria-haspopup="dialog"[^>]*aria-controls="fever-sheet"/,
+    'el amarillo es el disparador de la hoja'
   );
-  assert.match(html, /<span id="auto-count">x10<\/span>/, 'la insignia arranca con el paquete por defecto');
-  assert.match(html, /<span class="btn__title">FEVER<\/span>/, 'rotulo del pulsador que compra el bonus');
+  assert.match(html, /<span class="btn__title">FEVER<\/span>/, 'rotulo principal del pulsador');
   assert.match(
     html,
-    /<span class="pill" id="feature-cost">100x · 1,00<\/span>/,
-    'el FEVER publica su coste en la capsula de valor del caramelo'
+    /<span class="pill">x5 · x10 · x25<\/span>/,
+    'el catalogo se anuncia en la capsula del pulsador'
   );
-  assert.doesNotMatch(html, /id="feature-options"/, 'los chips salieron del panel');
-  assert.doesNotMatch(html, /class="btn__opt"/, 'no quedan chips: el paquete se elige en la hoja');
+  assert.match(
+    html,
+    /<span class="pill" id="btn-auto-pack"><span id="auto-count">x10<\/span><\/span>/,
+    'la pildora del azul es texto: no abre la hoja ni cicla el paquete'
+  );
   assert.doesNotMatch(
     html,
-    /id="btn-feature"[^>]*aria-haspopup/,
-    'el FEVER compra: no abre dialogos'
+    /<button[^>]*id="btn-auto-pack"/,
+    'la pildora no es un pulsador: el paquete se elige en la hoja'
   );
-  assert.doesNotMatch(html, /class="statusbar"/, 'el pie del panel ya no publica estado ni version');
-  assert.doesNotMatch(html, /id="status-text"/, 'sin barra de estado no queda texto de sesion');
-  assert.doesNotMatch(html, /id="engine-text"/, 'ni la version del motor');
   assert.match(
     html,
     /<h2 class="fever__title" id="fever-title">Giros Rápidos<\/h2>/,
@@ -1060,9 +766,10 @@ test('el marcado trae FEVER, la insignia del paquete y la hoja GIROS RAPIDOS', (
     /aria-describedby="fever-lead"/,
     'la descripcion de la hoja queda enlazada al dialogo'
   );
+  assert.doesNotMatch(html, /id="feature-cost"/, 'la capsula del coste del bonus ya no existe');
 });
 
-test('el panel, los mandos del arte y la hoja estan en la fuente y en el minificado', () => {
+test('los estilos de la hoja y de la pildora estan en la fuente y en el minificado', () => {
   const css = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.css'), 'utf8');
 
   assert.match(
@@ -1071,72 +778,29 @@ test('el panel, los mandos del arte y la hoja estan en la fuente y en el minific
     'las tres tarjetas se reparten en una fila'
   );
   assert.match(css, /\.fever__flame\s*\{/, 'la estrella de la cabecera tiene estilo propio');
-
-  /* El panel es el arte: los cinco pulsadores dibujados son ventanas al lienzo. */
   assert.match(
     css,
-    /\.machine__side \{\s*background: url\('\.\.\/\.\.\/assets\/santa-crush\/console\/console-desktop\.webp'\) no-repeat center \/ 100% 100%;/,
-    'la consola de escritorio pinta el arte como carcasa'
+    /\.machine__side \.controls #btn-feature\.gbtn \.pill \{[^}]*max-width: 92%;/,
+    'el catalogo del pulsador usa el ancho del caramelo'
   );
   assert.match(
     css,
-    /\.machine__side \.controls #btn-feature,\s*\n\s*\.machine__side \.controls #btn-auto \{/,
-    'FEVER y AUTO recortan su caramelo del lienzo (no se pinta capsula encima)'
-  );
-  assert.match(
-    css,
-    /\.machine__side \.controls #btn-auto \{[^}]*--art-x: 51\.96;/,
-    'el AUTO es el caramelo azul del pie'
-  );
-  assert.match(
-    css,
-    /\.machine__side \.controls #btn-feature \{[^}]*--art-x: 10\.8;/,
-    'el FEVER es el caramelo amarillo del pie'
+    /\.machine__side \.controls #btn-feature \.pill \{ display: none; \}/,
+    'en movil el catalogo no se pinta sobre el arte'
   );
 
-  /* El unico pulsador que se pinta es el GIRAR grande de la banda libre. */
-  const spin = [...css.matchAll(
-    /\.machine__side \.controls \.btn--spin,\s*\n\s*\.machine__side \.controls #btn-spin \{([^}]*)\}/g
-  )]
-    .map((match) => match[1])
-    .find((body) => body.includes('left: 12%;'));
-  assert.ok(spin, 'El GIRAR declara su capsula propia');
-  assert.match(spin, /top: 67\.4%;/, 'arranca bajo la lectura del saldo');
-  assert.match(spin, /width: 76%;/, 'y ocupa el ancho de la banda libre');
-  assert.match(spin, /linear-gradient\(180deg, #ff6a5c/, 'capsula roja candy');
-  /* El marco del GIRAR se mide con la misma vara que el resto de mandos: borde
-     de 3 px —el grosor con el que el arte dibuja el aro de FEVER y AUTO— y el
-     radio de capsula (999 px) que comparten las pastillas del pie. Antes era un
-     anillo de `box-shadow`, y los modos de bajo consumo reescriben esa
-     propiedad con `!important`: la capsula grande se quedaba sin marco. */
-  assert.match(spin, /border: 3px solid transparent;/, 'marco de 3 px, el de los caramelos del pie');
-  assert.match(spin, /border-radius: 999px;/, 'capsula: el mismo radio que las pastillas');
-  assert.match(spin, /background-origin: padding-box, border-box;/, 'el oro vive en la capa del borde');
-  assert.match(spin, /background-clip: padding-box, border-box;/, 'y no invade la cara carmesi');
-  assert.match(
-    spin,
-    /linear-gradient\(180deg, #fff8cf 0%, #ffd54a 46%, #c9861a 100%\)/,
-    'el aro usa el dorado del sistema'
-  );
-  assert.doesNotMatch(spin, /0 0 0 0\.07em #ffd54a,/, 'el aro ya no es un anillo de sombra');
-  /* La caja global es `border-box`: los 3 px del marco crecen hacia dentro, asi
-     que la capsula conserva su tamano y su contenido no se mueve (medido en
-     Edge a 1440, 1000 y 900 px de ancho: cero desbordamiento en los tres). */
-  assert.match(css, /\*\s*\{\s*box-sizing:\s*border-box;\s*\}/, 'el marco no altera la caja');
-
-  /* Insignia del paquete: hermana del AUTO, en escritorio y en movil. */
+  /* Pildora del paquete: hermana del AUTO y sin eventos, para que su caja no se
+     lleve los clics del caramelo azul. */
   assert.match(
     css,
     /\.machine__side \.controls #btn-auto-pack \{[^}]*position: absolute;[^}]*left: 64\.48%;/,
-    'en escritorio la insignia se apoya en la mitad baja del caramelo azul'
+    'en escritorio la pildora se apoya en la mitad baja del caramelo azul'
   );
-  /* El centro del caramelo azul tiene que quedar libre. La insignia es hermana
-     del AUTO —no puede ser hija: un boton dentro de otro no es marcado valido—
-     asi que su caja se lleva los clics que caen encima. Con el pill arrancando
-     en el 84 % tapaba el punto de gravedad del pulsador (80,21 % + 8,5 % / 2 =
-     84,46 %): pulsar el centro del AUTO rodaba el paquete en vez de arrancar el
-     autogiro, y habia que acertar en el rotulo. Este test compara las dos
-     geometrias declaradas para que no vuelvan a cruzarse. */
+  assert.match(
+    css,
+    /\.machine__side \.controls #btn-auto-pack \{[^}]*pointer-events: none;/,
+    'la pildora es decorativa: no intercepta el clic del AUTO'
+  );
   const pctOf = (body, prop) => {
     const hit = body.match(new RegExp(`${prop}:\\s*(-?\\d+(?:\\.\\d+)?)%`));
     return hit ? Number(hit[1]) : null;
@@ -1146,177 +810,45 @@ test('el panel, los mandos del arte y la hoja estan en la fuente y en el minific
   assert.ok(autoWindow, 'el AUTO declara su ventana en el arte');
   const packFace = [...css.matchAll(/\.machine__side \.controls #btn-auto-pack \{([^}]*)\}/g)]
     .find((match) => match[1].includes('left: 64.48%;'));
-  assert.ok(packFace, 'la insignia declara su caja en escritorio');
+  assert.ok(packFace, 'la pildora declara su caja en escritorio');
   const autoTop = pctOf(autoWindow[1], 'top');
   const autoHeight = pctOf(autoWindow[1], 'height');
   const packTop = pctOf(packFace[1], 'top');
   const packHeight = pctOf(packFace[1], 'height');
   assert.ok(
     packTop > autoTop + autoHeight / 2,
-    'la insignia arranca por debajo del centro del caramelo: el centro sigue siendo del AUTO'
+    'la pildora arranca por debajo del centro del caramelo: el centro sigue siendo del AUTO'
   );
-  assert.ok(packTop + packHeight <= autoTop + autoHeight, 'y la insignia cabe entera dentro del caramelo');
+  assert.ok(packTop + packHeight <= autoTop + autoHeight, 'y cabe entera dentro del caramelo');
   assert.ok(packHeight <= autoHeight * 0.4, 'ocupa menos de la mitad del alto: es una pastilla, no un pulsador');
   assert.match(
     css,
     /\.machine__side \.controls #btn-auto-pack \{[^}]*left: 6\.33%;/,
     'en movil ocupa la capsula 1 del pie, debajo del disco "..."'
   );
+
+  /* GIRAR: el marco es un borde dorado de 3 px, el mismo de FEVER y AUTO. */
+  const spin = [...css.matchAll(/\.machine__side \.controls #btn-spin \{([^}]*)\}/g)]
+    .map((match) => match[1])
+    .find((body) => body.includes('left: 12%;')) || '';
+  assert.match(spin, /border: 3px solid transparent;/, 'marco de 3 px, el de los caramelos del pie');
+  assert.match(spin, /border-radius: 999px;/, 'capsula: el mismo radio que las pastillas');
+  assert.match(spin, /background-origin: padding-box, border-box;/, 'el oro vive en la capa del borde');
+  assert.match(spin, /background-clip: padding-box, border-box;/, 'y no invade la cara carmesi');
   assert.match(
-    css,
-    /#btn-auto-pack \.pill__roll-ghost/,
-    'la cifra saliente del rodillo tiene su capa'
+    spin,
+    /linear-gradient\(180deg, #fff8cf 0%, #ffd54a 46%, #c9861a 100%\)/,
+    'el aro usa el dorado del sistema'
   );
-  assert.match(
-    css,
-    /#btn-auto-pack #auto-count\.is-roll-in/,
-    'la cifra entrante se anima al cambiar de paquete'
-  );
-  assert.match(css, /#btn-auto-pack:focus-visible\s*\{/, 'la insignia tiene anillo de foco propio');
-  assert.match(css, /#btn-auto-pack:disabled\s*\{/, 'la insignia se apaga con el motor ocupado');
-  assert.match(
-    css,
-    /#btn-feature \.pill \{ display: none; \}/,
-    'en movil el precio del FEVER no se pinta sobre el arte'
-  );
+
   assert.doesNotMatch(css, /\.btn__opts\s*\{/, 'los chips salieron de la hoja de estilos');
-  assert.doesNotMatch(css, /\.btn__opt\s*\{/, 'no queda estilo de chip que mantener');
+  assert.doesNotMatch(css, /pill__roll-ghost/, 'el rodillo salio de la hoja de estilos');
+  assert.doesNotMatch(css, /is-roll-in/, 'no queda animacion de rodillo que mantener');
 
   const min = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.min.css'), 'utf8');
   assert.ok(min.includes('.fever__flame'), 'el minificado conserva la estrella de la hoja');
-  assert.ok(min.includes('#btn-auto-pack:disabled'), 'el minificado conserva el candado de la insignia');
   assert.ok(min.includes('.machine__side .controls .btn--spin'), 'el minificado conserva el GIRAR grande');
   assert.ok(!min.includes('.btn__opts'), 'el minificado no arrastra los chips');
 });
 
-
-
-/* ------------------------------------------- sincronia de la insignia movil */
-
-test('elegir paquete repinta la insignia aunque el azul tenga aria-pressed pegado', async () => {
-  const ui = await createView();
-
-  /* Atributo pegado: la insignia no puede depender de el para decidir si pinta
-     —un bucle cortado a mitad puede dejarlo en `true`—, el estado manda. */
-  ui.refs.autoBtn.setAttribute('aria-pressed', 'true');
-
-  assert.equal(ui.setQuickSpins(25), true);
-  assert.equal(ui.refs.autoCount.textContent, 'x25', 'la cifra cambia en la misma llamada');
-  assert.match(
-    ui.refs.autoPack.getAttribute('aria-label'),
-    /Paquete de tiradas automáticas · 25\./,
-    'el nombre accesible viaja con la cifra'
-  );
-
-  assert.equal(ui.setQuickSpins(5), true);
-  assert.equal(ui.refs.autoCount.textContent, 'x5', 'y sigue cambiando en cada paquete');
-});
-
-test('el clon del rodillo se retira solo aunque no llegue animationend', async () => {
-  const ui = await createView();
-  ui.rollCleanupMs = 5;
-
-  const attached = [];
-  const host = {
-    offsetWidth: 48,
-    querySelectorAll: () => attached.filter((node) => node.attached),
-    appendChild(node) { node.parentNode = host; node.attached = true; attached.push(node); },
-    removeChild(node) { node.attached = false; }
-  };
-
-  const count = ui.refs.autoCount;
-  count.parentNode = host;
-  count.classList = { add() {}, remove() {}, toggle() {} };
-  count.textContent = '';
-
-  const previousDocument = globalThis.document;
-  globalThis.document = {
-    createElement: () => {
-      const node = fakeNode();
-      node.attached = false;
-      node.parentNode = null;
-      return node;
-    }
-  };
-
-  try {
-    ui.setQuickSpins(10);
-    ui.setQuickSpins(25);
-    assert.equal(attached.length, 1, 'la cifra saliente se clona');
-    assert.equal(count.textContent, 'x25', 'la cifra viva es la nueva');
-
-    /* Sin `animationend` (pestaña en segundo plano, animaciones apagadas con la
-       pagina abierta) el respaldo retira el clon: si se quedara, taparia la
-       cifra nueva con la vieja. */
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    assert.equal(attached.filter((node) => node.attached).length, 0, 'el clon se retira igual');
-  } finally {
-    if (previousDocument === undefined) delete globalThis.document;
-    else globalThis.document = previousDocument;
-  }
-});
-
-test('con movimiento reducido activado en vivo la cifra cambia sin rodillo', async () => {
-  const ui = await createView();
-  const classes = [];
-  let created = 0;
-
-  const count = ui.refs.autoCount;
-  count.parentNode = { offsetWidth: 48, appendChild() {}, removeChild() {}, querySelectorAll: () => [] };
-  count.classList = {
-    add: (name) => classes.push(name),
-    remove() {},
-    toggle() {}
-  };
-  count.textContent = '';
-
-  const previousDocument = globalThis.document;
-  const previousWindow = globalThis.window;
-  globalThis.document = {
-    createElement: () => {
-      created += 1;
-      return fakeNode();
-    }
-  };
-  /* El sistema activa "reducir movimiento" con la pagina ya cargada: el CSS
-     deja de animar en vivo y la vista tiene que enterarse en el momento. */
-  globalThis.window = { matchMedia: () => ({ matches: true }) };
-
-  try {
-    ui.setQuickSpins(10);
-    ui.setQuickSpins(25);
-    assert.equal(count.textContent, 'x25', 'el texto se actualiza igual de rapido');
-    assert.equal(created, 0, 'sin animacion no se clona la cifra saliente');
-    assert.deepEqual(classes, [], 'tampoco se marca la entrada');
-  } finally {
-    if (previousDocument === undefined) delete globalThis.document;
-    else globalThis.document = previousDocument;
-    if (previousWindow === undefined) delete globalThis.window;
-    else globalThis.window = previousWindow;
-  }
-});
-
-test('ciclar el paquete desde el controlador repinta la insignia de la vista', async () => {
-  const { GameController } = await loadUiModule('controllers/GameController.js');
-  const ui = await createView();
-  const sfx = createSfxSpy();
-
-  const api = { spin: async () => ({ ok: true }), gameInfo: async () => ({}) };
-  const session = { isDemo: false, invalidate() {}, resolve: async () => ({ source: 'dev' }) };
-  const game = new GameController({ api, ui, sfx, session });
-
-  assert.equal(ui.refs.autoCount.textContent, 'x10', 'arranca con el paquete por defecto');
-
-  assert.equal(game.cycleQuickSpins(), 25);
-  assert.equal(game.quickSpinsPick, 25);
-  assert.equal(ui.refs.autoCount.textContent, 'x25', 'el toque corto deja la cifra nueva');
-
-  assert.equal(game.cycleQuickSpins(), 5);
-  assert.equal(ui.refs.autoCount.textContent, 'x5', 'y la siguiente, tambien');
-
-  assert.equal(game.pickQuickSpins(10), true);
-  assert.equal(game.quickSpinsPick, 10);
-  assert.equal(ui.refs.autoCount.textContent, 'x10', 'elegir en la hoja repinta la pastilla');
-  assert.match(ui.refs.autoPack.getAttribute('aria-label'), /· 10\./);
-});
 
