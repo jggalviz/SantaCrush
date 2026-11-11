@@ -1802,6 +1802,43 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
     );
   }
 
+  // Los simbolos llenan su casilla. El aire lateral del tablero se ataca en las
+  // tres capas que lo sumaban: el `padding` del panel, el hueco entre casillas y
+  // el 12 % de margen interno de cada simbolo. Las dos hojas —movil y
+  // escritorio— comparten contrato: el caramelo se dibuja de borde a borde con
+  // `contain` (igual que los sellos de marca) y el aire del tablero queda en el
+  // filo que necesita el radio de las esquinas del panel.
+  const symbolBodies = bodies('\\.machine__table \\.tile__img');
+  assert.equal(symbolBodies.length, 2, 'Movil y escritorio declaran la caja del simbolo');
+  for (const body of symbolBodies) {
+    for (const declaration of ['left: 0;', 'top: 0;', 'width: 100%;', 'height: 100%;']) {
+      assert.ok(
+        body.includes(declaration),
+        'El simbolo ocupa su casilla con `' + declaration + '`'
+      );
+    }
+    assert.match(body, /object-fit:\s*contain;/, 'La proporcion del caramelo se mantiene');
+  }
+  for (const declaration of [
+    'padding: clamp(1px, calc(var(--m-w) * 0.0026), 2px);',
+    'padding: clamp(1px, calc(var(--frame-h) * 0.0026), 3px);',
+  ]) {
+    assert.ok(
+      windowBodies.some((body) => body.includes(declaration)),
+      'El aire del tablero se queda en el filo: `' + declaration + '`'
+    );
+  }
+  const framedGridBodies = bodies('\\.machine__table \\.grid');
+  for (const declaration of [
+    'gap: clamp(1px, calc(var(--m-w) * 0.0037), 2.5px);',
+    'gap: clamp(2px, calc(var(--frame-h) * 0.0065), 6px);',
+  ]) {
+    assert.ok(
+      framedGridBodies.some((body) => body.includes(declaration)),
+      'El hueco entre casillas es una linea de separacion: `' + declaration + '`'
+    );
+  }
+
   // Geometria de la columna lateral (d2 · 655 x 1091): la corona y la consola son
   // una sola pieza, asi que el ancho sale del alto comun y no queda ninguna
   // separacion vertical entre ambas mitades.

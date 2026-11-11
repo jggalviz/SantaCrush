@@ -53,6 +53,13 @@ arriba, reflejo dorado al pie y filo dorado). Las casillas bajan a vidrio con
 alfa para que el panel se siga leyendo por detras y el filo blanco translucido
 mantiene separadas las 30 celdas.
 
+Los once simbolos se dibujan **a sangre** dentro de su casilla (`100 %` de ancho
+y alto con `object-fit: contain`, igual que los sellos de marca `SC`/`MX`): el
+panel solo reserva el filo que pide el radio de sus esquinas y el hueco entre
+casillas es la linea de separacion, no aire. Asi no queda margen lateral muerto
+dentro de la ventana del marco y cada caramelo ocupa el mayor alto que le deja la
+casilla (el alto manda porque el dibujo es casi cuadrado y la casilla apaisada).
+
 El modal de reglas y tabla de pagos no es una hoja blanca: `theme.css` lo pinta
 como la **consola del juego**, con las mismas cuatro capas del tablero —reticula
 de 1 px, brillo de estadio arriba, reflejo dorado al pie y cuerpo marino— mas el

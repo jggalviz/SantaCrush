@@ -5229,8 +5229,9 @@ body.is-demo .machine__side .controls .balance::after {
     margin: 0;
     /* El aire del tablero se recorta al mínimo: cada píxel que se lleva el
        padding es alto que pierden las cinco filas. Medidas atadas a `--m-w`
-       para que el aire acompañe al arte en cualquier orientación. */
-    padding: clamp(2px, calc(var(--m-w) * 0.006), 4px);
+       para que el aire acompañe al arte en cualquier orientación; solo queda el
+       filo que necesita el radio de las esquinas del panel. */
+    padding: clamp(1px, calc(var(--m-w) * 0.0026), 2px);
     border: 0;
     /* Mismo radio que las esquinas del hueco del arte (31 px de 1392 = 2,2 %):
        con un radio mayor el tablero se retiraba de la esquina y asomaba el fondo
@@ -5254,14 +5255,16 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__table .board::after { display: none; }
 
   /* La cuadrícula ocupa el hueco exacto de la ventana: las celdas se reparten el
-     alto disponible en lugar de imponer su relación de aspecto. */
+     alto disponible en lugar de imponer su relación de aspecto. El hueco entre
+     casillas es la línea de separación, no aire: en un tablero de 317 px cada
+     píxel de hueco se lo quitan las seis columnas. */
   .machine__table .grid {
     width: 100%;
     height: 100%;
     aspect-ratio: auto;
     max-width: none;
     max-height: none;
-    gap: clamp(2px, calc(var(--m-w) * 0.0055), 3.5px);
+    gap: clamp(1px, calc(var(--m-w) * 0.0037), 2.5px);
   }
 
   .machine__table .tile {
@@ -5271,23 +5274,29 @@ body.is-demo .machine__side .controls .balance::after {
     border-radius: clamp(5px, calc(var(--m-w) * 0.017), 9px);
   }
 
-  /* El símbolo se dibuja dentro del 88 % central de su celda: `width`/`height`
-     en % sí se resuelven contra la caja ya definida del `tile` (el 85 % de
-     `height` caía en una fila de rejilla de alto automático y la imagen crecía
-     hasta el 107 %, cortándose por arriba y por abajo). `contain` mantiene la
-     proporción del caramelo aunque la celda sea más ancha que alta. */
+  /* El símbolo se dibuja a sangre en su celda, como los sellos de marca:
+     `width`/`height` en % se resuelven contra la caja ya definida del `tile` (el
+     85 % de `height` caía en una fila de rejilla de alto automático y la imagen
+     crecía hasta el 107 %, cortándose por arriba y por abajo). `contain` mantiene
+     la proporción del caramelo aunque la celda sea más ancha que alta. Antes se
+     quedaba en el 88 % central y ese 12 % de aire era el margen lateral que se
+     veía dentro de cada casilla. */
   .machine__table .tile__img {
     position: absolute;
-    left: 6%;
-    top: 6%;
-    width: 88%;
-    height: 88%;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     max-width: none;
     max-height: none;
     padding: 0;
     object-fit: contain;
     object-position: center;
   }
+
+  /* En táctil el `:hover` se queda pegado después del toque: con el símbolo a
+     sangre, cualquier crecimiento le come el dibujo contra el filo. */
+  .machine__table .tile:hover .tile__img { transform: none; }
 }
 /* --------------------------------------------------------------------------
    Anchos intermedios (600-899 px) · la marca se reserva su propio cielo
@@ -7337,7 +7346,10 @@ body.is-demo .machine__side .controls .balance::after {
     width: 88.32%;
     height: 77.35%;
     margin: 0;
-    padding: clamp(3px, calc(var(--frame-h) * 0.007), 8px);
+    /* El aire del tablero se queda en el filo: cada píxel que se lleva el padding
+       es ancho y alto que pierden las cinco filas. Solo se reserva lo justo para
+       que las esquinas redondeadas del panel no muerdan la primera casilla. */
+    padding: clamp(1px, calc(var(--frame-h) * 0.0026), 3px);
     border: 0;
     border-radius: calc(var(--frame-h) * 0.026);
     max-width: none;
@@ -7366,14 +7378,16 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__table .board::after { display: none; }
 
   /* La cuadricula ocupa el hueco exacto: cinco filas se reparten el alto en
-     lugar de imponer su relacion de aspecto (que recortaria las casillas). */
+     lugar de imponer su relacion de aspecto (que recortaria las casillas). El
+     hueco entre casillas es solo la linea de separacion: 8,4 px de aire en un
+     marco de 767 px se leian como tablero vacio entre columna y columna. */
   .machine__table .grid {
     width: 100%;
     height: 100%;
     aspect-ratio: auto;
     max-width: none;
     max-height: none;
-    gap: clamp(3px, calc(var(--frame-h) * 0.011), 9px);
+    gap: clamp(2px, calc(var(--frame-h) * 0.0065), 6px);
   }
 
   .machine__table .tile {
@@ -7383,19 +7397,28 @@ body.is-demo .machine__side .controls .balance::after {
     border-radius: clamp(6px, calc(var(--frame-h) * 0.018), 15px);
   }
 
-  /* El caramelo se dibuja en el 88 % central de su celda: `contain` mantiene su
-     proporcion aunque la celda sea mas ancha que alta. */
+  /* El caramelo llena su casilla de borde a borde, igual que los sellos de marca
+     (`SC`/`MX`): `contain` mantiene la proporcion del maestro —335 x 341 px— y
+     la casilla es la unica que manda en el tamano. Antes se dibujaba en el 88 %
+     central y ese 12 % de aire, sumado al hueco entre casillas y al padding del
+     tablero, era el margen lateral que se leia como tablero vacio. */
   .machine__table .tile__img {
     position: absolute;
-    left: 6%;
-    top: 6%;
-    width: 88%;
-    height: 88%;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     max-width: none;
     max-height: none;
     padding: 0;
     object-fit: contain;
     object-position: center;
+  }
+
+  /* Con el simbolo a sangre el 1,045 de la hoja base cortaba el dibujo contra el
+     filo de la casilla: el hover crece lo justo para seguir leyendose vivo. */
+  .machine__table .tile:hover .tile__img {
+    transform: translateY(-1px) scale(1.03);
   }
 }
 
@@ -8043,6 +8066,17 @@ body.is-demo .machine__side .controls .balance::after {
 @keyframes softWave {
   0%, 100% { translate: 0 0; }
   50% { translate: 0 calc(-1 * var(--wave-lift, 2.6px)); }
+}
+
+/* En el tablero del marco el simbolo va a sangre (100 % de la casilla), asi que
+   la onda ya no tiene aire donde flotar: con los 2-3 px de la hoja base el ciclo
+   le comeria el filo de arriba y dejaria un claro abajo. Se recorta a 1 px, que
+   se sigue leyendo como respiracion. Solo aplica donde la onda corre: por debajo
+   de 1024 px la apaga la hoja tactil. */
+@media (min-width: 1024px) {
+  .machine__table :is(.tile__img, .tile__glyph, .tile__bomb-value) {
+    --wave-lift: 1px;
+  }
 }
 
 /* La onda vive SOLO en reposo: anticipacion, giro, rebote, premio, pop,
