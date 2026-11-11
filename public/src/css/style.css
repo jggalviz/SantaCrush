@@ -7854,16 +7854,6 @@ body.is-demo .machine__side .controls .balance::after {
   text-shadow: 0 2px 0 #a25400, 0 0 18px rgba(255, 238, 158, 0.8);
 }
 
-.win__hint {
-  font-size: clamp(10px, 1.6vw, 12px);
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 248, 232, 0.72);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  animation: win-hint 2.4s ease-in-out infinite;
-}
-
 /* --------------------------------------------------------------------------
    Intensidad de la pantalla de victoria
    --------------------------------------------------------------------------
@@ -7899,11 +7889,6 @@ body.is-demo .machine__side .controls .balance::after {
   animation: none;
 }
 
-.win.is-low .win__hint {
-  animation: none;
-  opacity: 0.55;
-}
-
 @keyframes win-pop-soft {
   from { opacity: 0; transform: scale(0.94); }
   to { opacity: 1; transform: scale(1); }
@@ -7925,11 +7910,6 @@ body.is-demo .machine__side .controls .balance::after {
 @keyframes win-amount-pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.035); }
-}
-
-@keyframes win-hint {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.85; }
 }
 
 /* Cierre: el velo y el cartel se retiran con `opacity`/`scale` antes de que
@@ -7958,13 +7938,11 @@ body.is-demo .machine__side .controls .balance::after {
   .win__art-wrap,
   .win__art,
   .win__amount,
-  .win__hint,
   .win.is-closing .win__stage,
   .win.is-low .win__rays,
   .win.is-low .win__art-wrap,
   .win.is-low .win__art,
   .win.is-low .win__amount,
-  .win.is-low .win__hint,
   .win.is-high .win__art { animation: none; }
 
   .win__rays { opacity: 0.35; }
