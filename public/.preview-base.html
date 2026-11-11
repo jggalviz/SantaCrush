@@ -244,7 +244,7 @@
   <div class="fx" id="fx" aria-hidden="true"></div>
 
   <!-- Pantalla de victoria (GRAN PREMIO / MEGA / EPICA). Se muestra encima del
-       juego con el cartel WIN, rayos giratorios y pelotas cayendo por los
+       juego con la animacion WIN (Santa, letrero dorado y regalos), rayos
        laterales; `uiManager` la cierra sola a los 3-4 s o con un toque.
        Es decorativa para lectores de pantalla (`aria-hidden`): la cifra y el
        nivel los anuncia el banner del tablero, que es la region viva. -->
@@ -253,8 +253,13 @@
     <div class="win__rain" id="win-rain" aria-hidden="true"></div>
     <div class="win__stage">
       <div class="win__art-wrap">
-        <img class="win__art" id="win-art" src="/src/assets/victoria_navidena.webp"
-             alt="" width="1200" height="918" decoding="async" loading="lazy" />
+        <!-- WebP animado (3 fotogramas de 350 ms en bucle) y su fotograma fijo:
+             el CSS cambia uno por otro con `prefers-reduced-motion` porque un
+             WebP animado se reproduce solo. Ambos comparten la caja 724x724. -->
+        <img class="win__art win__art--anim" id="win-art" src="/src/assets/win_celebracion.webp"
+             alt="" width="724" height="724" decoding="async" loading="lazy" />
+        <img class="win__art win__art--still" src="/src/assets/win_celebracion_still.webp"
+             alt="" width="724" height="724" decoding="async" loading="lazy" />
       </div>
       <strong class="win__amount">
         <span id="win-amount">0,00</span>

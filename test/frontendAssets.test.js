@@ -24,8 +24,9 @@ const THEME_PATH = path.join(PUBLIC_DIR, 'src', 'css', 'theme.css');
 const INDEX_PATH = path.join(PUBLIC_DIR, 'index.html');
 const LOGO_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'MERIDIANOBET-CRUSH-LOGO.webp');
 const LOGO_MASTER_PATH = path.join(ROOT_DIR, 'design', 'MeridianoBet Sports Crush Logo.png');
-const WIN_ART_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_navidena.webp');
-const WIN_MASTER_PATH = path.join(ROOT_DIR, 'design', 'victoria_navidena.png');
+const WIN_ART_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'win_celebracion.webp');
+const WIN_ART_STILL_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'win_celebracion_still.webp');
+const WIN_MASTER_PATH = path.join(ROOT_DIR, 'design', 'win_celebracion.gif');
 const WIN_SOUND_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'AUDIO-WIN-NEW-stadium-applause.MP3');
 const MUSIC_SOUND_PATH = path.join(
   PUBLIC_DIR,
@@ -645,105 +646,161 @@ test('la barra superior solo lleva los controles del juego', () => {
   assert.doesNotMatch(html, /[\u{1F507}-\u{1F50A}]/u, 'La barra usa SVG, no emojis de altavoz');
 });
 
-test('el cartel de victoria se sirve en WebP con alfa y el maestro queda fuera de public/', () => {
+test('la animacion de victoria se sirve en WebP animado y el maestro queda fuera de public/', async () => {
   const html = read(INDEX_PATH);
   const css = read(STYLE_PATH);
   const ui = read(path.join(PUBLIC_DIR, 'ui', 'renderers', 'GameView.js'));
   const masters = read(path.join(ROOT_DIR, 'scripts', 'build-santa-masters.js'));
   const winBuild = read(path.join(ROOT_DIR, 'scripts', 'build-win-art.js'));
 
-  // El maestro (2,7 MB) se archiva en `design/`: no viaja al CDN ni se puede
-  // colar como respaldo en `public/src/assets`.
-  assert.ok(fs.existsSync(WIN_MASTER_PATH), 'Falta el maestro design/victoria_navidena.png');
-  assert.ok(fs.statSync(WIN_MASTER_PATH).size > 0, 'El maestro del cartel esta vacio');
-  assert.ok(
-    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'Victoria navideña con mono y regalos.png')),
-    'El PNG maestro no debe quedarse en public/src/assets'
+  // El GIF maestro (494 KB, 3 fotogramas) se archiva en `design/`: no viaja al
+  // CDN ni se puede colar como respaldo en `public/src/assets`.
+  assert.ok(fs.existsSync(WIN_MASTER_PATH), 'Falta el maestro design/win_celebracion.gif');
+  const gif = fs.readFileSync(WIN_MASTER_PATH);
+  assert.ok(gif.length > 0, 'El maestro de la animacion esta vacio');
+  assert.match(
+    gif.toString('ascii', 0, 6),
+    /^GIF8[79]a$/,
+    'design/win_celebracion.gif debe ser el GIF maestro de la celebracion'
   );
+  assert.equal(gif.readUInt16LE(6), 724, 'El maestro mide 724 px de ancho');
+  assert.equal(gif.readUInt16LE(8), 724, 'El maestro mide 724 px de alto (lienzo cuadrado)');
   assert.ok(
-    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_dulce.webp')),
-    'El cartel anterior (victoria_dulce.webp) ya no se sirve'
+    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'win_celebracion.gif')),
+    'El GIF maestro no debe quedarse en public/src/assets'
   );
-  // El cartel recortado a 1,847:1 (banda 1280 x 693) perdia la base del
-  // letrero: campanas, lazo y remate dorado. Ni el asset ni el maestro viejo
-  // vuelven a publicarse; el nombre nuevo ademas evita el `immutable` del CDN.
-  assert.ok(
-    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_deportiva.webp')),
-    'El cartel recortado (victoria_deportiva.webp) ya no se sirve'
-  );
-  assert.ok(
-    !fs.existsSync(path.join(ROOT_DIR, 'design', 'victoria_deportiva.png')),
-    'El maestro recortado (design/victoria_deportiva.png) ya no se conserva'
-  );
-  const victoriaSource = masters.slice(
-    masters.indexOf("wants('victoria')"),
+
+  // El cartel anterior (mono + letrero + campanas, 1200 x 918) se retira: el
+  // overlay pinta ahora la animacion cuadrada. Ni el WebP ni sus maestros
+  // vuelven a publicarse, y el nombre nuevo evita el `immutable` del CDN.
+  for (const retired of ['victoria_navidena.webp', 'victoria_dulce.webp', 'victoria_deportiva.webp']) {
+    assert.ok(
+      !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', retired)),
+      `El cartel anterior (${retired}) ya no se sirve`
+    );
+  }
+  for (const retired of ['victoria_navidena.png', 'victoria_deportiva.png']) {
+    assert.ok(
+      !fs.existsSync(path.join(ROOT_DIR, 'design', retired)),
+      `El maestro anterior (design/${retired}) ya no se conserva`
+    );
+  }
+
+  // `build:santa-masters win` archiva el GIF de diseno y `build:win` lo
+  // convierte sin recortar: ni `cover` ni `extract`, el lienzo se publica entero.
+  const winMasterSource = masters.slice(
+    masters.indexOf("wants('win')"),
     masters.indexOf("wants('fondos')")
   );
-  // Sin `cover` en el codigo: los comentarios del bloque explican justo ese
-  // recorte, asi que se descartan antes de mirar.
-  assert.doesNotMatch(
-    victoriaSource.replace(/\/\/[^\n]*/g, ''),
-    /fit: 'cover'/,
-    'build-santa-masters no debe recortar el cartel con `cover`: se come la base del letrero'
+  assert.match(
+    winMasterSource,
+    /Santa WIN Celebration-Animation\.gif/,
+    'build-santa-masters debe archivar la entrega `Santa WIN Celebration-Animation.gif`'
   );
   assert.match(
-    victoriaSource,
-    /\.trim\(\{ threshold: 8 \}\)/,
-    'El cartel se publica recortado al alfa, sin reencuadrar la relacion'
+    winMasterSource,
+    /win_celebracion\.gif/,
+    'El maestro archivado debe ser design/win_celebracion.gif'
   );
 
-  assert.ok(fs.existsSync(WIN_ART_PATH), 'Falta public/src/assets/victoria_navidena.webp');
+  // Los comentarios de cabecera del build explican justo los recortes que NO se
+  // hacen, asi que se descartan antes de mirar el codigo.
+  const winBuildSource = winBuild.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  assert.doesNotMatch(
+    winBuildSource,
+    /fit:\s*'cover'/,
+    'build:win no debe recortar la animacion con `cover`: se comeria las letras o los regalos'
+  );
+  assert.doesNotMatch(
+    winBuildSource,
+    /\.extract\(/,
+    'build:win no debe recortar la animacion con `extract`: el dibujo se publica entero'
+  );
+  assert.match(winBuild, /const TARGET_WIDTH = 724;/, 'build:win publica la animacion a 724 px nativos');
+  assert.match(winBuildSource, /animated: true/, 'build:win lee y escribe el WebP animado');
+  assert.match(winBuildSource, /alphaQuality: 100/, 'El alfa se publica sin perdida');
+
+  assert.ok(fs.existsSync(WIN_ART_PATH), 'Falta public/src/assets/win_celebracion.webp');
   const binary = fs.readFileSync(WIN_ART_PATH);
-  assert.equal(binary.toString('ascii', 0, 4), 'RIFF', 'El cartel debe ser un contenedor RIFF/WebP');
-  assert.equal(binary.toString('ascii', 8, 12), 'WEBP', 'El cartel debe ser un WebP real');
+  assert.equal(binary.toString('ascii', 0, 4), 'RIFF', 'La animacion debe ser un contenedor RIFF/WebP');
+  assert.equal(binary.toString('ascii', 8, 12), 'WEBP', 'La animacion debe ser un WebP real');
 
   const chunks = webpChunks(binary);
-  assert.equal(chunks[0].fourCC, 'VP8X', 'El cartel debe declarar extensiones (VP8X)');
+  assert.equal(chunks[0].fourCC, 'VP8X', 'La animacion debe declarar extensiones (VP8X)');
   assert.ok(
-    chunks.some((chunk) => chunk.fourCC === 'ALPH'),
-    'El cartel debe conservar el canal alfa del maestro (ALPH): sin el, el velo taparia la pantalla'
-  );
-  assert.ok(
-    chunks.some((chunk) => chunk.fourCC === 'VP8 '),
-    'El cartel debe ser un WebP lossy (VP8), no un PNG disfrazado'
+    binary[chunks[0].offset + 8] & 0x02,
+    'VP8X debe marcar la animacion (flag ANIM): sin el, el overlay perderia la celebracion'
   );
 
-  // Sin deformar y sin recortar: el maestro es el dibujo completo (mono +
-  // letrero + campanas) recortado al alfa, 1394 x 1066 (1,3077:1), y el WebP
-  // de 1200 x 918 conserva esa relacion.
-  const master = fs.readFileSync(WIN_MASTER_PATH);
-  assert.equal(master.toString('ascii', 1, 4), 'PNG', 'design/victoria_navidena.png debe ser el PNG maestro');
-  const masterWidth = master.readUInt32BE(16);
-  const masterHeight = master.readUInt32BE(20);
+  // Sin deformar y sin recortar: el maestro es un lienzo cuadrado de 724 x 724 y
+  // el WebP conserva esas medidas. El CSS reserva la misma caja 1:1.
   const width = binary.readUIntLE(chunks[0].offset + 12, 3) + 1;
   const height = binary.readUIntLE(chunks[0].offset + 15, 3) + 1;
+  assert.equal(width, 724, 'La animacion se sirve a 724 px de ancho (nativo del maestro)');
+  assert.equal(height, 724, 'La animacion se sirve a 724 px de alto (lienzo cuadrado)');
 
-  assert.equal(masterWidth, 1394, 'El maestro del cartel mide 1394 px de ancho');
-  assert.equal(masterHeight, 1066, 'El maestro del cartel mide 1066 px de alto (dibujo completo)');
-  assert.equal(width, 1200, 'El cartel debe servirse a 1200 px de ancho (ver build:win)');
-  assert.equal(height, 918, 'El cartel debe servirse a 918 px de alto (relacion del dibujo)');
-  assert.ok(
-    Math.abs(width / height - masterWidth / masterHeight) < 0.002,
-    `El cartel deforma la caja del maestro: ${width}x${height} contra ${masterWidth}x${masterHeight}`
-  );
-  // El dibujo es apaisado pero no una banda: alto/ancho ~0,765. Si baja de
-  // 0,6 es que alguien recorto la base del letrero para servirlo como banner
-  // (el recorte anterior medía 693/1280 = 0,54 y dejaba el cartel a cuchillo).
-  assert.ok(
-    height / width > 0.6,
-    `La caja ${width}x${height} parece un recorte del cartel, no el dibujo completo`
+  // Bucle infinito y los 3 fotogramas de 350 ms: el overlay dura menos de 5 s y
+  // el brillo no debe cortarse a media animacion.
+  const anim = chunks.find((chunk) => chunk.fourCC === 'ANIM');
+  assert.ok(anim, 'La animacion debe traer el bloque ANIM');
+  assert.equal(binary.readUInt16LE(anim.offset + 12), 0, 'El bucle debe ser infinito (loop 0)');
+  const frames = chunks.filter((chunk) => chunk.fourCC === 'ANMF');
+  assert.equal(frames.length, 3, 'La animacion conserva los 3 fotogramas del maestro');
+  for (const frame of frames) {
+    // ANMF: X (3) + Y (3) + ancho-1 (3) + alto-1 (3) + duracion (3) + flags (1).
+    assert.equal(
+      binary.readUIntLE(frame.offset + 20, 3),
+      350,
+      'Cada fotograma dura 350 ms, como el GIF del diseno'
+    );
+  }
+
+  const animated = await sharp(WIN_ART_PATH, { animated: true }).metadata();
+  assert.equal(animated.format, 'webp');
+  assert.equal(animated.pages, 3, 'El WebP debe declarar 3 paginas');
+  assert.equal(animated.pageHeight, 724, 'Cada pagina mide 724 px de alto (no es la tira del GIF)');
+  assert.deepEqual(animated.delay, [350, 350, 350], 'Los tiempos del GIF se conservan');
+  assert.equal(animated.loop, 0, 'El bucle se conserva en infinito');
+  assert.equal(
+    animated.hasAlpha,
+    true,
+    'La animacion conserva el canal alfa: sin el, el velo taparia el juego'
   );
 
-  // Peso: el dibujo completo a q=76 pesa ~377 KB y se pinta a 720 px CSS como
-  // maximo; 1200 px conservan el detalle retina sin pasar del presupuesto.
+  // Peso: a q=76 con el alfa sin perdida la animacion ronda los 282 KB (el
+  // cartel estatico anterior pesaba 377 KB). El tope deja aire para subir
+  // calidad sin servir un PNG disfrazado.
   assert.ok(
     binary.length < 400 * 1024,
-    `El cartel pesa ${(binary.length / 1024).toFixed(1)} KB (objetivo < 400 KB)`
+    `La animacion pesa ${(binary.length / 1024).toFixed(1)} KB (objetivo < 400 KB)`
   );
-  assert.match(
-    winBuild,
-    /const TARGET_WIDTH = 1200;/,
-    'build:win publica el cartel a 1200 px (720 px CSS x 1,67 de retina)'
+
+  // Fotograma fijo: mismo lienzo cuadrado y sin bloque ANIM. El CSS lo pinta con
+  // `prefers-reduced-motion` porque un WebP animado se reproduce solo.
+  assert.ok(
+    fs.existsSync(WIN_ART_STILL_PATH),
+    'Falta public/src/assets/win_celebracion_still.webp'
+  );
+  const still = fs.readFileSync(WIN_ART_STILL_PATH);
+  assert.equal(still.toString('ascii', 0, 4), 'RIFF', 'El fotograma fijo debe ser RIFF/WebP');
+  assert.equal(still.toString('ascii', 8, 12), 'WEBP', 'El fotograma fijo debe ser un WebP real');
+  const stillChunks = webpChunks(still);
+  assert.equal(stillChunks[0].fourCC, 'VP8X', 'El fotograma fijo debe declarar VP8X');
+  assert.equal(
+    still[stillChunks[0].offset + 8] & 0x02,
+    0,
+    'El fotograma fijo no puede ser animado: es el respaldo de `prefers-reduced-motion`'
+  );
+  assert.equal(
+    stillChunks.some((chunk) => chunk.fourCC === 'ANIM'),
+    false,
+    'El fotograma fijo no debe traer bloque ANIM'
+  );
+  assert.equal(still.readUIntLE(stillChunks[0].offset + 12, 3) + 1, 724, 'El fijo mide 724 px de ancho');
+  assert.equal(still.readUIntLE(stillChunks[0].offset + 15, 3) + 1, 724, 'El fijo mide 724 px de alto');
+  assert.ok(
+    still.length < 160 * 1024,
+    `El fotograma fijo pesa ${(still.length / 1024).toFixed(1)} KB (objetivo < 160 KB)`
   );
 
   // Capa dedicada, con el arte, la lluvia y el importe que rellena `GameView`.
@@ -755,14 +812,29 @@ test('el cartel de victoria se sirve en WebP con alfa y el maestro queda fuera d
   );
   assert.match(
     html,
-    /src="\/src\/assets\/victoria_navidena\.webp"/,
-    'La capa debe usar el WebP optimizado del cartel navideño'
+    /src="\/src\/assets\/win_celebracion\.webp"/,
+    'La capa debe usar el WebP animado de la celebracion'
+  );
+  assert.match(
+    html,
+    /src="\/src\/assets\/win_celebracion_still\.webp"/,
+    'La capa debe incluir el fotograma fijo de `prefers-reduced-motion`'
+  );
+  assert.match(
+    html,
+    /class="win__art win__art--anim" id="win-art"/,
+    'El `<img>` animado conserva el id `win-art`'
+  );
+  assert.match(
+    html,
+    /class="win__art win__art--still"/,
+    'El fotograma fijo comparte la clase `win__art` (misma caja) pero no el id'
   );
   // La caja reservada por el HTML tiene que coincidir con el WebP (sin saltos).
   assert.match(
     html,
-    /width="1200" height="918"/,
-    'El HTML debe reservar la caja 1200x918 del cartel'
+    /width="724" height="724"/,
+    'El HTML debe reservar la caja 724x724 de la animacion'
   );
   assert.match(html, /id="win-rain"/, 'Falta el contenedor de la lluvia de pelotas');
   assert.match(html, /id="win-amount"/, 'Falta el contador del premio');
@@ -779,12 +851,24 @@ test('el cartel de victoria se sirve en WebP con alfa y el maestro queda fuera d
     'Los rayos deben girar con `rotateRays`'
   );
 
-  // El cartel completo (1,307:1) se centra y se adapta: techo de escritorio
-  // (720 px), ancho de movil (92vw) y alto disponible (58vh x 1,307).
+  // La animacion (lienzo 1:1) se centra y se adapta: techo de escritorio
+  // (720 px), ancho de movil (92vw) y alto disponible (56vh). El tercer techo es
+  // el alto, no el ancho x 1,307 del cartel anterior, porque el dibujo es
+  // cuadrado: asi no se recorta ningun borde ni empuja el importe fuera del velo.
   assert.match(
     css,
-    /\.win__art\s*\{[^}]*width:\s*min\(720px,\s*92vw,\s*calc\(58vh \* 1\.307\)\);/,
-    'El cartel debe escalar con sus tres techos (escritorio, movil y alto)'
+    /\.win__art\s*\{[^}]*width:\s*min\(720px,\s*92vw,\s*56vh\);/,
+    'La animacion debe escalar con sus tres techos (escritorio, movil y alto)'
+  );
+  assert.match(
+    css,
+    /\.win__art--still\s*\{\s*display:\s*none;\s*\}/,
+    'El fotograma fijo solo se pinta con movimiento reducido'
+  );
+  assert.match(
+    css,
+    /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.win__art--anim \{ display: none; \}[\s\S]*?\.win__art--still \{ display: block; \}/,
+    'Con movimiento reducido se cambia el WebP animado por su fotograma fijo'
   );
   assert.match(
     css,
@@ -912,8 +996,13 @@ test('la victoria llueve los balones del tablero en lugar de caramelos', () => {
   );
   assert.match(
     ui,
-    /const WIN_ART_SRC = '\/src\/assets\/victoria_navidena\.webp';/,
-    'La precarga debe apuntar al cartel nuevo'
+    /const WIN_ART_SRC = '\/src\/assets\/win_celebracion\.webp';/,
+    'La precarga debe apuntar a la animacion nueva'
+  );
+  assert.match(
+    ui,
+    /const WIN_ART_STILL_SRC = '\/src\/assets\/win_celebracion_still\.webp';/,
+    'La precarga debe conocer el fotograma fijo de `prefers-reduced-motion`'
   );
 });
 

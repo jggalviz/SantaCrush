@@ -2,19 +2,20 @@
 
 /**
  * Deriva los maestros de las maquinas (d1, d2, marco_movil,
- * consola_movil) y el cartel de victoria desde el arte de 5 Santa Crush.
+ * consola_movil) y la animacion de victoria desde el arte de 5 Santa Crush.
  *
  *   desk/Marco navideño de caramelos brillantes.png    -> design/d1.png (1033x863)
  *   desk/Marco de tragaperras navideño festivo.png   -> design/d2.png ( 655x1091)
  *   movil/Marco navideño de campanas doradas.png       -> design/marco_movil.png (1392x1038)
  *   movil/Panel navideño brillante con Santa y reno.png -> design/consola_movil.png (1780x883)
- *   Victoria navideña con mono y regalos.png           -> design/victoria_navidena.png
+ *   Santa WIN Celebration-Animation.gif                -> design/win_celebracion.gif
  *
  * Los maestros se reencajan para que el hueco/ventana del arte caiga donde el
  * CSS mide los anclajes, pero SIEMPRE con escala uniforme: recortar o estirar
  * un solo eje para clavar una caja antes se comia la cresta de la nieve del
- * toldo (d1), la base del letrero del premio (victoria) y el pie del marco con
- * las estrellas y el lazo central (d2).
+ * toldo (d1) y el pie del marco con las estrellas y el lazo central (d2). La
+ * animacion de victoria no se reencaja: se archiva tal cual porque el CSS
+ * reserva su caja 1:1.
  */
 
 const fs = require('node:fs');
@@ -25,7 +26,7 @@ const ROOT = path.join(__dirname, '..');
 const DESIGN = path.join(ROOT, 'design');
 
 /**
- * Piezas a regenerar. `node scripts/build-santa-masters.js d1 victoria` rehace
+ * Piezas a regenerar. `node scripts/build-santa-masters.js d1 win` rehace
  * solo esas dos; sin argumentos se rehace todo el juego de maestros.
  *
  * El selector existe porque este script parte del arte de origen (`desk/`,
@@ -203,27 +204,23 @@ async function containIn(file, canvas, box) {
 }
 
 (async () => {
-  /* -------------------------------------------------------- victoria ------ */
-  if (wants('victoria')) {
-    // Cartel del premio: mono con gorro, letrero WIN y campanas con lazo. El
-    // dibujo mide 1394 x 1066 (1,3077:1) tras recortar el alfa.
-    //
-    // El maestro anterior se reescalaba con `fit: 'cover'` a una banda de
-    // 1638 x 887 (1,847:1) y se centraba en un lienzo de 1774 x 887. `cover`
-    // recorta el eje que sobra: se comia la base del letrero (campanas, lazo y
-    // remate dorado) y el importe y el aviso caian sobre un cartel cortado en
-    // seco. Ahora se publica el recorte al alfa tal cual y es el CSS el que
-    // reserva la caja con la relacion real del dibujo.
-    const victoria = await sharp(path.join(ROOT, 'Victoria navideña con mono y regalos.png'))
-      .ensureAlpha()
-      .trim({ threshold: 8 })
-      .png()
-      .toBuffer();
-    const victoriaMeta = await sharp(victoria).metadata();
-    fs.writeFileSync(path.join(DESIGN, 'victoria_navidena.png'), victoria);
+  /* --------------------------------------------------------------- win ---- */
+  if (wants('win')) {
+    // Animacion del premio: Santa con gorro, letrero WIN dorado y regalos. El
+    // GIF de diseno mide 724 x 724 con 3 fotogramas de 350 ms en bucle y ya
+    // viene recortado al alfa, asi que se archiva tal cual en `design/`;
+    // `npm run build:win` lo convierte en el WebP animado (y en su fotograma
+    // fijo para `prefers-reduced-motion`) que sirve el overlay. No se recorta
+    // nada: el CSS reserva una caja 1:1 con la relacion del dibujo.
+    const gif = path.join(ROOT, 'Santa WIN Celebration-Animation.gif');
+    if (!fs.existsSync(gif)) {
+      throw new Error('Falta la animacion de diseno: Santa WIN Celebration-Animation.gif');
+    }
+    fs.copyFileSync(gif, path.join(DESIGN, 'win_celebracion.gif'));
+    const gifMeta = await sharp(gif, { animated: true }).metadata();
     console.log(
-      `design/victoria_navidena.png  ${victoriaMeta.width}x${victoriaMeta.height} ` +
-        `(recorte al alfa, ${(victoriaMeta.width / victoriaMeta.height).toFixed(4)}:1)`
+      `design/win_celebracion.gif  ${gifMeta.width}x${gifMeta.pageHeight || gifMeta.height} ` +
+        `(${gifMeta.pages || 1} fotogramas, animacion del overlay WIN)`
     );
   }
 

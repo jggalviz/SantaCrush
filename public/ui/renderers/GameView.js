@@ -48,12 +48,13 @@ const DROP_LAND_RATIO = 0.7;
 const ROWS = GRID.rows;
 const COLS = GRID.cols;
 
-/* Overlay de victoria: cartel WIN con rayos, importe en conteo rapido y lluvia
-   de pelotas por los laterales. Cualquier victoria abre la capa; la intensidad
-   (destello, lluvia, entrada y permanencia) escala con `win / bet`.
-   El cartel es el dibujo completo (mono + letrero + campanas, 1,307:1): el
-   archivo anterior se servia recortado a 1,85:1 y perdia la base del letrero. */
-const WIN_ART_SRC = '/src/assets/victoria_navidena.webp';
+/* Overlay de victoria: animacion WIN con rayos, importe en conteo rapido y
+   lluvia de pelotas por los laterales. Cualquier victoria abre la capa; la
+   intensidad (destello, lluvia, entrada y permanencia) escala con `win / bet`.
+   El arte es el WebP animado de `build:win` (724 x 724, 3 fotogramas de 350 ms
+   en bucle) y el fotograma fijo del mismo dibujo para `prefers-reduced-motion`. */
+const WIN_ART_SRC = '/src/assets/win_celebracion.webp';
+const WIN_ART_STILL_SRC = '/src/assets/win_celebracion_still.webp';
 const WIN_CLOSE_MS = 240;
 
 /* Perfiles de intensidad. `low` cubre los premios que no devuelven la apuesta
@@ -1224,12 +1225,13 @@ export class Ui {
   }
 
   /**
-   * Precarga el cartel del overlay en tiempo ocioso.
+   * Precarga la animacion del overlay en tiempo ocioso.
    *
-   * El `<img>` va con `loading="lazy"` dentro de una capa oculta: el navegador
-   * no lo descarga hasta la primera victoria y 423 KB en ese momento se
+   * Los `<img>` van con `loading="lazy"` dentro de una capa oculta: el navegador
+   * no los descarga hasta la primera victoria y 282 KB en ese momento se
    * notarian como un hueco en mitad de la entrada elastica. Se pide una vez, sin
-   * bloquear el arranque y sin prioridad alta.
+   * bloquear el arranque y sin prioridad alta. Con movimiento reducido se
+   * precarga el fotograma fijo, que es el que pinta el CSS.
    */
   preloadWinArt_() {
     if (this.winArtPreload || typeof Image !== 'function') return;
@@ -1238,7 +1240,7 @@ export class Ui {
       if (this.winArtPreload) return;
       const image = new Image();
       image.decoding = 'async';
-      image.src = WIN_ART_SRC;
+      image.src = REDUCED_MOTION ? WIN_ART_STILL_SRC : WIN_ART_SRC;
       this.winArtPreload = image;
     };
 

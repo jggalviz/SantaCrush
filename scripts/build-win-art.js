@@ -2,40 +2,35 @@
 'use strict';
 
 /**
- * Optimiza el cartel de victoria (WIN overlay).
+ * Optimiza la animacion de victoria (WIN overlay).
  *
  *   npm run build:win
  *
- * El maestro vive en `design/victoria_navidena.png`: el mono con gorro, el
- * letrero WIN y las campanas con lazo, recortado al alfa (1394 x 1066 px,
- * 1,3077:1) por `scripts/build-santa-masters.js victoria`. Igual que el resto
- * del arte, se archiva fuera de `public/` porque todo lo que hay en
- * `public/src/**` se publica en el CDN y el PNG pesa 2,7 MB.
+ * El maestro vive en `design/win_celebracion.gif`: el Santa con gorro, el
+ * letrero WIN dorado y los regalos de fondo, 724 x 724 px cuadrados, 3
+ * fotogramas de 350 ms en bucle infinito y con canal alfa. Lo archiva
+ * `scripts/build-santa-masters.js win` a partir de la entrega de diseno
+ * (`Santa WIN Celebration-Animation.gif` en la raiz del repo). Igual que el
+ * resto del arte, el GIF se guarda fuera de `public/` porque todo lo que hay en
+ * `public/src/**` se publica en el CDN.
  *
- * El cartel es apaisado pero no una banda: el dibujo incluye la base del
- * letrero (campanas, lazo y remate dorado). El maestro anterior se recortaba a
- * 1,847:1 con `cover` y esa base desaparecia, asi que el importe y el aviso
- * quedaban colgando de un cartel cortado en seco. Aqui NO se recorta la
- * relacion: se sirve el dibujo completo.
+ * El dibujo es cuadrado y NO se recorta: el script no usa `cover` ni `extract`,
+ * asi que el Santa, las letras y los regalos llegan completos al overlay. El CSS
+ * reserva una caja 1:1 con el `width`/`height` del HTML.
  *
- * El script escribe `public/src/assets/victoria_navidena.webp` con este
- * contrato:
- *   - WebP con alfa (VP8X + ALPH + VP8) a calidad 76. `alphaQuality: 100`
- *     conserva el canal alfa sin perdida: el recorte del cartel no gana halos
- *     blancos ni escalones en el borde de las letras.
- *   - 1200 px de ancho (1200 x 918). El CSS no pinta el arte por encima de
- *     720 px CSS, asi que 1200 cubre retina (1,67x) sin pasar del presupuesto
- *     de peso: a 1280 px el mismo dibujo pide ~465 KB.
- *   - Antes de reescalar se recorta el alfa vacio (`trim`). El maestro deja un
- *     par de filas transparentes por el borde; recortarlas evita escalar margen
- *     muerto que el CSS tendria que reservar.
- *   - Tope de peso: 400 KB (el WebP actual ronda los 377 KB).
+ * Salidas:
+ *   - `public/src/assets/win_celebracion.webp`: WebP ANIMADO (VP8X + ANIM +
+ *     3 x ANMF) a calidad 76, 724 px (el tamano nativo del maestro: reescalar
+ *     hacia arriba no anade detalle y multiplica el peso). Conserva los 350 ms
+ *     por fotograma y el bucle infinito, y `alphaQuality: 100` mantiene el alfa
+ *     sin perdida para que el velo oscuro no se vea por el borde del dibujo.
+ *     Tope: 400 KB (el archivo actual ronda los 235 KB).
+ *   - `public/src/assets/win_celebracion_still.webp`: el primer fotograma, mismo
+ *     lienzo cuadrado y sin bloque ANIM. El CSS lo pinta en lugar del animado
+ *     cuando el jugador pide `prefers-reduced-motion`: un WebP animado se
+ *     reproduce solo y ninguna regla CSS puede pararlo. Tope: 160 KB.
  *
- * La relacion de aspecto se valida contra la caja recortada, que es la que se
- * reescala: comparar contra el lienzo original fallaria en cuanto `trim` quita
- * margen asimetrico.
- *
- * Es idempotente: misma entrada y misma calidad -> mismos bytes.
+ * Es idempotente: misma entrada y mismas calidades -> mismos bytes.
  */
 
 const fs = require('node:fs');
@@ -43,99 +38,158 @@ const path = require('node:path');
 const sharp = require('sharp');
 
 const ROOT = path.join(__dirname, '..');
-const SOURCE = path.join(ROOT, 'design', 'victoria_navidena.png');
-const TARGET = path.join(ROOT, 'public', 'src', 'assets', 'victoria_navidena.webp');
-const DEPLOY = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets', 'victoria_navidena.webp');
+const SOURCE = path.join(ROOT, 'design', 'win_celebracion.gif');
+const ASSETS = path.join(ROOT, 'public', 'src', 'assets');
+const TARGET = path.join(ASSETS, 'win_celebracion.webp');
+const STILL = path.join(ASSETS, 'win_celebracion_still.webp');
+const DEPLOY_DIR = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets');
 
-// El arte se pinta como maximo a 720 px CSS: 1200 px cubren retina (1,67x) con
-// el cartel entero dentro de los 400 KB (a 1280 px pide ~465 KB a q=76).
-const TARGET_WIDTH = 1200;
+// El CSS pinta la animacion como maximo a 720 px CSS; 724 px es el nativo del
+// maestro y cubre ~1x retina sin inventar pixeles.
+const TARGET_WIDTH = 724;
 const QUALITY = Number(process.env.WIN_QUALITY || 76);
+const STILL_QUALITY = Number(process.env.WIN_STILL_QUALITY || 82);
 const MAX_BYTES = 400 * 1024;
+const MAX_STILL_BYTES = 160 * 1024;
+// 0 = bucle infinito (el overlay dura menos de 5 s y asi el brillo no se corta).
+const LOOP = 0;
 
 const kb = (n) => `${(n / 1024).toFixed(1)} kB`;
 
+/**
+ * `.vercel/output` es un hard link de la repo: si se rompe (o la copia no
+ * existe todavia) se refresca a mano para que el preview local no sirva el arte
+ * anterior.
+ */
+function syncDeploy(file) {
+  if (!fs.existsSync(DEPLOY_DIR)) return;
+  const deployed = path.join(DEPLOY_DIR, path.basename(file));
+  if (fs.existsSync(deployed) && fs.statSync(deployed).ino === fs.statSync(file).ino) return;
+  fs.copyFileSync(file, deployed);
+}
+
+
 (async () => {
   if (!fs.existsSync(SOURCE)) {
-    throw new Error(`Falta el maestro ${path.relative(ROOT, SOURCE)}: mueve el PNG a design/`);
-  }
-
-  const master = await sharp(SOURCE).metadata();
-  if (!master.width || !master.height) {
-    throw new Error(`${path.basename(SOURCE)} no declara medidas: revisa el PNG`);
-  }
-  if (!master.hasAlpha) {
     throw new Error(
-      'El maestro no trae canal alfa: el cartel se recorta sobre el juego y un fondo ' +
-        'opaco taparia la pantalla. Exporta el PNG con transparencia.'
+      `Falta el maestro ${path.relative(ROOT, SOURCE)}: ` +
+        'archiva el GIF con `node scripts/build-santa-masters.js win`'
     );
   }
 
-  // Recorte del alfa vacio. Este maestro trae aire transparente a los lados
-  // (1621 x 878 utiles de 1774 x 887), asi que el recorte no es cosmetico:
-  // evita publicar margen muerto que el CSS tendria que escalar.
-  const trimmed = await sharp(SOURCE)
-    .ensureAlpha()
-    .trim({ threshold: 1 })
-    .toBuffer({ resolveWithObject: true });
-  const crop = trimmed.info.trimOffsetLeft || trimmed.info.trimOffsetTop
-    ? `${trimmed.info.trimOffsetLeft},${trimmed.info.trimOffsetTop}`
-    : null;
-  const cropWidth = trimmed.info.width || master.width;
-  const cropHeight = trimmed.info.height || master.height;
+  const master = await sharp(SOURCE, { animated: true }).metadata();
+  const pageHeight = master.pageHeight || master.height;
+  const pages = master.pages || 1;
 
-  const webp = await sharp(trimmed.data)
-    .resize({ width: TARGET_WIDTH, fit: 'inside', withoutEnlargement: true })
+  if (!master.width || !pageHeight) {
+    throw new Error(`${path.basename(SOURCE)} no declara medidas: revisa el GIF`);
+  }
+  if (pages < 2) {
+    throw new Error(
+      'El maestro trae un solo fotograma: el overlay espera la animacion de la ' +
+        'celebracion, no una imagen fija'
+    );
+  }
+  if (master.width !== pageHeight) {
+    throw new Error(
+      `El maestro mide ${master.width}x${pageHeight} y el contrato exige un lienzo ` +
+        'cuadrado: el CSS reserva 1:1 y un rectangulo se deformaria o dejaria aire'
+    );
+  }
+  if (!master.hasAlpha) {
+    throw new Error(
+      'El maestro no trae canal alfa: la animacion se pinta sobre el juego y un ' +
+        'fondo opaco taparia la pantalla'
+    );
+  }
+
+  const width = Math.min(TARGET_WIDTH, master.width);
+  const delay = Array.isArray(master.delay) ? master.delay.slice(0, pages) : [];
+
+  const webp = await sharp(SOURCE, { animated: true })
+    .resize({ width, kernel: 'lanczos3' })
     .webp({
       quality: QUALITY,
       alphaQuality: 100,
       effort: 6,
-      smartSubsample: true
+      smartSubsample: true,
+      loop: LOOP,
+      delay
     })
     .toBuffer();
 
-  const out = await sharp(webp).metadata();
+  const out = await sharp(webp, { animated: true }).metadata();
   if (out.format !== 'webp') {
     throw new Error(`El destino no es un WebP real: ${out.format}`);
   }
-  if (!out.hasAlpha) {
-    throw new Error('El WebP salio sin canal alfa: revisa alphaQuality y el maestro');
-  }
-  if (out.width !== TARGET_WIDTH) {
+  if (out.pages !== pages) {
     throw new Error(
-      `El WebP mide ${out.width}px de ancho y el contrato exige ${TARGET_WIDTH}px ` +
-        '(ver cabecera: 1280 px cubren retina a 700 px CSS)'
+      `El WebP animado salio con ${out.pages} fotogramas y el maestro tiene ${pages}: ` +
+        'se perderia parte de la celebracion'
     );
   }
-  if (Math.abs(out.width / out.height - cropWidth / cropHeight) > 0.002) {
+  if (!out.hasAlpha) {
+    throw new Error('El WebP animado salio sin canal alfa: revisa alphaQuality');
+  }
+  if (out.width !== width || out.pageHeight !== width) {
     throw new Error(
-      `El WebP mide ${out.width}x${out.height} y rompe la relacion de la caja recortada ` +
-        `${cropWidth}x${cropHeight} (maestro ${master.width}x${master.height}): el cartel se deformaria`
+      `El WebP animado mide ${out.width}x${out.pageHeight} y el contrato exige ` +
+        `${width}x${width} (cuadrado, sin recortes)`
+    );
+  }
+  if (JSON.stringify(out.delay) !== JSON.stringify(delay)) {
+    throw new Error(
+      `El WebP animado cambio los tiempos (${out.delay} ms contra ${delay} ms del maestro)`
     );
   }
   if (webp.length >= MAX_BYTES) {
     throw new Error(
-      `El cartel pesa ${kb(webp.length)} y el contrato exige menos de ${MAX_BYTES / 1024} KB: ` +
-        'baja WIN_QUALITY antes de publicarlo'
+      `La animacion pesa ${kb(webp.length)} y el contrato exige menos de ` +
+        `${MAX_BYTES / 1024} KB: baja WIN_QUALITY antes de publicarla`
+    );
+  }
+
+  const still = await sharp(SOURCE, { page: 0 })
+    .resize({ width, kernel: 'lanczos3' })
+    .webp({ quality: STILL_QUALITY, alphaQuality: 100, effort: 6, smartSubsample: true })
+    .toBuffer();
+
+  const stillOut = await sharp(still).metadata();
+  if (stillOut.format !== 'webp') {
+    throw new Error(`El fotograma fijo no es un WebP real: ${stillOut.format}`);
+  }
+  if (stillOut.pages) {
+    throw new Error('El fotograma fijo salio animado: `prefers-reduced-motion` no lo pararia');
+  }
+  if (stillOut.width !== width || stillOut.height !== width) {
+    throw new Error(
+      `El fotograma fijo mide ${stillOut.width}x${stillOut.height} y debe compartir el ` +
+        `lienzo cuadrado ${width}x${width} de la animacion`
+    );
+  }
+  if (still.length >= MAX_STILL_BYTES) {
+    throw new Error(
+      `El fotograma fijo pesa ${kb(still.length)} y el contrato exige menos de ` +
+        `${MAX_STILL_BYTES / 1024} KB: baja WIN_STILL_QUALITY`
     );
   }
 
   fs.writeFileSync(TARGET, webp);
-  // `.vercel/output` es un hard link del repo: si se rompe, se refresca a mano.
-  if (fs.existsSync(DEPLOY) && fs.statSync(DEPLOY).ino !== fs.statSync(TARGET).ino) {
-    fs.copyFileSync(TARGET, DEPLOY);
-  }
+  fs.writeFileSync(STILL, still);
+  syncDeploy(TARGET);
+  syncDeploy(STILL);
 
   console.log(
-    `origen  ${path.relative(ROOT, SOURCE)}  ${master.width}x${master.height}  ` +
-      `${kb(fs.statSync(SOURCE).size)}${crop ? `  (alfa recortado en ${crop} -> ${cropWidth}x${cropHeight})` : '  (alfa ya ajustado)'}`
+    `origen  ${path.relative(ROOT, SOURCE)}  ${master.width}x${pageHeight}  ` +
+      `${kb(fs.statSync(SOURCE).size)}  ${pages} fotogramas de ${delay.join('/')} ms`
   );
   console.log(
-    `salida  ${path.relative(ROOT, TARGET)}  ${out.width}x${out.height}  ` +
-      `${kb(webp.length)} (q=${QUALITY}, alfa intacta)`
+    `salida  ${path.relative(ROOT, TARGET)}  ${out.width}x${out.pageHeight}  ` +
+      `${kb(webp.length)} (q=${QUALITY}, ${out.pages} fotogramas, bucle ${LOOP}, alfa intacta)`
   );
   console.log(
-    `ahorro  ${(100 - (webp.length / fs.statSync(SOURCE).size) * 100).toFixed(1)} % menos que el maestro`
+    `fijo    ${path.relative(ROOT, STILL)}  ${stillOut.width}x${stillOut.height}  ` +
+      `${kb(still.length)} (q=${STILL_QUALITY}, prefers-reduced-motion)`
   );
 })().catch((err) => {
   console.error(`build:win · ${err.message}`);

@@ -7730,14 +7730,14 @@ body.is-demo .machine__side .controls .balance::after {
 /* --------------------------------------------------------------------------
    Pantalla de victoria (WIN overlay)
    --------------------------------------------------------------------------
-   Velo a pantalla completa con el cartel WIN, rayos girando y pelotas cayendo
+   Velo a pantalla completa con la animacion WIN, rayos girando y pelotas cayendo
    por los laterales. Aparece en cualquier victoria y se cierra solo (1,7 s en
    premios bajos, 3 s en la banda 1-10x, 3,8-4,6 s en big/mega/epic) o con un
    toque, Escape o un giro nuevo. La intensidad la elige `uiManager` con
    `win / bet` y se aplica con `is-low` / `is-mid` / `is-high`.
 
    Reglas de rendimiento:
-     - El velo funde `opacity`; los rayos (giro), la flotacion del cartel, el
+     - El velo funde `opacity`; los rayos (giro), la flotacion de la animacion, el
        latido del importe y la entrada animan solo `transform`/`opacity`. Ni
        filtros ni sombras por frame.
      - El velo queda por encima de `.fx` (55) y por debajo del modal (60) y de
@@ -7765,7 +7765,7 @@ body.is-demo .machine__side .controls .balance::after {
    capa se quedaria siempre visible. */
 .win[hidden] { display: none; }
 
-/* Halo calido detras del cartel: gradiente estatico, se rasteriza una vez. */
+/* Halo calido detras de la animacion: gradiente estatico, se rasteriza una vez. */
 .win::before {
   content: "";
   position: absolute;
@@ -7825,22 +7825,26 @@ body.is-demo .machine__side .controls .balance::after {
   will-change: transform;
 }
 
-/* Cartel (1200 x 918, relacion 1,307:1): mono, letrero WIN y campanas con
-   lazo. El ancho lo limitan tres techos en este orden: el tamano de diseno en
-   escritorio (720 px), el ancho util del movil (92vw) y, en pantallas
-   apaisadas o bajas, el alto disponible (58vh x 1,307): el cartel nunca empuja
-   el importe ni el aviso fuera del velo ni recorta la base del letrero.
-   El `width`/`height` del HTML ya reserva la caja, asi que la primera pintura
-   no salta. */
+/* Animacion del premio (724 x 724, 1:1): Santa con gorro, letrero WIN dorado y
+   regalos. El ancho lo limitan tres techos en este orden: el tamano de diseno
+   en escritorio (720 px), el ancho util del movil (92vw) y, en pantallas
+   apaisadas o bajas, el alto disponible (56vh). La caja es cuadrada como el
+   dibujo, asi que no se recorta ningun borde ni empuja el importe fuera del
+   velo. El `width`/`height` del HTML ya reserva la caja, de modo que la primera
+   pintura no salta. */
 .win__art {
   display: block;
-  width: min(720px, 92vw, calc(58vh * 1.307));
+  width: min(720px, 92vw, 56vh);
   height: auto;
   transform-origin: 50% 60%;
   animation: win-pop 0.66s cubic-bezier(0.2, 1.45, 0.36, 1) both;
   will-change: transform, opacity;
   user-select: none;
 }
+
+/* Fotograma fijo de respaldo: con movimiento reducido sustituye al WebP animado
+   (que se reproduce solo) en la misma caja cuadrada. */
+.win__art--still { display: none; }
 
 @keyframes win-veil-in {
   from { opacity: 0; }
@@ -7949,7 +7953,7 @@ body.is-demo .machine__side .controls .balance::after {
   50% { transform: scale(1.035); }
 }
 
-/* Cierre: el velo y el cartel se retiran con `opacity`/`scale` antes de que
+/* Cierre: el velo y la animacion se retiran con `opacity`/`scale` antes de que
    `uiManager` vuelva a poner `hidden`. */
 .win.is-closing { animation: win-veil-out 0.24s ease-in forwards; }
 .win.is-closing .win__stage { animation: win-out 0.24s ease-in forwards; }
@@ -7965,8 +7969,8 @@ body.is-demo .machine__side .controls .balance::after {
 }
 
 /* Con movimiento reducido la capa sigue abriendose (es el mensaje visual del
-   premio) pero sin rayos girando, flotacion, latido ni entrada: el cartel y el
-   importe aparecen ya resueltos y `uiManager` no lanza pelotas. Las reglas de
+   premio) pero sin rayos girando, flotacion, latido ni entrada: la animacion y
+   el importe aparecen ya resueltos y `uiManager` no lanza pelotas. Las reglas de
    perfil tienen mas especificidad que las base, asi que se repiten aqui (y al
    ir despues en el archivo ganan tambien en cascada). */
 @media (prefers-reduced-motion: reduce) {
@@ -7981,6 +7985,11 @@ body.is-demo .machine__side .controls .balance::after {
   .win.is-low .win__art,
   .win.is-low .win__amount,
   .win.is-high .win__art { animation: none; }
+
+  /* El WebP animado (3 fotogramas) no se puede pausar desde CSS: se cambia por
+     su fotograma fijo, que ocupa la misma caja 1:1. */
+  .win__art--anim { display: none; }
+  .win__art--still { display: block; }
 
   .win__rays { opacity: 0.35; }
   .win.is-low .win__rays { opacity: 0.22; }
