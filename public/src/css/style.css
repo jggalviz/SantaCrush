@@ -7212,8 +7212,20 @@ body.is-demo .machine__side .controls .balance::after {
     text-shadow: 0 0 8px #fff, 0 0 16px rgba(255, 196, 150, 0.85);
   }
 
-  /* La placa dorada del MAX lleva su rotulo en tinta tostada. */
+  /* La placa dorada del MAX lleva su rotulo en tinta tostada.
+     La caja tactil se ancla con `--art-x` 76,79-89,31 % (centro 83,05 %), pero
+     la placa dibujada en d2.webp va de x 510 a 598 del lienzo de 655: su centro
+     real es 84,52 %, 1,47 % del ancho de la consola a la derecha (~9 px a 1920).
+     El rotulo lo centra el flex en la caja, asi que caia ese pelo a la izquierda
+     de la placa; `left` devuelve la tinta a su sitio (1,47 / 12,52 = 11,7 % de la
+     caja). Solo mueve el texto: ni la caja, ni el recorte del lienzo, ni la zona
+     tactil cambian. En vertical la placa (centro 56,22 %) y la caja (56,52 %)
+     difieren 0,3 % del alto de la consola, pero el cajetin de linea deja el hueco
+     del descendente arriba, asi que la tinta ya cae a medio px del centro de la
+     placa y no se toca. */
   .machine__side .controls__bet #btn-bet-max .chip__label {
+    position: relative;
+    left: 11.7%;
     display: block;
     padding: 0;
     font-size: clamp(10px, calc(var(--cons-scale) * 0.050), 20px);
