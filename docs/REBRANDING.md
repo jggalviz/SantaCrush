@@ -60,21 +60,6 @@ casillas es la linea de separacion, no aire. Asi no queda margen lateral muerto
 dentro de la ventana del marco y cada caramelo ocupa el mayor alto que le deja la
 casilla (el alto manda porque el dibujo es casi cuadrado y la casilla apaisada).
 
-En escritorio el **marco ocupa todo el ancho del viewport**: `.app` pierde su
-`max-width` (el tope de 1760 px dejaba 400 px de fondo a cada lado en 2560 y
-80 px en 1920) y `.machine` sangra sobre el padding del contenedor con
-`width: calc(100 % + 2 * var(--app-pad-x))` y `margin-inline` negativo. Dentro de
-esa caja, `--frame-w` ya no se deduce de la relacion del dibujo ni lleva tope:
-es exactamente `100vw - --d-gap-x - --side-w`, de modo que la columna lateral, la
-separacion y el marco suman el ancho del viewport y la rejilla no tiene sobrante
-que repartir. El filo derecho del marco cae sobre el filo de la pantalla; el
-izquierdo queda bajo la consola, que es la pieza que ocupa esa banda. d1 se
-estira en horizontal (`background-size: 100% 100 %`) y, como la ventana del arte
-y `.board` se anclan en % de la misma caja, cualquier estiramiento mantiene el
-tablero pegado a su hueco transparente. Solo se estira cuando manda el alto
-(pantallas anchas o ventanas bajas); cuando manda el ancho, `--frame-h` sale de
-1,79737 y el marco queda en la relacion natural del dibujo (1,19700).
-
 El modal de reglas y tabla de pagos no es una hoja blanca: `theme.css` lo pinta
 como la **consola del juego**, con las mismas cuatro capas del tablero —reticula
 de 1 px, brillo de estadio arriba, reflejo dorado al pie y cuerpo marino— mas el
@@ -190,6 +175,27 @@ el propio origen.
    900 px no cambia nada.
    La barra del navegador movil usa la meta `theme-color`, ya en rojo de marca:
    `<meta name="theme-color" content="#c8102e" />`.
+
+   El marco y la consola **sangran hasta los dos filos del viewport** en movil.
+   `.app` reserva su aire lateral en `--m-pad-x` (`clamp(4px, 1.5vw, 10px)`) y
+   `.stage` se lo come con margenes negativos (y deja de recortar: el corte lo
+   hace `.app`, que es el que llega al filo). Como `--m-w` se mide con `100cqw`,
+   al ensanchar el escenario ese ancho util pasa a ser el del viewport completo,
+   asi que marco, tablero y consola comparten el ancho de la pantalla. El lienzo
+   de `marco_movil.webp` (1392 x 1038) trae ademas 23 px transparentes a cada
+   lado (el filo pintado del caramelo arranca en x = 23), de modo que el dibujo
+   se pinta al **103,4175 %** de ancho (1392 / 1346) y centrado: ese aire se sale
+   de la caja y el caramelo toca el filo. Los dos % horizontales que se apoyan en
+   el dibujo pasan por la misma escala (`x' = 1,0341753 · x − 1,70867 %`): la
+   ventana del tablero queda en 6,66805 % / 86,66389 % y la franja del HUD en
+   0,624125 de ancho con arranque 0,27486. El eje vertical no cambia (el HUD
+   sigue midiendose con `--frame-h`).
+   Cuando manda el alto (movil apaisado, ventanas anchas y bajas) `--m-w` encoge
+   en proporcion y el conjunto vuelve a centrarse como antes; ahi el dibujo
+   conserva su estiramiento del 3,4 % y sobresale ~1,7 % de su caja por lado, que
+   es el unico resto del sangrado fuera del telefono vertical.
+
+Pendiente de arte (ver la tabla de alcance): las carcasas moviles
 
    En escritorio (`min-width: 900px`) el logo no va en una tarjeta: se pega en el
    hueco azul de la nube que dibuja `d2.webp`, centrado en el 50 % / 21,6 % de ese

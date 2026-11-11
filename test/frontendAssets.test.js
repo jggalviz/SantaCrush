@@ -1514,7 +1514,7 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   assert.match(
     machineGrid[0],
     /padding:\s*0;/,
-    'Sin padding propio: el aire lateral lo pone `.app` y es simetrico'
+    'Sin padding propio: el sangrado lateral lo hace `.stage` con `--m-pad-x`'
   );
   // El ancho sale del alto libre menos la separacion, repartido entre la
   // relacion del marco (1038 / 1392 = 0,7457, la del recorte sin estirar) y la
@@ -1528,11 +1528,48 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
     'El ancho de la maquina descuenta marco + separacion + consola del alto libre'
   );
 
+  // El escenario devuelve el aire lateral de `.app` con el mismo `--m-pad-x`:
+  // como es el que mide la maquina (`100cqw`), al ensancharlo el ancho util pasa
+  // a ser el del viewport completo y marco y consola tocan los dos filos. El
+  // recorte queda en `.app`, que corta en la caja de padding (el filo de la
+  // pantalla).
+  const stageRule = css.match(/\.stage\s*\{[^}]*container-type:\s*size;[^}]*\}/);
+  assert.ok(stageRule, 'El escenario movil mide la maquina con `container-type: size`');
+  assert.match(
+    stageRule[0],
+    /width:\s*calc\(100% \+ 2 \* var\(--m-pad-x\)\);/,
+    'El escenario sangra sobre el padding lateral de `.app`'
+  );
+  assert.match(
+    stageRule[0],
+    /margin-inline:\s*calc\(-1 \* var\(--m-pad-x\)\);/,
+    'El sangrado es simetrico y no desplaza la maquina'
+  );
+  assert.match(
+    stageRule[0],
+    /overflow:\s*visible;/,
+    'El escenario deja de recortar para que el sangrado llegue al filo'
+  );
+  assert.match(
+    css,
+    /\.app\s*\{[^}]*--m-pad-x:\s*clamp\(4px, 1\.5vw, 10px\);[^}]*var\(--m-pad-x\)[^}]*\}/,
+    '`.app` guarda su aire lateral en `--m-pad-x` y lo usa en el padding'
+  );
+
   // 2) Las dos piezas se miden con esa unidad y con la relacion exacta de su
   //    lienzo (`contain` sobre una caja con esa relacion llena el 100%).
   const frameRule = css.match(/\.machine__table\s*\{[^}]*aspect-ratio:\s*1392 \/ 1038;[^}]*\}/);
   assert.ok(frameRule, 'El marco debe declarar la relacion exacta de su recorte, 1392/1038');
   assert.match(frameRule[0], /width:\s*var\(--m-w\);/, 'El marco se mide con `--m-w`');
+  // El lienzo del recorte trae 23 px transparentes a cada lado, asi que el
+  // dibujo se pinta un 3,4175 % mas ancho (1392 / 1346) y centrado: el filo
+  // pintado del caramelo cae en el filo de la caja y el aire sobrante se sale de
+  // ella. Sin ese estiramiento quedaba una franja de fondo a los lados.
+  assert.match(
+    frameRule[0],
+    /background:\s*url\('\.\.\/assets\/marco_movil\.webp'\)\s*no-repeat\s*center\s*\/\s*103\.4175% 100%;/,
+    'El marco se pinta a sangre sobre el lienzo del recorte'
+  );
 
   const caseRule = css.match(
     /\.machine__side \.controls\s*\{[^}]*aspect-ratio:\s*1780 \/ 883;[^}]*\}/
@@ -1554,9 +1591,12 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   // 3) El tablero tapa la ventana transparente del marco con % del recorte
   //    (medido: x 8,12-91,67 %, y 42,29-90,46 %), con un pelo de aire por fuera
   //    para que su filo se meta bajo el aro dorado y no asome el fondo.
+  //    Con el dibujo a sangre los dos % del eje X pasan por la escala del
+  //    estiramiento (x' = 1,0341753 · x − 1,70867 %): 8,10 → 6,66805 y
+  //    83,80 → 86,66389. El alto no cambia.
   assert.match(
     css,
-    /\.machine__table \.board\s*\{[^}]*position:\s*absolute;[^}]*left:\s*8\.10%;[^}]*top:\s*42\.23%;[^}]*width:\s*83\.80%;[^}]*height:\s*48\.50%;[^}]*\}/,
+    /\.machine__table \.board\s*\{[^}]*position:\s*absolute;[^}]*left:\s*6\.66805%;[^}]*top:\s*42\.23%;[^}]*width:\s*86\.66389%;[^}]*height:\s*48\.50%;[^}]*\}/,
     'El tablero se coloca en la ventana del marco, no en el flujo de la fila'
   );
 
@@ -1564,8 +1604,10 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   //    estadio sostiene el logo centrado en el marco y la franja de las tres
   //    placas doradas va de 28,23 a 88,58 % del ancho y de 26,01 a 32,47 % del
   //    alto del recorte (bbox de los tres cuerpos rojos de `marco_movil.webp`).
+  //    Con el dibujo a sangre la franja se reasigna con la misma escala:
+  //    0,6035 → 0,624125 de ancho y 0,2823 → 0,27486 de arranque.
   const hudRule = css.match(
-    /\.machine__side \.hud\s*\{[^}]*width:\s*calc\(var\(--m-w\) \* 0\.6035\);[^}]*\}/
+    /\.machine__side \.hud\s*\{[^}]*width:\s*calc\(var\(--m-w\) \* 0\.624125\);[^}]*\}/
   );
   assert.ok(hudRule, 'El HUD debe medir la franja exacta de las tres placas');
   assert.match(
@@ -1575,8 +1617,8 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   );
   assert.match(
     hudRule[0],
-    /margin-left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ var\(--m-w\) \* 0\.2823\);/,
-    'La franja arranca en la primera placa del HUD (28,23 % del marco)'
+    /margin-left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ var\(--m-w\) \* 0\.27486\);/,
+    'La franja arranca en la primera placa del HUD (28,23 % del recorte, ya escalado)'
   );
   assert.match(
     hudRule[0],
@@ -1849,37 +1891,13 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   );
   assert.match(
     css,
-    /--frame-w: calc\(100vw - var\(--d-gap-x\) - var\(--side-w\)\);/,
-    'El marco se lleva todo el ancho que deja la columna lateral, sin tope'
+    /--frame-w: calc\(var\(--frame-h\) \* 1\.19700\)/,
+    'El marco mide 1033/863 de su alto (relacion del dibujo, sin recortar el toldo)'
   );
   assert.match(
     css,
     /--side-w: calc\(var\(--frame-h\) \/ 1\.66565\)/,
     'La columna lateral mide 655/1091 de su alto'
-  );
-
-  // El lienzo de escritorio ya no se limita a 1760 px ni se queda dentro del
-  // padding de `.app`: la maquina sangra sobre el (margen negativo) y el marco
-  // se lleva lo que antes era fondo a los lados (bandas de 400 px en 2560 y de
-  // 80 + 20 px en 1920).
-  assert.match(
-    css,
-    /\.app \{ max-width: none; \}/,
-    'El lienzo de escritorio no tiene tope de ancho: el arte llega al filo'
-  );
-  const machineBodies = bodies('\\.machine');
-  assert.ok(
-    machineBodies.some(
-      (body) =>
-        body.includes('width: calc(100% + 2 * var(--app-pad-x));') &&
-        body.includes('margin-inline: calc(-1 * var(--app-pad-x));')
-    ),
-    'La maquina ocupa el ancho del viewport (sangra sobre el padding de `.app`)'
-  );
-  assert.match(
-    css,
-    /--app-pad-x: max\(\s*clamp\(8px, 1\.5vw, 20px\),\s*env\(safe-area-inset-left\),\s*env\(safe-area-inset-right\)\s*\)/,
-    'El sangrado usa el mismo padding lateral que `.app` (con las muescas)'
   );
 
   const sideBodies = bodies('\\.machine__side');

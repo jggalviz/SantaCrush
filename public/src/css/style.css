@@ -4906,8 +4906,20 @@ body.is-demo .machine__side .controls .balance::after {
      ------------------------------------------------------------------------ */
   /* El escenario es el que conoce el alto real disponible para la máquina: con
      `container-type: size` el `100cqh` de `--m-w` descuenta topbar y paddings
-     sin repetir presupuestos a mano. */
-  .stage { container-type: size; }
+     sin repetir presupuestos a mano.
+
+     Además devuelve el padding lateral de `.app` (`--m-pad-x`, ver «Cabecera
+     delgada»): el escenario es el que mide `--m-w` con `100cqw`, así que al
+     ensancharlo ese aire pasa a ser arte y `100cqw` queda como el ancho
+     completo del viewport. El recorte lo hace `.app` (su `overflow: hidden`
+     corta en la caja de padding, o sea en el filo de la pantalla), de modo que
+     el escenario deja de recortar para que el sangrado llegue hasta ahí. */
+  .stage {
+    container-type: size;
+    width: calc(100% + 2 * var(--m-pad-x));
+    margin-inline: calc(-1 * var(--m-pad-x));
+    overflow: visible;
+  }
 
   .machine {
     /* Ancla de las capas absolutas: el logo y el HUD se colocan respecto a la
@@ -4928,7 +4940,8 @@ body.is-demo .machine__side .controls .balance::after {
        que el saldo suba hasta su placa sin repetir el número. */
     --row-gap: clamp(4px, 1.2dvh, 10px);
     row-gap: var(--row-gap);
-    /* El aire lateral ya lo pone `.app`: aqui no se resta ancho al tablero. */
+    /* Sin padding propio: el aire lateral de `.app` lo cancela el escenario
+       (ver `.stage`), asi que la maquina llena el ancho completo. */
     padding: 0;
     /* Ancho de la máquina: el menor entre el que cabe a lo ancho y el que deja
        el alto libre. El divisor 1,2418 es la suma de las relaciones alto/ancho
@@ -4937,6 +4950,12 @@ body.is-demo .machine__side .controls .balance::after {
        no forma parte del divisor. `--m-w` es además la unidad de medida de todo
        lo que se superpone al arte (`calc(var(--m-w) * k)`), de modo que cada
        capa escala con el dibujo y no con la altura de su celda.
+
+       `100cqw` es el ancho COMPLETO del viewport: el escenario se come el
+       padding lateral de `.app` (ver `.stage`), asi que el marco y la consola
+       tocan los dos filos de la pantalla cuando manda el ancho. Cuando manda el
+       alto (ventanas anchas y bajas) `--m-w` encoge en proporcion y el conjunto
+       se centra, sin estirar el dibujo.
 
        Se mide en `cqw`/`cqh` y no en `%`: un `%` dentro de una custom property
        se resuelve contra la propiedad que la consume, así que el mismo token
@@ -5107,12 +5126,18 @@ body.is-demo .machine__side .controls .balance::after {
        marco: usando `--m-w` la franja caía por debajo de su placa. Las placas
        de este marco miden 6,46 % de alto (las del anterior, 8,16 %): con la
        franja vieja el rótulo y el dato se centraban 2,2 % por debajo de su
-       placa y el dato asomaba sobre los banderines. */
-    width: calc(var(--m-w) * 0.6035);
+       placa y el dato asomaba sobre los banderines.
+
+       El dibujo va a sangre (ver `background` de `.machine__table`), asi que los
+       dos factores horizontales pasan por la misma escala del tablero
+       (x' = 1,0341753 · x − 1,70867 %): 0,6035 → 0,624125 de ancho y 0,2823 →
+       0,27486 de arranque. Los % de las tres celdas dentro de la franja no
+       cambian, porque la franja crece en la misma proporcion que sus placas. */
+    width: calc(var(--m-w) * 0.624125);
     height: calc(var(--frame-h) * 0.0646);
     justify-self: start;
     align-self: start;
-    margin-left: calc((100% - var(--m-w)) / 2 + var(--m-w) * 0.2823);
+    margin-left: calc((100% - var(--m-w)) / 2 + var(--m-w) * 0.27486);
     margin-top: calc(var(--frame-h) * 0.2601);
     min-height: 0;
     padding: 0;
@@ -5198,6 +5223,10 @@ body.is-demo .machine__side .controls .balance::after {
      quede ni una linea de fondo asomando por la ventana. Al ser % de la propia
      caja del marco, la ventana se respeta a cualquier escala y la cuadricula
      6 x 5 nunca empuja el layout.
+
+     El dibujo se pinta a sangre (ver `background`), asi que los dos % del eje X
+     pasan por la escala del sangrado; el alto no cambia y sus % se quedan como
+     se midieron.
      ------------------------------------------------------------------------ */
   .machine__table {
     grid-area: frame;
@@ -5205,16 +5234,22 @@ body.is-demo .machine__side .controls .balance::after {
     z-index: 1;
     display: block;
     width: var(--m-w);
-    /* Relación exacta del recorte (1392 x 1038): el arte no se estira, así que
-       los banderines y las monedas conservan su forma y los % de la ventana caen
-       donde se midieron. */
+    /* Relación exacta del recorte (1392 x 1038): los banderines y las monedas
+       conservan su alto y los % verticales de la ventana caen donde se
+       midieron. El unico estiramiento es el 3,4 % horizontal del sangrado. */
     aspect-ratio: 1392 / 1038;
     justify-self: center;
     align-self: start;
     min-height: 0;
     padding: 0;
     border: 0;
-    background: url('../assets/marco_movil.webp') no-repeat center / 100% 100%;
+    /* El lienzo del recorte trae 23 px transparentes a cada lado (1,6523 % de
+       1392: el filo pintado del caramelo arranca en x = 23), asi que el dibujo se
+       pinta un 3,4175 % mas ancho —1392 / 1346— y centrado: ese aire se sale de
+       la caja por los dos filos y el marco toca el viewport. El estiramiento es
+       solo horizontal; los % de la ventana y del HUD se reasignaron con la misma
+       escala, asi que tablero y dibujo siguen coincidiendo. */
+    background: url('../assets/marco_movil.webp') no-repeat center / 103.4175% 100%;
     box-shadow: none;
     container-type: normal;
     overflow: visible;
@@ -5222,9 +5257,13 @@ body.is-demo .machine__side .controls .balance::after {
 
   .machine__table .board {
     position: absolute;
-    left: 8.10%;
+    /* Anclajes del recorte (x 8,10 % · ancho 83,80 %) pasados por la escala del
+       sangrado: x' = 1,0341753 · x − 1,70867 %, que es el aire transparente que
+       ahora se sale de la caja. Asi el tablero sigue tapando el hueco exacto del
+       dibujo estirado. */
+    left: 6.66805%;
     top: 42.23%;
-    width: 83.80%;
+    width: 86.66389%;
     height: 48.50%;
     margin: 0;
     /* El aire del tablero se recorta al mínimo: cada píxel que se lleva el
@@ -6345,9 +6384,13 @@ body.is-demo .machine__side .controls .balance::after {
   .app {
     height: 100dvh;
     gap: clamp(4px, 1.2dvh, 9px);
+    /* Aire lateral del viewport. `.stage` lo cancela con margenes negativos para
+       que el marco y la consola sangren hasta el filo; se guarda en un token
+       para que las dos reglas no se desalineen si cambia el rango. */
+    --m-pad-x: clamp(4px, 1.5vw, 10px);
     padding:
       max(5px, env(safe-area-inset-top))
-      clamp(4px, 1.5vw, 10px)
+      var(--m-pad-x)
       max(5px, env(safe-area-inset-bottom));
     overflow: hidden;
   }
@@ -6494,10 +6537,9 @@ body.is-demo .machine__side .controls .balance::after {
    ========================================================================== */
 
 @media (min-width: 900px) {
-  /* El arte ocupa el ancho completo del viewport: el tope de 1760 px dejaba
-     400 px de fondo a cada lado en pantallas de 2560 y 80 px en 1920. El ancho
-     del marco lo decide `--frame-w` (ver `.machine`), no este contenedor. */
-  .app { max-width: none; }
+  /* El arte necesita algo mas de lienzo que la tarjeta antigua: con 1760 px el
+     marco y la consola crecen en pantallas de 1920 sin tocar el resto. */
+  .app { max-width: 1760px; }
 
   /* Los focos difuminados del fondo antiguo eran bokeh sobre un degradado
      plano; sobre la ilustracion del estadio solo lavarian las esquinas del
@@ -6511,42 +6553,22 @@ body.is-demo .machine__side .controls .balance::after {
     --d-gap-x: clamp(10px, 1.3vw, 26px);
     /* Alto que no es maquina: paddings de `.app`, barra superior y su gap. */
     --d-chrome: calc(96px + 1.2dvh);
-    /* Padding lateral de `.app`: la maquina lo cancela con margenes negativos
-       (`width: calc(100% + 2 * var(--app-pad-x))`) para que el arte sangre
-       hasta el filo del viewport. Es el mismo `max(...)` que aplica `.app` en
-       su regla de viewport, asi que el calculo no se desalinea si cambia. */
-    --app-pad-x: max(
-      clamp(8px, 1.5vw, 20px),
-      env(safe-area-inset-left),
-      env(safe-area-inset-right)
-    );
+    /* Ancho que se lleva `.app` (padding lateral simetrico + un pelo de aire). */
+    --d-avail-pad: clamp(16px, 3vw, 44px);
 
     /* Alto del marco: el menor entre el que deja el viewport y el que deja el
        ancho. 1,79737 = 1,19700 (relacion de d1, 1033/863) + 0,60037 (ancho de
-       la columna lateral por unidad de alto: 655/1091, ver mas abajo). El ancho
-       ya no descuenta el padding de `.app` ni el tope de 1760 px: la maquina
-       sangra sobre los dos (ver `--app-pad-x` y `.app` en este mismo bloque). */
+       la columna lateral por unidad de alto: 655/1091, ver mas abajo). */
     --frame-h: min(
       calc(100dvh - var(--d-chrome) - var(--d-bleed)),
-      calc((100vw - var(--d-gap-x)) / 1.79737)
+      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.79737)
     );
+    --frame-w: calc(var(--frame-h) * 1.19700);
     /* 1,66565 = 1091/655: la columna lateral es una sola pieza, asi que su ancho
        sale directamente del alto comun, sin descontar ninguna separacion. Con
        el arte nuevo (mas estrecho y alto que el anterior) la columna cede ~15 %
        de ancho al tablero para el mismo alto de marco. */
     --side-w: calc(var(--frame-h) / 1.66565);
-    /* El marco se lleva TODO el ancho que deja la columna lateral: lo que antes
-       era fondo a los lados ahora es tablero. No hay tope ni `max-width`: la
-       suma de las dos columnas y su separacion da exactamente `100vw`, asi que
-       la rejilla no tiene sobrante que repartir y el filo derecho del marco cae
-       sobre el filo del viewport (el izquierdo queda bajo la consola, que es la
-       que ocupa esa banda). d1 se estira en horizontal (`background-size: 100%
-       100%` y los anclajes en % de su caja), de modo que la ventana del arte y
-       el tablero siguen coincidiendo sea cual sea el estiramiento. Solo hay
-       estiramiento cuando manda el alto (pantallas anchas o ventanas bajas);
-       cuando manda el ancho, `--frame-h` sale de 1,79737 y el marco queda en la
-       relacion natural del dibujo (1,19700), sin deformar. */
-    --frame-w: calc(100vw - var(--d-gap-x) - var(--side-w));
     /* Escala tipografica de cada mitad del dibujo. Ya no son altos de piezas
        separadas (d2 lo funde todo): solo fijan los cuerpos de letra que se
        apoyan sobre la nube y sobre la consola. */
@@ -6563,12 +6585,6 @@ body.is-demo .machine__side .controls .balance::after {
     align-content: center;
     column-gap: var(--d-gap-x);
     row-gap: 0;
-    /* La maquina sangra sobre el padding de `.app` (mismo `max(...)` en
-       `--app-pad-x`) para que el marco llegue al filo del viewport. `.app` tiene
-       `overflow: hidden`, pero el padding entra en su caja: no recorta nada. */
-    width: calc(100% + 2 * var(--app-pad-x));
-    max-width: none;
-    margin-inline: calc(-1 * var(--app-pad-x));
     height: 100%;
     min-height: 0;
     padding: var(--d-bleed) 0 0;
