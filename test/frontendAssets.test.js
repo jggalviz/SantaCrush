@@ -1849,8 +1849,8 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   );
   assert.match(
     css,
-    /--frame-w: min\(\s*calc\(100vw - var\(--d-gap-x\) - var\(--side-w\)\),\s*calc\(var\(--frame-h\) \* 1\.34\)\s*\)/,
-    'El marco se lleva todo el ancho que deja la columna lateral (tope 1,34 de estiramiento)'
+    /--frame-w: calc\(100vw - var\(--d-gap-x\) - var\(--side-w\)\);/,
+    'El marco se lleva todo el ancho que deja la columna lateral, sin tope'
   );
   assert.match(
     css,

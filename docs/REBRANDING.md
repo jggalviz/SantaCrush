@@ -64,14 +64,16 @@ En escritorio el **marco ocupa todo el ancho del viewport**: `.app` pierde su
 `max-width` (el tope de 1760 px dejaba 400 px de fondo a cada lado en 2560 y
 80 px en 1920) y `.machine` sangra sobre el padding del contenedor con
 `width: calc(100 % + 2 * var(--app-pad-x))` y `margin-inline` negativo. Dentro de
-esa caja, `--frame-w` ya no se deduce de la relacion del dibujo, sino del ancho
-que deja la columna lateral: `min(100vw - gap - --side-w, --frame-h * 1.34)`. d1
-se estira en horizontal (`background-size: 100% 100 %`) y el tope 1,34 —un 12 %
-sobre su relacion 1,197— es lo que evita que las aspas del caramelo y las
-bombillas del toldo se lean deformadas; cuando se alcanza (16:9 y mas anchos) el
-sobrante vuelve a repartirse a los lados. Como la ventana del arte y `.board` se
-anclan en % de la misma caja, cualquier estiramiento mantiene el tablero pegado a
-su hueco transparente.
+esa caja, `--frame-w` ya no se deduce de la relacion del dibujo ni lleva tope:
+es exactamente `100vw - --d-gap-x - --side-w`, de modo que la columna lateral, la
+separacion y el marco suman el ancho del viewport y la rejilla no tiene sobrante
+que repartir. El filo derecho del marco cae sobre el filo de la pantalla; el
+izquierdo queda bajo la consola, que es la pieza que ocupa esa banda. d1 se
+estira en horizontal (`background-size: 100% 100 %`) y, como la ventana del arte
+y `.board` se anclan en % de la misma caja, cualquier estiramiento mantiene el
+tablero pegado a su hueco transparente. Solo se estira cuando manda el alto
+(pantallas anchas o ventanas bajas); cuando manda el ancho, `--frame-h` sale de
+1,79737 y el marco queda en la relacion natural del dibujo (1,19700).
 
 El modal de reglas y tabla de pagos no es una hoja blanca: `theme.css` lo pinta
 como la **consola del juego**, con las mismas cuatro capas del tablero —reticula
