@@ -5099,17 +5099,21 @@ body.is-demo .machine__side .controls .balance::after {
     position: relative;
     z-index: 3;
     display: block;
-    /* Franja exacta de las tres placas del HUD: x 30,46-90,88 % · y
-       27,37-35,53 % del recorte (medido sobre `marco_movil.webp`). El logo ocupa
-       el cielo de la izquierda, así que la franja arranca donde termina.
+    /* Franja exacta de las tres placas del HUD: x 28,23-88,58 % · y
+       26,01-32,47 % del recorte (bbox de los tres cuerpos rojos medido sobre
+       `marco_movil.webp`). El logo ocupa el cielo de la izquierda, así que la
+       franja arranca donde termina.
        El alto y el margen se miden con `--frame-h` porque son % del ALTO del
-       marco: usando `--m-w` la franja caía por debajo de su placa. */
-    width: calc(var(--m-w) * 0.6043);
-    height: calc(var(--frame-h) * 0.0816);
+       marco: usando `--m-w` la franja caía por debajo de su placa. Las placas
+       de este marco miden 6,46 % de alto (las del anterior, 8,16 %): con la
+       franja vieja el rótulo y el dato se centraban 2,2 % por debajo de su
+       placa y el dato asomaba sobre los banderines. */
+    width: calc(var(--m-w) * 0.6035);
+    height: calc(var(--frame-h) * 0.0646);
     justify-self: start;
     align-self: start;
-    margin-left: calc((100% - var(--m-w)) / 2 + var(--m-w) * 0.3046);
-    margin-top: calc(var(--frame-h) * 0.2737);
+    margin-left: calc((100% - var(--m-w)) / 2 + var(--m-w) * 0.2823);
+    margin-top: calc(var(--frame-h) * 0.2601);
     min-height: 0;
     padding: 0;
     border: 0;
@@ -5141,9 +5145,11 @@ body.is-demo .machine__side .controls .balance::after {
     overflow: hidden;
   }
 
-  .machine__side .hud__cell:nth-child(1) { left: 0; width: 30.28%; }
-  .machine__side .hud__cell:nth-child(2) { left: 30.75%; width: 32.01%; }
-  .machine__side .hud__cell:nth-child(3) { left: 63.23%; width: 36.77%; }
+  /* Los tres huecos de la franja, en % de ella: placas x 28,23-45,04 % ·
+     47,70-65,37 % · 68,03-88,58 % del recorte del marco. */
+  .machine__side .hud__cell:nth-child(1) { left: 0; width: 27.85%; }
+  .machine__side .hud__cell:nth-child(2) { left: 32.28%; width: 29.28%; }
+  .machine__side .hud__cell:nth-child(3) { left: 65.95%; width: 34.05%; }
 
   /* La primera placa del HUD pasa a mostrar el SALDO dinámico (sección 5), así
      que el rótulo y el dato de la apuesta que trae el HUD se retiran de la placa:
@@ -5156,24 +5162,27 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .hud__label {
     flex: 0 0 auto;
     /* Tipografia atada a `--m-w` y no a `vw`: en horizontal el viewport es ancho
-       pero la maquina es pequena, y con `vw` el rotulo crecia mas que su placa. */
-    font-size: clamp(4.8px, calc(var(--m-w) * 0.016), 7.2px);
+       pero la maquina es pequena, y con `vw` el rotulo crecia mas que su placa.
+       El minimo (4,2 px) queda por debajo del calculo a cualquier ancho real,
+       asi el rotulo nunca desborda la placa del HUD cuando la maquina encoge. */
+    font-size: clamp(4.2px, calc(var(--m-w) * 0.0148), 7px);
     line-height: 1;
     letter-spacing: 0.04em;
     color: #ffd977;
     text-shadow: 0 1px 1px rgba(30, 0, 20, 0.85);
   }
 
-  /* Los dos renglones tienen que caber en 8,16 % del alto del marco (~23 px a
-     390 px de ancho): 6,1 px de rótulo + 11,7 px de dato dejan ~4 px de aire
-     sobre las placas nuevas del HUD. */
+  /* Los dos renglones tienen que caber en 6,46 % del alto del marco (~18,2 px a
+     390 px de ancho): 5,6 px de rótulo + 1,1 px de aire + 10,9 px de dato dejan
+     el bloque centrado dentro del aro de la placa. */
   .machine__side .hud__value,
   .machine__side .hud__cell--win .hud__value {
     flex: 0 0 auto;
     margin: 0;
-    /* 0,031 del ancho del marco: el peor caso real («10.000,00») cabe en el
-       interior de la placa de GANANCIA desde 320 px de ancho. */
-    font-size: clamp(8px, calc(var(--m-w) * 0.031), 13px);
+    /* 0,0262 del ancho del marco: el peor caso real («10.000,00») cabe en el
+       interior de la placa de GANANCIA desde 320 px de ancho. El minimo queda
+       por debajo del calculo a cualquier ancho real, como en el rotulo. */
+    font-size: clamp(6.4px, calc(var(--m-w) * 0.0262), 11.6px);
     /* 1,1 y no 1: la caja de línea tiene que contener el hombro del glifo; con
        `line-height: 1` el navegador recortaba un píxel por abajo. */
     line-height: 1.1;
@@ -5502,15 +5511,15 @@ body.is-demo .machine__side .controls .balance::after {
   /* El saldo viaja a la primera placa del HUD: es la lectura que tiene que
      estar siempre a la vista y su placa del pie pasa a ser el pulsador MÁS
      (sección 6). La caja copia la de `.hud__cell:nth-child(1)`
-     (x 30,46-48,76 % · y 27,37-35,53 % del marco) subida por encima de la
-     consola, que es su bloque contenedor: el alto del marco (72,63 % hasta la
+     (x 28,23-45,04 % · y 26,01-32,47 % del marco) subida por encima de la
+     consola, que es su bloque contenedor: el alto del marco (73,99 % hasta la
      franja del HUD) más la separación de la rejilla. */
   .machine__side .controls .balance,
   body.is-demo .machine__side .controls .balance {
-    left: 30.46%;
-    top: calc(-1 * (var(--frame-h) * 0.7263 + var(--row-gap)));
-    width: 18.30%;
-    height: calc(var(--frame-h) * 0.0816);
+    left: 28.23%;
+    top: calc(-1 * (var(--frame-h) * 0.7399 + var(--row-gap)));
+    width: 16.81%;
+    height: calc(var(--frame-h) * 0.0646);
     gap: clamp(1px, calc(var(--m-w) * 0.003), 2px);
     padding: 0 1%;
     /* Sobre el arte del marco (`z-index: 1`) y por debajo de la pegatina del
@@ -5525,7 +5534,7 @@ body.is-demo .machine__side .controls .balance::after {
      que la franja del HUD se lea como una sola línea de datos. */
   .machine__side .controls .balance__label {
     flex: 0 0 auto;
-    font-size: clamp(5.2px, calc(var(--m-w) * 0.018), 8px);
+    font-size: clamp(4.2px, calc(var(--m-w) * 0.0148), 7px);
     line-height: 1;
     letter-spacing: 0.06em;
     text-align: center;
@@ -5535,20 +5544,18 @@ body.is-demo .machine__side .controls .balance::after {
 
   /* El saldo hereda del escritorio `color: transparent` + degradado recortado a
      la tinta: a 9 px el navegador no pinta nada y la placa parecía vacía. Aquí
-     el dato se pinta plano y dorado, como el de la apuesta, con un cuerpo un
-     pelo menor que los otros dos datos del HUD: a 10,1 px caben los doce
-     caracteres de un saldo de siete cifras («1.000.000,00») dentro del hueco
-     interior de la placa (18,75 % del marco) sin tocar el aro, incluso a 320 px
-     de ancho. */
+     el dato se pinta plano y dorado, como el de la apuesta, un pelo por debajo
+     del cuerpo de los otros dos datos del HUD: la placa mide 16,81 % del ancho
+     y el bloque rótulo + dato tiene que caber en 6,46 % del alto del marco. */
   .machine__side .controls .balance__value {
     flex: 0 0 auto;
     min-width: 0;
     max-width: 100%;
     margin: 0;
-    font-size: clamp(7.4px, calc(var(--m-w) * 0.026), 12px);
-    /* 1,2 y no 1: la caja de linea tiene que contener el hombro y el descendente
-       de las cifras para que el recorte de la placa no roce el dato. */
-    line-height: 1.2;
+    font-size: clamp(6.4px, calc(var(--m-w) * 0.025), 11.2px);
+    /* 1,15 y no 1: la caja de linea tiene que contener el hombro y el
+       descendente de las cifras sin empujar el bloque fuera del aro. */
+    line-height: 1.15;
     white-space: nowrap;
     letter-spacing: -0.01em;
     color: #fff6c9;
@@ -5607,13 +5614,15 @@ body.is-demo .machine__side .controls .balance::after {
      recorta con puntos suspensivos en vez de envolver. */
   .machine__side .controls .statusbar {
     position: absolute;
-    /* Todo el hueco interior de la placa (x 37,3-61,6 % · y 71,7-81,9 %): la
-       franja ocupa la mitad baja, de modo que el aviso dispone de 23 % de ancho
-       y el recorte con puntos suspensivos llega lo mas tarde posible. */
-    left: 37.8%;
-    top: 77.0%;
-    width: 23.0%;
-    height: 4.8%;
+    /* Hueco interior de la placa (x 37,0-62,8 % · y 71,7-81,9 %): la franja se
+       queda con la mitad baja, centrada en el eje real de la placa (49,9 % del
+       ancho) y sin tocar el aro inferior. Antes arrancaba en 77,0 % con 23 % de
+       ancho: el texto caia 3 px a la izquierda del aro y su ultima linea se
+       pegaba al borde dorado. */
+    left: 37.35%;
+    top: 78.06%;
+    width: 25.1%;
+    height: 2.98%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -5622,7 +5631,7 @@ body.is-demo .machine__side .controls .balance::after {
     padding: 0;
     margin: 0;
     color: #ffe7a6;
-    font-size: clamp(5px, calc(var(--m-w) * 0.0148), 7.2px);
+    font-size: clamp(3.6px, calc(var(--m-w) * 0.0148), 5.8px);
     font-weight: 800;
     line-height: 1;
     letter-spacing: 0;
@@ -5868,16 +5877,24 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* Placa 3 (x 36,40-62,58 % · y 68,9-84,1 %, el doble de alta que las otras
-     dos): su mitad alta lleva el rotulo y la baja, el estado del motor. El hueco
-     interior va de 71,7 % a 81,9 %, asi que el rotulo se centra en 74,6 %, a
-     5,4 % del alto del recorte por debajo del borde de la caja tactil (69,2 %). */
+     dos): el hueco interior va de 71,7 % a 81,9 % del alto de la consola, así
+     que la mitad alta (74,15 % de centro) lleva el rótulo y la baja (79,4 %), el
+     estado del motor. Se centra en el eje REAL de la placa —49,9 % del ancho de
+     la consola—, que cae 1,3 px a la derecha del eje de la caja táctil: por eso
+     el `left` suma 0,35 % del ancho del marco y el rótulo no queda descuadrado
+     respecto al aro dorado. */
   .machine__side .controls #btn-spin::after {
     content: "GIRAR";
-    left: 50%;
-    top: calc(100% + var(--m-w) * 0.0268);
+    left: calc(50% + var(--m-w) * 0.0035);
+    top: calc(100% + var(--m-w) * 0.0284);
     width: calc(var(--m-w) * 0.2618);
-    height: calc(var(--m-w) * 0.0338);
-    font-size: clamp(6px, calc(var(--m-w) * 0.028), 11.2px);
+    /* La caja mide lo mismo que el cuerpo del texto y el par «rótulo + estado»
+       queda centrado en el hueco interior (19,1 px de alto a 390 px de ancho):
+       9,0 px de GIRAR + 1,5 px de aire + 5,6 px del estado, con 1,5 px arriba y
+       abajo. Antes el rótulo medía 10,6 px y su caja 12,8 px, así que el estado
+       se le encimaba y su línea tocaba el aro inferior. */
+    height: calc(var(--m-w) * 0.0238);
+    font-size: clamp(5.8px, calc(var(--m-w) * 0.0238), 9.2px);
   }
 
   /* --- Nombres accesibles de los discos -----------------------------------

@@ -1473,25 +1473,25 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
 
   // 4) La marca y el HUD caen sobre sus huecos del arte nuevo: el cielo del
   //    estadio sostiene el logo centrado en el marco y la franja de las tres
-  //    placas doradas va de 30,46 a 90,88 % del ancho y de 27,37 a 35,53 % del
-  //    alto del recorte.
+  //    placas doradas va de 28,23 a 88,58 % del ancho y de 26,01 a 32,47 % del
+  //    alto del recorte (bbox de los tres cuerpos rojos de `marco_movil.webp`).
   const hudRule = css.match(
-    /\.machine__side \.hud\s*\{[^}]*width:\s*calc\(var\(--m-w\) \* 0\.6043\);[^}]*\}/
+    /\.machine__side \.hud\s*\{[^}]*width:\s*calc\(var\(--m-w\) \* 0\.6035\);[^}]*\}/
   );
   assert.ok(hudRule, 'El HUD debe medir la franja exacta de las tres placas');
   assert.match(
     hudRule[0],
-    /height:\s*calc\(var\(--frame-h\) \* 0\.0816\);/,
+    /height:\s*calc\(var\(--frame-h\) \* 0\.0646\);/,
     'La franja mide el alto interior de las placas del HUD'
   );
   assert.match(
     hudRule[0],
-    /margin-left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ var\(--m-w\) \* 0\.3046\);/,
-    'La franja arranca en la primera placa del HUD (30,46 % del marco)'
+    /margin-left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ var\(--m-w\) \* 0\.2823\);/,
+    'La franja arranca en la primera placa del HUD (28,23 % del marco)'
   );
   assert.match(
     hudRule[0],
-    /margin-top:\s*calc\(var\(--frame-h\) \* 0\.2737\);/,
+    /margin-top:\s*calc\(var\(--frame-h\) \* 0\.2601\);/,
     'La franja cae sobre sus placas y no sobre la ventana'
   );
 
