@@ -5,7 +5,7 @@
  * consola_movil) y el cartel de victoria desde el arte de 5 Santa Crush.
  *
  *   desk/Marco navideño de caramelos brillantes.png    -> design/d1.png (1033x863)
- *   desk/Interfaz Navideña con Campanas Doradas.png    -> design/d2.png ( 655x928)
+ *   desk/Marco de tragaperras navideño festivo.png   -> design/d2.png ( 655x1091)
  *   movil/Marco navideño de campanas doradas.png       -> design/marco_movil.png (1392x1038)
  *   movil/Panel navideño brillante con Santa y reno.png -> design/consola_movil.png (1780x883)
  *   Victoria navideña con mono y regalos.png           -> design/victoria_navidena.png

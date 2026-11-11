@@ -7383,10 +7383,10 @@ body.is-demo .machine__side .controls .balance::after {
 }
 
 /* La respiracion de la chapa en escritorio: el mismo vaiven que en movil, pero
-   acotado a -4 px y 2 % porque el logo va montado sobre el aro dorado de la nube
-   y con los -7 px y el 3 % de `pana-logo-breathe` el pico subia de mas hacia la
-   corona. El `filter` se queda quieto, heredado de la regla base, para no
-   repintar. */
+   acotado a -4 px y 2 % porque el logo se apoya en la banda de nieve de la
+   corona y con los -7 px y el 3 % de `pana-logo-breathe` el pico subia de mas
+   hacia la cresta del toldo. El `filter` se queda quieto, heredado de la regla
+   base, para no repintar. */
 @keyframes pana-logo-breathe-side {
   0%,
   100% { transform: translateY(0) scale(1); }
