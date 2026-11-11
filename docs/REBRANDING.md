@@ -60,6 +60,19 @@ casillas es la linea de separacion, no aire. Asi no queda margen lateral muerto
 dentro de la ventana del marco y cada caramelo ocupa el mayor alto que le deja la
 casilla (el alto manda porque el dibujo es casi cuadrado y la casilla apaisada).
 
+En escritorio el **marco ocupa todo el ancho del viewport**: `.app` pierde su
+`max-width` (el tope de 1760 px dejaba 400 px de fondo a cada lado en 2560 y
+80 px en 1920) y `.machine` sangra sobre el padding del contenedor con
+`width: calc(100 % + 2 * var(--app-pad-x))` y `margin-inline` negativo. Dentro de
+esa caja, `--frame-w` ya no se deduce de la relacion del dibujo, sino del ancho
+que deja la columna lateral: `min(100vw - gap - --side-w, --frame-h * 1.34)`. d1
+se estira en horizontal (`background-size: 100% 100 %`) y el tope 1,34 —un 12 %
+sobre su relacion 1,197— es lo que evita que las aspas del caramelo y las
+bombillas del toldo se lean deformadas; cuando se alcanza (16:9 y mas anchos) el
+sobrante vuelve a repartirse a los lados. Como la ventana del arte y `.board` se
+anclan en % de la misma caja, cualquier estiramiento mantiene el tablero pegado a
+su hueco transparente.
+
 El modal de reglas y tabla de pagos no es una hoja blanca: `theme.css` lo pinta
 como la **consola del juego**, con las mismas cuatro capas del tablero —reticula
 de 1 px, brillo de estadio arriba, reflejo dorado al pie y cuerpo marino— mas el

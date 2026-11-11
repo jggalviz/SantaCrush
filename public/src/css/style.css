@@ -6494,9 +6494,10 @@ body.is-demo .machine__side .controls .balance::after {
    ========================================================================== */
 
 @media (min-width: 900px) {
-  /* El arte necesita algo mas de lienzo que la tarjeta antigua: con 1760 px el
-     marco y la consola crecen en pantallas de 1920 sin tocar el resto. */
-  .app { max-width: 1760px; }
+  /* El arte ocupa el ancho completo del viewport: el tope de 1760 px dejaba
+     400 px de fondo a cada lado en pantallas de 2560 y 80 px en 1920. El ancho
+     del marco lo decide `--frame-w` (ver `.machine`), no este contenedor. */
+  .app { max-width: none; }
 
   /* Los focos difuminados del fondo antiguo eran bokeh sobre un degradado
      plano; sobre la ilustracion del estadio solo lavarian las esquinas del
@@ -6510,22 +6511,42 @@ body.is-demo .machine__side .controls .balance::after {
     --d-gap-x: clamp(10px, 1.3vw, 26px);
     /* Alto que no es maquina: paddings de `.app`, barra superior y su gap. */
     --d-chrome: calc(96px + 1.2dvh);
-    /* Ancho que se lleva `.app` (padding lateral simetrico + un pelo de aire). */
-    --d-avail-pad: clamp(16px, 3vw, 44px);
+    /* Padding lateral de `.app`: la maquina lo cancela con margenes negativos
+       (`width: calc(100% + 2 * var(--app-pad-x))`) para que el arte sangre
+       hasta el filo del viewport. Es el mismo `max(...)` que aplica `.app` en
+       su regla de viewport, asi que el calculo no se desalinea si cambia. */
+    --app-pad-x: max(
+      clamp(8px, 1.5vw, 20px),
+      env(safe-area-inset-left),
+      env(safe-area-inset-right)
+    );
 
     /* Alto del marco: el menor entre el que deja el viewport y el que deja el
        ancho. 1,79737 = 1,19700 (relacion de d1, 1033/863) + 0,60037 (ancho de
-       la columna lateral por unidad de alto: 655/1091, ver mas abajo). */
+       la columna lateral por unidad de alto: 655/1091, ver mas abajo). El ancho
+       ya no descuenta el padding de `.app` ni el tope de 1760 px: la maquina
+       sangra sobre los dos (ver `--app-pad-x` y `.app` en este mismo bloque). */
     --frame-h: min(
       calc(100dvh - var(--d-chrome) - var(--d-bleed)),
-      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.79737)
+      calc((100vw - var(--d-gap-x)) / 1.79737)
     );
-    --frame-w: calc(var(--frame-h) * 1.19700);
     /* 1,66565 = 1091/655: la columna lateral es una sola pieza, asi que su ancho
        sale directamente del alto comun, sin descontar ninguna separacion. Con
        el arte nuevo (mas estrecho y alto que el anterior) la columna cede ~15 %
        de ancho al tablero para el mismo alto de marco. */
     --side-w: calc(var(--frame-h) / 1.66565);
+    /* El marco se lleva TODO el ancho que deja la columna lateral: lo que antes
+       era fondo a los lados ahora es tablero. d1 se estira en horizontal
+       (`background-size: 100% 100%` y los anclajes en % de su caja), asi que la
+       ventana del arte y el tablero siguen coincidiendo sea cual sea el
+       estiramiento. El tope de 1,34 (1,119 sobre la relacion 1,19700 del
+       dibujo) es lo que aguanta el marco sin que las aspas del caramelo ni las
+       bombillas del toldo se lean deformadas; a partir de ahi el sobrante se
+       reparte a los lados con el `justify-content: center` de la rejilla. */
+    --frame-w: min(
+      calc(100vw - var(--d-gap-x) - var(--side-w)),
+      calc(var(--frame-h) * 1.34)
+    );
     /* Escala tipografica de cada mitad del dibujo. Ya no son altos de piezas
        separadas (d2 lo funde todo): solo fijan los cuerpos de letra que se
        apoyan sobre la nube y sobre la consola. */
@@ -6542,6 +6563,12 @@ body.is-demo .machine__side .controls .balance::after {
     align-content: center;
     column-gap: var(--d-gap-x);
     row-gap: 0;
+    /* La maquina sangra sobre el padding de `.app` (mismo `max(...)` en
+       `--app-pad-x`) para que el marco llegue al filo del viewport. `.app` tiene
+       `overflow: hidden`, pero el padding entra en su caja: no recorta nada. */
+    width: calc(100% + 2 * var(--app-pad-x));
+    max-width: none;
+    margin-inline: calc(-1 * var(--app-pad-x));
     height: 100%;
     min-height: 0;
     padding: var(--d-bleed) 0 0;

@@ -1849,13 +1849,37 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   );
   assert.match(
     css,
-    /--frame-w: calc\(var\(--frame-h\) \* 1\.19700\)/,
-    'El marco mide 1033/863 de su alto (relacion del dibujo, sin recortar el toldo)'
+    /--frame-w: min\(\s*calc\(100vw - var\(--d-gap-x\) - var\(--side-w\)\),\s*calc\(var\(--frame-h\) \* 1\.34\)\s*\)/,
+    'El marco se lleva todo el ancho que deja la columna lateral (tope 1,34 de estiramiento)'
   );
   assert.match(
     css,
     /--side-w: calc\(var\(--frame-h\) \/ 1\.66565\)/,
     'La columna lateral mide 655/1091 de su alto'
+  );
+
+  // El lienzo de escritorio ya no se limita a 1760 px ni se queda dentro del
+  // padding de `.app`: la maquina sangra sobre el (margen negativo) y el marco
+  // se lleva lo que antes era fondo a los lados (bandas de 400 px en 2560 y de
+  // 80 + 20 px en 1920).
+  assert.match(
+    css,
+    /\.app \{ max-width: none; \}/,
+    'El lienzo de escritorio no tiene tope de ancho: el arte llega al filo'
+  );
+  const machineBodies = bodies('\\.machine');
+  assert.ok(
+    machineBodies.some(
+      (body) =>
+        body.includes('width: calc(100% + 2 * var(--app-pad-x));') &&
+        body.includes('margin-inline: calc(-1 * var(--app-pad-x));')
+    ),
+    'La maquina ocupa el ancho del viewport (sangra sobre el padding de `.app`)'
+  );
+  assert.match(
+    css,
+    /--app-pad-x: max\(\s*clamp\(8px, 1\.5vw, 20px\),\s*env\(safe-area-inset-left\),\s*env\(safe-area-inset-right\)\s*\)/,
+    'El sangrado usa el mismo padding lateral que `.app` (con las muescas)'
   );
 
   const sideBodies = bodies('\\.machine__side');
