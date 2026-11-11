@@ -1518,13 +1518,15 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   );
   // El ancho sale del alto libre menos la separacion, repartido entre la
   // relacion del marco (1038 / 1392 = 0,7457, la del recorte sin estirar) y la
-  // de la consola (883 / 1780 = 0,4961): 1,2418 en total.
+  // de la consola (883 / 1780 = 0,4961): 1,2418 en total. La separacion se lee
+  // del token de la rejilla (`--row-gap`), que en movil vale 0: la junta va a
+  // tope (ver el test de la junta marco-consola).
   // `cqw`/`cqh` en lugar de `%`: dentro de una custom property un `%` se
   // resuelve contra la propiedad que la usa, y el mismo token medía el ancho en
   // `width` y el alto en `height` (el HUD caía 12 px bajo sus placas).
   assert.match(
     machineGrid[0],
-    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - clamp\(4px, 1\.2dvh, 10px\)\) \/ 1\.2418\)\);/,
+    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - var\(--row-gap\)\) \/ 1\.2418\)\);/,
     'El ancho de la maquina descuenta marco + separacion + consola del alto libre'
   );
 
@@ -1669,6 +1671,56 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
     1,
     'El tope del logo vive en una sola regla, comun a todo el rango movil'
   );
+});
+
+test('en movil la junta marco-consola va a tope, sin franja de fondo', () => {
+  const css = read(STYLE_PATH);
+
+  // El arte del marco llega con tinta hasta su ultimo pixel, pero el recorte de
+  // la consola trae el filo de arriba casi vacio (0,8 % de su alto sin tinta y
+  // el aro macizo a partir del 2,3 %). Con un `gap` de 10 px se veian 11 px de
+  // fondo entre el bloque del slot y la botonera (medido con capturas y diff de
+  // pixeles a 390 x 844). Aqui el hueco se anula y la consola se mete bajo el
+  // marco con `--joint-tuck`, 1,2 % de `--m-w` (4,7 px a 390 px de ancho): lo
+  // justo para tapar ese aire muerto sin comerse el filo del dibujo.
+  const machineGrid = css.match(
+    /\.machine\s*\{[^}]*grid-template-areas:\s*"frame"\s*"console";[^}]*\}/
+  );
+  assert.ok(machineGrid, 'La maquina movil debe apilar marco y consola en una columna');
+  assert.match(machineGrid[0], /--row-gap:\s*0px;/, 'La separacion marco-consola se anula');
+  assert.match(machineGrid[0], /row-gap:\s*var\(--row-gap\);/, 'La rejilla consume el token');
+  assert.match(
+    machineGrid[0],
+    /--joint-tuck:\s*calc\(var\(--m-w\) \* 0\.012\);/,
+    'El solape se mide con el ancho de la maquina, no con un valor fijo'
+  );
+
+  // La caja de la consola sube ese solape con margen negativo: con el `gap` a 0
+  // el aire solo puede salir de la propia caja, y el margen no toca el reparto de
+  // `--m-w` (las dos relaciones del arte siguen mandando el alto).
+  const caseRule = css.match(
+    /\.machine__side \.controls\s*\{[^}]*aspect-ratio:\s*1780 \/ 883;[^}]*\}/
+  );
+  assert.ok(caseRule, 'La consola debe declarar su relacion 1780/883');
+  assert.match(
+    caseRule[0],
+    /margin:\s*calc\(-1 \* var\(--joint-tuck\)\) 0 0;/,
+    'La consola se mete bajo el marco lo justo para no dejar franja'
+  );
+
+  // El saldo vive dentro de la consola y se ancla al HUD del marco: si la caja
+  // sube, su `top` tiene que descontar el mismo solape o la placa se desplaza.
+  assert.match(
+    css,
+    /top:\s*calc\(-1 \* \(var\(--frame-h\) \* 0\.7399 \+ var\(--row-gap\) - var\(--joint-tuck\)\)\);/,
+    'El saldo sigue clavado en la primera placa del HUD'
+  );
+
+  // El ajuste es exclusivo del tramo movil: el escritorio monta la consola en su
+  // propia columna y no debe recibir ni el token ni la separacion variable.
+  const desktopGrid = css.match(/\.machine\s*\{[^}]*grid-template-areas:\s*"side table";[^}]*\}/);
+  assert.ok(desktopGrid, 'El escritorio mantiene su rejilla de dos columnas');
+  assert.doesNotMatch(desktopGrid[0], /joint-tuck|--row-gap/, 'El escritorio no hereda la junta movil');
 });
 
 test('el logo recupera presencia en tablets con aire reservado y sin mover su base', () => {

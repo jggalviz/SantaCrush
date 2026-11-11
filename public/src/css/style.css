@@ -4937,9 +4937,23 @@ body.is-demo .machine__side .controls .balance::after {
     justify-content: stretch;
     /* La separación marco-consola es, además, la distancia entre la consola y la
        franja del HUD (otra fila de la misma rejilla): se guarda en un token para
-       que el saldo suba hasta su placa sin repetir el número. */
-    --row-gap: clamp(4px, 1.2dvh, 10px);
+       que el saldo suba hasta su placa sin repetir el número.
+
+       En móvil la junta va a tope. El dibujo del marco llega con tinta hasta su
+       último píxel, pero el recorte de la consola trae el filo de arriba casi
+       vacío (0,8 % de su alto sin tinta y el aro macizo a partir del 2,3 %), así
+       que un `gap` de 10 px se leía como una franja de fondo entre el bloque del
+       slot y la botonera. Aquí el hueco se anula y la consola se mete bajo el
+       marco con `--joint-tuck`; entre las dos piezas solo queda el filo de la
+       carcasa. Los dos tokens siguen alimentando el alto del logo (`--logo-sky`)
+       y el ancla del saldo, que se desplaza con el solape. */
+    --row-gap: 0px;
     row-gap: var(--row-gap);
+    /* Solape de la junta: 1,2 % de `--m-w` (4,7 px a 390 px de ancho). Es el
+       aire muerto que trae la consola por arriba —2,3 % de su alto hasta el aro
+       macizo, o sea 0,0114 de `--m-w`— redondeado a la baja para no comerse el
+       filo del marco. */
+    --joint-tuck: calc(var(--m-w) * 0.012);
     /* Sin padding propio: el aire lateral de `.app` lo cancela el escenario
        (ver `.stage`), asi que la maquina llena el ancho completo. */
     padding: 0;
@@ -4963,7 +4977,7 @@ body.is-demo .machine__side .controls .balance::after {
        quedara 12 px por debajo de sus placas). Con unidades de contenedor
        `--m-w` es una longitud y mide lo mismo en cualquier propiedad. */
     --m-w: 100cqw;
-    --m-w: min(100cqw, calc((100cqh - clamp(4px, 1.2dvh, 10px)) / 1.2418));
+    --m-w: min(100cqw, calc((100cqh - var(--row-gap)) / 1.2418));
     /* Alto del marco (aspect-ratio 1392 / 1038, la relación exacta del recorte:
        el arte no se estira). Los % verticales de las capas superpuestas se
        miden con `--frame-h`, porque el alto no es proporcional a `--m-w` en
@@ -5426,8 +5440,8 @@ body.is-demo .machine__side .controls .balance::after {
     position: relative;
     /* Sobre el arte del marco (`z-index: 1`): el saldo sube hasta su placa del
        HUD y, al vivir dentro de la consola, sin esto lo tapaba el dibujo del
-       marco. La caja de la consola nunca se solapa con la del marco (las separa
-       el `row-gap`), asi que subir la capa no cambia nada mas. */
+       marco. La consola se solapa con el marco solo en `--joint-tuck` (el aire
+       muerto de su recorte), asi que subir la capa no cambia nada mas. */
     z-index: 2;
     display: block;
     /* El arte manda: mismo ancho que el marco y la relacion exacta del
@@ -5440,7 +5454,12 @@ body.is-demo .machine__side .controls .balance::after {
     /* Mismo eje que el tablero: las dos filas comparten `--m-w`, que ya esta
        centrada en la columna, asi que con centrar el case basta. */
     justify-self: center;
-    margin: 0;
+    /* La caja sube `--joint-tuck`: el recorte trae el filo de arriba casi vacio y
+       asi la botonera se pega al bloque del slot sin dejar franja de fondo. El
+       solape no altera el reparto (`--m-w` mide las dos relaciones y el `gap` es
+       0): el margen negativo solo acorta la fila, que se dimensiona por el
+       contenido. */
+    margin: calc(-1 * var(--joint-tuck)) 0 0;
     /* Sin borde, aire ni sombra propios: el dibujo ya trae su filo y su brillo. */
     padding: 0;
     border: 0;
@@ -5561,11 +5580,12 @@ body.is-demo .machine__side .controls .balance::after {
      (sección 6). La caja copia la de `.hud__cell:nth-child(1)`
      (x 28,23-45,04 % · y 26,01-32,47 % del marco) subida por encima de la
      consola, que es su bloque contenedor: el alto del marco (73,99 % hasta la
-     franja del HUD) más la separación de la rejilla. */
+     franja del HUD) más la separación de la rejilla, descontando el solape de la
+     junta (la consola sube `--joint-tuck`, así que su caja arranca más arriba). */
   .machine__side .controls .balance,
   body.is-demo .machine__side .controls .balance {
     left: 28.23%;
-    top: calc(-1 * (var(--frame-h) * 0.7399 + var(--row-gap)));
+    top: calc(-1 * (var(--frame-h) * 0.7399 + var(--row-gap) - var(--joint-tuck)));
     width: 16.81%;
     height: calc(var(--frame-h) * 0.0646);
     gap: clamp(1px, calc(var(--m-w) * 0.003), 2px);

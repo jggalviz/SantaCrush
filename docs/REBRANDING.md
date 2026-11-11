@@ -195,6 +195,17 @@ el propio origen.
    conserva su estiramiento del 3,4 % y sobresale ~1,7 % de su caja por lado, que
    es el unico resto del sangrado fuera del telefono vertical.
 
+   La **junta marco-consola** tambien va a tope. El dibujo del marco llega con
+   tinta hasta su ultimo pixel, pero el recorte de `consola_movil.webp` trae el
+   filo de arriba casi vacio (0,8 % de su alto sin tinta y el aro macizo a partir
+   del 2,3 %), asi que el `row-gap` de la rejilla se leia como una franja de fondo
+   de 11 px entre el bloque del slot y la botonera. Ahora `--row-gap` vale 0 y la
+   caja de la consola sube `--joint-tuck` (1,2 % de `--m-w`, 4,7 px a 390 px de
+   ancho) con `margin-top` negativo: el solape solo acorta la fila, no toca el
+   reparto de `--m-w`, y el saldo descuenta el mismo solape en su `top` para
+   seguir clavado en la primera placa del HUD. Medido a 320, 360, 390, 430 y
+   768 x 1024: cero franja de fondo y ningun scroll vertical.
+
 Pendiente de arte (ver la tabla de alcance): las carcasas moviles
 
    En escritorio (`min-width: 900px`) el logo no va en una tarjeta: se pega en el
