@@ -1,16 +1,19 @@
 'use strict';
 
 /**
- * Deriva los cuatro maestros de las maquinas (d1, d2, marco_movil,
- * consola_movil) desde el arte de 5 Santa Crush.
+ * Deriva los maestros de las maquinas (d1, d2, marco_movil,
+ * consola_movil) y el cartel de victoria desde el arte de 5 Santa Crush.
  *
- *   desk/Marco navideño de caramelos brillantes.png    -> design/d1.png (1033x843)
+ *   desk/Marco navideño de caramelos brillantes.png    -> design/d1.png (1033x863)
  *   desk/Interfaz Navideña con Campanas Doradas.png    -> design/d2.png ( 655x928)
  *   movil/Marco navideño de campanas doradas.png       -> design/marco_movil.png (1392x1093)
  *   movil/Panel navideño brillante con Santa y reno.png -> design/consola_movil.png (1780x883)
+ *   Victoria navideña con mono y regalos.png           -> design/victoria_navidena.png
  *
- * El CSS no se toca: los maestros se reencajan para que el hueco/ventana del
- * arte caiga donde el CSS mide los anclajes.
+ * Los maestros se reencajan para que el hueco/ventana del arte caiga donde el
+ * CSS mide los anclajes, pero SIEMPRE con escala uniforme: recortar o estirar
+ * un solo eje para clavar una caja antes se comia la cresta de la nieve del
+ * toldo (d1) y la base del letrero del premio (victoria).
  */
 
 const fs = require('node:fs');
@@ -19,6 +22,18 @@ const sharp = require('sharp');
 
 const ROOT = path.join(__dirname, '..');
 const DESIGN = path.join(ROOT, 'design');
+
+/**
+ * Piezas a regenerar. `node scripts/build-santa-masters.js d1 victoria` rehace
+ * solo esas dos; sin argumentos se rehace todo el juego de maestros.
+ *
+ * El selector existe porque este script parte del arte de origen (`desk/`,
+ * `movil/`, `slot/`, el GIF del logo), que no siempre es el vigente: correrlo
+ * entero para retocar una pieza pisaria los simbolos ya importados. Con nombres
+ * se regenera solo lo que se toca y el resto queda como esta en `design/`.
+ */
+const PICK = new Set(process.argv.slice(2));
+const wants = (piece) => PICK.size === 0 || PICK.has(piece);
 
 /** BBox de la tinta (alfa >= 16) de un buffer RGBA en crudo. */
 function inkBox(data, width, height, threshold = 16) {
@@ -108,69 +123,97 @@ async function alignByHole(file, canvas, srcHole, dstHole) {
     .toBuffer();
 }
 
+/**
+ * Recorta el alfa y encaja el dibujo en `canvas` con escala uniforme. El lienzo
+ * comparte la relacion del bbox (la comprueba `build-desktop-art.js`), asi que
+ * `fill` no deforma: solo reescala.
+ */
+async function fitInk(file, canvas) {
+  const ink = await inkOf(file);
+  return sharp(ink.data, { raw: { width: ink.info.width, height: ink.info.height, channels: 4 } })
+    .resize(canvas.width, canvas.height, { fit: 'fill', kernel: 'lanczos3' })
+    .png()
+    .toBuffer();
+}
+
 (async () => {
   /* ---------------------------------------------------------------- d1 ---- */
-  // Marco del tablero: la ventana del arte debe caer donde el CSS la mide
-  // (hueco del maestro vigente: x 5,61-94,29 % · y 12,50-92,98 % de 1033x843).
-  const d1 = await alignByHole(
-    path.join(ROOT, 'desk', 'Marco navideño de caramelos brillantes.png'),
-    { width: 1033, height: 843 },
-    { left: 79, top: 163, width: 1140, height: 836 },
-    { left: 58, top: 105, width: 916, height: 676 }
-  );
-  fs.writeFileSync(path.join(DESIGN, 'd1.png'), d1);
-  console.log('design/d1.png  1033x843');
+  if (wants('d1')) {
+    // Marco del tablero. El maestro (1388 x 1133) trae margen transparente; el
+    // dibujo util mide 1301 x 1088 (1,1958:1) y su ventana transparente queda en
+    // x 6,15-93,77 % · y 14,98-91,64 % de esa caja.
+    //
+    // Antes el arte se reescalaba en los dos ejes por separado para clavar la
+    // ventana en un lienzo de 1033 x 843 (1,2254:1) y el sobrante se recortaba
+    // por arriba y por abajo: 27 px del toldo, justo la cresta de nieve y los
+    // adornos, quedaban guillotinados contra el borde. El lienzo pasa a la
+    // relacion del dibujo (1033 x 863, 1,197:1) para que el marco respire; el CSS
+    // mide la ventana en % de esta caja nueva (ver `--frame-w` y `.machine__table
+    // .board`), asi que los anclajes siguen trazables sobre el dibujo.
+    const d1 = await fitInk(
+      path.join(ROOT, 'desk', 'Marco navideño de caramelos brillantes.png'),
+      { width: 1033, height: 863 }
+    );
+    fs.writeFileSync(path.join(DESIGN, 'd1.png'), d1);
+    console.log('design/d1.png  1033x863 (escala uniforme, sin recortar el toldo)');
+  }
 
   /* ---------------------------------------------------------------- d2 ---- */
-  // Columna lateral: el arte se estira al lienzo y luego se reasignan las
-  // franjas para que placas, discos y pastillas caigan en su caja del CSS.
-  const d2Ink = await inkOf(path.join(ROOT, 'desk', 'Interfaz Navideña con Campanas Doradas.png'));
-  const fitted = await sharp(d2Ink.data, {
-    raw: { width: d2Ink.info.width, height: d2Ink.info.height, channels: 4 }
-  })
-    .resize(655, 928, { fit: 'fill', kernel: 'lanczos3' })
-    .png()
-    .toBuffer();
-  const d2 = await rowRemap(fitted, { width: 655, height: 928 }, [
-    { srcTop: 0, srcBottom: 325, tgtTop: 0, tgtBottom: 343 },
-    { srcTop: 325, srcBottom: 386, tgtTop: 343, tgtBottom: 404 },
-    { srcTop: 386, srcBottom: 446, tgtTop: 404, tgtBottom: 464 },
-    { srcTop: 446, srcBottom: 476, tgtTop: 464, tgtBottom: 514 },
-    { srcTop: 476, srcBottom: 573, tgtTop: 514, tgtBottom: 604 },
-    { srcTop: 573, srcBottom: 741, tgtTop: 604, tgtBottom: 778 },
-    { srcTop: 741, srcBottom: 827, tgtTop: 778, tgtBottom: 878 },
-    { srcTop: 827, srcBottom: 860, tgtTop: 878, tgtBottom: 928 }
-  ]);
-  fs.writeFileSync(path.join(DESIGN, 'd2.png'), d2);
-  console.log('design/d2.png  655x928');
+  if (wants('d2')) {
+    // Columna lateral: el arte se estira al lienzo y luego se reasignan las
+    // franjas para que placas, discos y pastillas caigan en su caja del CSS.
+    const d2Ink = await inkOf(path.join(ROOT, 'desk', 'Interfaz Navideña con Campanas Doradas.png'));
+    const fitted = await sharp(d2Ink.data, {
+      raw: { width: d2Ink.info.width, height: d2Ink.info.height, channels: 4 }
+    })
+      .resize(655, 928, { fit: 'fill', kernel: 'lanczos3' })
+      .png()
+      .toBuffer();
+    const d2 = await rowRemap(fitted, { width: 655, height: 928 }, [
+      { srcTop: 0, srcBottom: 325, tgtTop: 0, tgtBottom: 343 },
+      { srcTop: 325, srcBottom: 386, tgtTop: 343, tgtBottom: 404 },
+      { srcTop: 386, srcBottom: 446, tgtTop: 404, tgtBottom: 464 },
+      { srcTop: 446, srcBottom: 476, tgtTop: 464, tgtBottom: 514 },
+      { srcTop: 476, srcBottom: 573, tgtTop: 514, tgtBottom: 604 },
+      { srcTop: 573, srcBottom: 741, tgtTop: 604, tgtBottom: 778 },
+      { srcTop: 741, srcBottom: 827, tgtTop: 778, tgtBottom: 878 },
+      { srcTop: 827, srcBottom: 860, tgtTop: 878, tgtBottom: 928 }
+    ]);
+    fs.writeFileSync(path.join(DESIGN, 'd2.png'), d2);
+    console.log('design/d2.png  655x928');
+  }
 
   /* ------------------------------------------------------- marco_movil ---- */
-  // La ventana del marco movil debe caer en la caja del tablero
-  // (7,20-92,90 % · 39,40-92,40 %) para que la cuadricula no se meta bajo el aro.
-  const marco = await alignByHole(
-    path.join(ROOT, 'movil', 'Marco navideño de campanas doradas.png'),
-    { width: 1392, height: 1093 },
-    { left: 117, top: 456, width: 1208, height: 520 },
-    {
-      left: Math.round(1392 * 0.072),
-      top: Math.round(1093 * 0.394),
-      width: Math.round(1392 * (0.929 - 0.072)),
-      height: Math.round(1093 * (0.924 - 0.394))
-    }
-  );
-  fs.writeFileSync(path.join(DESIGN, 'marco_movil.png'), marco);
-  console.log('design/marco_movil.png  1392x1093');
+  if (wants('marco_movil')) {
+    // La ventana del marco movil debe caer en la caja del tablero
+    // (7,20-92,90 % · 39,40-92,40 %) para que la cuadricula no se meta bajo el aro.
+    const marco = await alignByHole(
+      path.join(ROOT, 'movil', 'Marco navideño de campanas doradas.png'),
+      { width: 1392, height: 1093 },
+      { left: 117, top: 456, width: 1208, height: 520 },
+      {
+        left: Math.round(1392 * 0.072),
+        top: Math.round(1093 * 0.394),
+        width: Math.round(1392 * (0.929 - 0.072)),
+        height: Math.round(1093 * (0.924 - 0.394))
+      }
+    );
+    fs.writeFileSync(path.join(DESIGN, 'marco_movil.png'), marco);
+    console.log('design/marco_movil.png  1392x1093');
+  }
 
   /* ----------------------------------------------------- consola_movil ---- */
-  const consolaInk = await inkOf(path.join(ROOT, 'movil', 'Panel navideño brillante con Santa y reno.png'));
-  const consola = await sharp(consolaInk.data, {
-    raw: { width: consolaInk.info.width, height: consolaInk.info.height, channels: 4 }
-  })
-    .resize(1780, 883, { fit: 'fill', kernel: 'lanczos3' })
-    .png()
-    .toBuffer();
-  fs.writeFileSync(path.join(DESIGN, 'consola_movil.png'), consola);
-  console.log('design/consola_movil.png  1780x883');
+  if (wants('consola_movil')) {
+    const consolaInk = await inkOf(path.join(ROOT, 'movil', 'Panel navideño brillante con Santa y reno.png'));
+    const consola = await sharp(consolaInk.data, {
+      raw: { width: consolaInk.info.width, height: consolaInk.info.height, channels: 4 }
+    })
+      .resize(1780, 883, { fit: 'fill', kernel: 'lanczos3' })
+      .png()
+      .toBuffer();
+    fs.writeFileSync(path.join(DESIGN, 'consola_movil.png'), consola);
+    console.log('design/consola_movil.png  1780x883');
+  }
 })().catch((error) => {
   console.error(`build:santa-masters · ${error.message}`);
   process.exitCode = 1;
@@ -212,57 +255,62 @@ async function containIn(file, canvas, box) {
 }
 
 (async () => {
-  /* ----------------------------------------------------------- victoria ---- */
-  // El cartel se sirve a 1280x693 (1,847:1) pero el maestro debe medir
-  // 1774x887: se recorta a la relacion publicada y se centra en el lienzo.
-  const WIN_W = 1638;
-  const WIN_H = 887;
-  const victoriaTrim = await sharp(path.join(ROOT, 'Victoria navideña con mono y regalos.png'))
-    .ensureAlpha()
-    .trim({ threshold: 8 })
-    .toBuffer();
-  const victoriaCrop = await sharp(victoriaTrim)
-    .resize(WIN_W, WIN_H, { fit: 'cover', position: 'attention', kernel: 'lanczos3' })
-    .png()
-    .toBuffer();
-  const victoria = await sharp({
-    create: {
-      width: 1774,
-      height: 887,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 }
-    }
-  })
-    .composite([{ input: victoriaCrop, left: Math.round((1774 - WIN_W) / 2), top: 0 }])
-    .png()
-    .toBuffer();
-  fs.writeFileSync(path.join(DESIGN, 'victoria_deportiva.png'), victoria);
-  console.log('design/victoria_deportiva.png  1774x887 (caja 1638x887)');
+  /* -------------------------------------------------------- victoria ------ */
+  if (wants('victoria')) {
+    // Cartel del premio: mono con gorro, letrero WIN y campanas con lazo. El
+    // dibujo mide 1394 x 1066 (1,3077:1) tras recortar el alfa.
+    //
+    // El maestro anterior se reescalaba con `fit: 'cover'` a una banda de
+    // 1638 x 887 (1,847:1) y se centraba en un lienzo de 1774 x 887. `cover`
+    // recorta el eje que sobra: se comia la base del letrero (campanas, lazo y
+    // remate dorado) y el importe y el aviso caian sobre un cartel cortado en
+    // seco. Ahora se publica el recorte al alfa tal cual y es el CSS el que
+    // reserva la caja con la relacion real del dibujo.
+    const victoria = await sharp(path.join(ROOT, 'Victoria navideña con mono y regalos.png'))
+      .ensureAlpha()
+      .trim({ threshold: 8 })
+      .png()
+      .toBuffer();
+    const victoriaMeta = await sharp(victoria).metadata();
+    fs.writeFileSync(path.join(DESIGN, 'victoria_navidena.png'), victoria);
+    console.log(
+      `design/victoria_navidena.png  ${victoriaMeta.width}x${victoriaMeta.height} ` +
+        `(recorte al alfa, ${(victoriaMeta.width / victoriaMeta.height).toFixed(4)}:1)`
+    );
+  }
 
   /* ---------------------------------------------------------- fondos ------- */
-  fs.copyFileSync(
-    path.join(ROOT, 'desk', 'Festive Christmas Toy Workshop.png'),
-    path.join(DESIGN, 'fondo_desk_meridino_crush.png')
-  );
-  fs.copyFileSync(
-    path.join(ROOT, 'movil', 'Vibrant Christmas Toy Workshop Wonderland.png'),
-    path.join(DESIGN, 'avenida_fantastica_reino_caramelos.png')
-  );
-  console.log('design/fondo_desk_meridino_crush.png + avenida_fantastica_reino_caramelos.png');
+  if (wants('fondos')) {
+    fs.copyFileSync(
+      path.join(ROOT, 'desk', 'Festive Christmas Toy Workshop.png'),
+      path.join(DESIGN, 'fondo_desk_meridino_crush.png')
+    );
+    fs.copyFileSync(
+      path.join(ROOT, 'movil', 'Vibrant Christmas Toy Workshop Wonderland.png'),
+      path.join(DESIGN, 'avenida_fantastica_reino_caramelos.png')
+    );
+    console.log('design/fondo_desk_meridino_crush.png + avenida_fantastica_reino_caramelos.png');
+  }
 
   /* --------------------------------------------------------- simbolos ------ */
-  for (let index = 1; index <= 9; index += 1) {
-    const source = path.join(ROOT, 'slot', `s${index}.png`);
-    if (!fs.existsSync(source)) throw new Error(`Falta el simbolo ${path.relative(ROOT, source)}`);
-    const canvas = await containIn(source, { width: 335, height: 341 }, { left: 0, top: 0, width: 335, height: 341 });
-    fs.writeFileSync(path.join(DESIGN, 'symbols', `s${index}.png`), canvas);
+  // Los simbolos vigentes los importa `npm run build:slot-art` de `slot/`
+  // (recorte al alfa y lienzo 335 x 341). Este bloque solo reencaja los s1..s9
+  // de origen: no toca s10 (BONO) ni s11 (sello del regalo).
+  if (wants('simbolos')) {
+    for (let index = 1; index <= 9; index += 1) {
+      const source = path.join(ROOT, 'slot', `s${index}.png`);
+      if (!fs.existsSync(source)) throw new Error(`Falta el simbolo ${path.relative(ROOT, source)}`);
+      const canvas = await containIn(source, { width: 335, height: 341 }, { left: 0, top: 0, width: 335, height: 341 });
+      fs.writeFileSync(path.join(DESIGN, 'symbols', `s${index}.png`), canvas);
+    }
+    console.log('design/symbols/s1..s9.png  335x341');
   }
-  console.log('design/symbols/s1..s9.png  335x341');
 
   /* ------------------------------------------------------------- sello ----- */
-  // Maestro del sello: fondo blanco opaco (el build lo pasa a alfa) y un aro
-  // dorado con rayas de caramelo sobre disco blanco, centrado en el lienzo.
-  const sealSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
+  if (wants('sello')) {
+    // Maestro del sello: fondo blanco opaco (el build lo pasa a alfa) y un aro
+    // dorado con rayas de caramelo sobre disco blanco, centrado en el lienzo.
+    const sealSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
   <rect width="1024" height="1024" fill="#ffffff"/>
   <circle cx="512" cy="512" r="510" fill="#8a4a06"/>
   <circle cx="512" cy="512" r="502" fill="#ffd85e"/>
@@ -276,27 +324,30 @@ async function containIn(file, canvas, box) {
   <text x="512" y="716" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold"
         font-size="120" letter-spacing="16" fill="#1f7a3a">CRUSH</text>
 </svg>`;
-  const sealMaster = await sharp(Buffer.from(sealSvg), { density: 288 })
-    .resize(1024, 1024, { fit: 'fill' })
-    .png()
-    .toBuffer();
-  fs.writeFileSync(path.join(DESIGN, 'MBETN-LOGO@3x.png'), sealMaster);
-  console.log('design/MBETN-LOGO@3x.png  1024x1024 (sello circular)');
+    const sealMaster = await sharp(Buffer.from(sealSvg), { density: 288 })
+      .resize(1024, 1024, { fit: 'fill' })
+      .png()
+      .toBuffer();
+    fs.writeFileSync(path.join(DESIGN, 'MBETN-LOGO@3x.png'), sealMaster);
+    console.log('design/MBETN-LOGO@3x.png  1024x1024 (sello circular)');
+  }
 
   /* -------------------------------------------------------------- logo ----- */
-  // Del GIF animado se toma el fotograma con mas tinta (el lockup completo) y
-  // se encaja en el lienzo 2:1 que exige build:logo.
-  const gif = path.join(ROOT, 'SANTA-CRUSH-LOGO-ANIMADO.gif');
-  const pages = (await sharp(gif).metadata()).pages || 1;
-  let best = null;
-  for (let page = 0; page < pages; page += 1) {
-    const frame = await sharp(gif, { page, pages: 1 }).png().toBuffer();
-    const count = await inkCount(frame);
-    if (!best || count > best.count) best = { page, count, frame };
+  if (wants('logo')) {
+    // Del GIF animado se toma el fotograma con mas tinta (el lockup completo) y
+    // se encaja en el lienzo 2:1 que exige build:logo.
+    const gif = path.join(ROOT, 'SANTA-CRUSH-LOGO-ANIMADO.gif');
+    const pages = (await sharp(gif).metadata()).pages || 1;
+    let best = null;
+    for (let page = 0; page < pages; page += 1) {
+      const frame = await sharp(gif, { page, pages: 1 }).png().toBuffer();
+      const count = await inkCount(frame);
+      if (!best || count > best.count) best = { page, count, frame };
+    }
+    const logo = await containIn(best.frame, { width: 1774, height: 887 }, { left: 0, top: 0, width: 1774, height: 887 });
+    fs.writeFileSync(path.join(DESIGN, 'MeridianoBet Sports Crush Logo.png'), logo);
+    console.log(`design/MeridianoBet Sports Crush Logo.png  1774x887 (fotograma ${best.page}/${pages})`);
   }
-  const logo = await containIn(best.frame, { width: 1774, height: 887 }, { left: 0, top: 0, width: 1774, height: 887 });
-  fs.writeFileSync(path.join(DESIGN, 'MeridianoBet Sports Crush Logo.png'), logo);
-  console.log(`design/MeridianoBet Sports Crush Logo.png  1774x887 (fotograma ${best.page}/${pages})`);
 })().catch((error) => {
   console.error(`build:santa-masters · ${error.message}`);
   process.exitCode = 1;

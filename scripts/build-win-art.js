@@ -6,25 +6,30 @@
  *
  *   npm run build:win
  *
- * El maestro vive en `design/victoria_deportiva.png` (el PNG
- * `Victoria deportiva brillante.png`): 1774 x 887 px y alfa real (las esquinas
- * son transparentes). Igual que el resto del arte, se archiva fuera de
- * `public/` porque todo lo que hay en `public/src/**` se publica en el CDN y el
- * PNG pesa 1,8 MB.
+ * El maestro vive en `design/victoria_navidena.png`: el mono con gorro, el
+ * letrero WIN y las campanas con lazo, recortado al alfa (1394 x 1066 px,
+ * 1,3077:1) por `scripts/build-santa-masters.js victoria`. Igual que el resto
+ * del arte, se archiva fuera de `public/` porque todo lo que hay en
+ * `public/src/**` se publica en el CDN y el PNG pesa 2,7 MB.
  *
- * El script escribe `public/src/assets/victoria_deportiva.webp` con este
+ * El cartel es apaisado pero no una banda: el dibujo incluye la base del
+ * letrero (campanas, lazo y remate dorado). El maestro anterior se recortaba a
+ * 1,847:1 con `cover` y esa base desaparecia, asi que el importe y el aviso
+ * quedaban colgando de un cartel cortado en seco. Aqui NO se recorta la
+ * relacion: se sirve el dibujo completo.
+ *
+ * El script escribe `public/src/assets/victoria_navidena.webp` con este
  * contrato:
- *   - WebP con alfa (VP8X + ALPH + VP8) a calidad 90. `alphaQuality: 100`
+ *   - WebP con alfa (VP8X + ALPH + VP8) a calidad 76. `alphaQuality: 100`
  *     conserva el canal alfa sin perdida: el recorte del cartel no gana halos
  *     blancos ni escalones en el borde de las letras.
- *   - 1280 px de ancho (1280 x 693 con la caja recortada). El CSS no pinta el
- *     arte por encima de 700 px CSS, asi que 1280 cubre pantallas retina
- *     (1,8x) sin cargar los ~317 KB de un lienzo mayor.
- *   - Antes de reescalar se recorta el alfa vacio (`trim`). Este maestro trae
- *     aire transparente a los lados (la caja util mide 1621 x 878), asi que el
- *     cartel se publica pegado a su contenido en lugar de arrastrar margen
- *     muerto que el CSS tendria que escalar.
- *   - Tope de peso: 400 KB (el WebP actual ronda los 317 KB).
+ *   - 1200 px de ancho (1200 x 918). El CSS no pinta el arte por encima de
+ *     720 px CSS, asi que 1200 cubre retina (1,67x) sin pasar del presupuesto
+ *     de peso: a 1280 px el mismo dibujo pide ~465 KB.
+ *   - Antes de reescalar se recorta el alfa vacio (`trim`). El maestro deja un
+ *     par de filas transparentes por el borde; recortarlas evita escalar margen
+ *     muerto que el CSS tendria que reservar.
+ *   - Tope de peso: 400 KB (el WebP actual ronda los 377 KB).
  *
  * La relacion de aspecto se valida contra la caja recortada, que es la que se
  * reescala: comparar contra el lienzo original fallaria en cuanto `trim` quita
@@ -38,14 +43,14 @@ const path = require('node:path');
 const sharp = require('sharp');
 
 const ROOT = path.join(__dirname, '..');
-const SOURCE = path.join(ROOT, 'design', 'victoria_deportiva.png');
-const TARGET = path.join(ROOT, 'public', 'src', 'assets', 'victoria_deportiva.webp');
-const DEPLOY = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets', 'victoria_deportiva.webp');
+const SOURCE = path.join(ROOT, 'design', 'victoria_navidena.png');
+const TARGET = path.join(ROOT, 'public', 'src', 'assets', 'victoria_navidena.webp');
+const DEPLOY = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets', 'victoria_navidena.webp');
 
-// El arte se pinta como maximo a 700 px CSS: 1280 px cubre retina (1,8x) sin
-// inflar la descarga (370 KB a 1420 px contra 317 KB aqui).
-const TARGET_WIDTH = 1280;
-const QUALITY = Number(process.env.WIN_QUALITY || 82);
+// El arte se pinta como maximo a 720 px CSS: 1200 px cubren retina (1,67x) con
+// el cartel entero dentro de los 400 KB (a 1280 px pide ~465 KB a q=76).
+const TARGET_WIDTH = 1200;
+const QUALITY = Number(process.env.WIN_QUALITY || 76);
 const MAX_BYTES = 400 * 1024;
 
 const kb = (n) => `${(n / 1024).toFixed(1)} kB`;

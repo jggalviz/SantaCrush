@@ -50,8 +50,10 @@ const COLS = GRID.cols;
 
 /* Overlay de victoria: cartel WIN con rayos, importe en conteo rapido y lluvia
    de pelotas por los laterales. Cualquier victoria abre la capa; la intensidad
-   (destello, lluvia, entrada y permanencia) escala con `win / bet`. */
-const WIN_ART_SRC = '/src/assets/victoria_deportiva.webp';
+   (destello, lluvia, entrada y permanencia) escala con `win / bet`.
+   El cartel es el dibujo completo (mono + letrero + campanas, 1,307:1): el
+   archivo anterior se servia recortado a 1,85:1 y perdia la base del letrero. */
+const WIN_ART_SRC = '/src/assets/victoria_navidena.webp';
 const WIN_CLOSE_MS = 240;
 
 /* Perfiles de intensidad. `low` cubre los premios que no devuelven la apuesta

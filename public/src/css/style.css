@@ -6433,9 +6433,11 @@ body.is-demo .machine__side .controls .balance::after {
    exacta, de modo que los anclajes en % medidos sobre el dibujo siguen
    valiendo a cualquier escala:
 
-     d1.webp · 1033 x 843  marco del tablero (ventana transparente x 5,42-94,19 %
-                           · y 12,34-92,53 %, radio interior ~22 px) → columna
-                           derecha
+     d1.webp · 1033 x 863  marco del tablero (ventana transparente x 6,15-93,77 %
+                           · y 14,98-91,64 %, radio interior ~22 px) → columna
+                           derecha. El lienzo sigue la relacion del dibujo
+                           (1,197:1); el anterior (1,2254:1) recortaba 27 px
+                           del toldo y la nieve se veia cortada a cuchillo.
      d2.webp ·  655 x 928  columna lateral completa: nube del logo (x 20-80 % ·
                            y 12-33 %) + tres placas (x 6,3-94 % · y 35,3-45,5 %)
                            + consola entera (− / lectura / + / MAX · GIRAR ·
@@ -6473,13 +6475,13 @@ body.is-demo .machine__side .controls .balance::after {
     --d-avail-pad: clamp(16px, 3vw, 44px);
 
     /* Alto del marco: el menor entre el que deja el viewport y el que deja el
-       ancho. 1,93120 = 1,22539 (relacion de d1) + 0,70582 (ancho de la columna
-       lateral por unidad de alto: 655/928, ver mas abajo). */
+       ancho. 1,90282 = 1,19700 (relacion de d1, 1033/863) + 0,70582 (ancho de
+       la columna lateral por unidad de alto: 655/928, ver mas abajo). */
     --frame-h: min(
       calc(100dvh - var(--d-chrome) - var(--d-bleed)),
-      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.93120)
+      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.90282)
     );
-    --frame-w: calc(var(--frame-h) * 1.22539);
+    --frame-w: calc(var(--frame-h) * 1.19700);
     /* 1,41679 = 928/655: la columna lateral es una sola pieza, asi que su ancho
        sale directamente del alto comun, sin descontar ninguna separacion. */
     --side-w: calc(var(--frame-h) / 1.41679);
@@ -7278,16 +7280,18 @@ body.is-demo .machine__side .controls .balance::after {
     justify-self: center;
   }
 
-  /* La ventana del dibujo (x 5,42-94,19 % · y 12,34-92,53 % del lienzo, radio
+  /* La ventana del dibujo (x 6,15-93,77 % · y 14,98-91,64 % del lienzo, radio
      interior ~22 px) se tapa con el tablero un pelo por fuera: asi su filo se
      mete bajo el aro dorado y no asoma ni una linea de fondo entre el arte y
-     las casillas. */
+     las casillas. Los % salen de la ventana transparente de d1 (1033 x 863):
+     el toldo y su nieve ocupan mas alto que en el recorte anterior, que
+     empezaba por debajo de la cresta. */
   .machine__table .board {
     position: absolute;
-    left: 5.3%;
-    top: 12.2%;
-    width: 89%;
-    height: 80.45%;
+    left: 5.8%;
+    top: 14.63%;
+    width: 88.32%;
+    height: 77.35%;
     margin: 0;
     padding: clamp(3px, calc(var(--frame-h) * 0.007), 8px);
     border: 0;
@@ -7778,15 +7782,16 @@ body.is-demo .machine__side .controls .balance::after {
   will-change: transform;
 }
 
-/* Cartel apaisado (1280 x 693, relacion 1,85:1). El ancho lo limitan tres
-   techos en este orden: el tamano de diseno en escritorio (700 px), el ancho
-   util del movil (92vw) y, en pantallas apaisadas o bajas, el alto disponible
-   (54vh x 1,85): el cartel nunca empuja el importe ni el aviso fuera del velo.
+/* Cartel (1200 x 918, relacion 1,307:1): mono, letrero WIN y campanas con
+   lazo. El ancho lo limitan tres techos en este orden: el tamano de diseno en
+   escritorio (720 px), el ancho util del movil (92vw) y, en pantallas
+   apaisadas o bajas, el alto disponible (58vh x 1,307): el cartel nunca empuja
+   el importe ni el aviso fuera del velo ni recorta la base del letrero.
    El `width`/`height` del HTML ya reserva la caja, asi que la primera pintura
    no salta. */
 .win__art {
   display: block;
-  width: min(700px, 92vw, calc(54vh * 1.85));
+  width: min(720px, 92vw, calc(58vh * 1.307));
   height: auto;
   transform-origin: 50% 60%;
   animation: win-pop 0.66s cubic-bezier(0.2, 1.45, 0.36, 1) both;

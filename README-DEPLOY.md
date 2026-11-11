@@ -385,7 +385,9 @@ No es necesario para un despliegue normal: los WebP/WOFF2/PNG ya están versiona
 | `npm run build:symbols` | `symbols/s1.png` … `symbols/s11.png` | `slot/s1.webp` … `slot/s11.webp` |
 | `npm run build:slot-art -- --source="<carpeta>"` | renders del diseñador (`s1..s9.png` + `Bono ...png` + `Regalo ...png`) | `symbols/s1.png` … `symbols/s11.png` (antes de `build:symbols`) |
 | ~~`npm run build:seals`~~ | histórica: `MBETN-LOGO@3x.png` | ya **no** alimenta el tablero; sobrescribe `symbols/s10.png` y `s11.png` con el sello anterior |
-| `npm run build:win` | `victoria_deportiva.png` | `victoria_deportiva.webp` |
+| `npm run build:win` | `victoria_navidena.png` | `victoria_navidena.webp` (1200 x 918, el cartel completo) |
+
+- Los maestros del marco de escritorio y del cartel de victoria salen del arte del diseñador con `node scripts/build-santa-masters.js d1 victoria` (`d1` = `desk/Marco navideño de caramelos brillantes.png`, `victoria` = `Victoria navideña con mono y regalos.png`); sin argumentos el script rehace **todos** los maestros y pisaría los símbolos ya importados.
 
 - Requieren `sharp` (ya está en `devDependencies`) y son **idempotentes**.
 - El **GIRAR de escritorio** no está dibujado en `design/d2.png`: el maestro deja esa franja en el verde de la tarjeta y `scripts/lib/girarPlate.js` pinta ahí la placa roja (aro dorado, bisel y sombra, con el rojo de los discos − / + y la geometría de AUTOGIRO/AUTO) **sobre la copia que se publica**, justo dentro de la caja que el CSS reserva al pulsador (9,16 % / 65,84 % / 80,76 % / 16,81 %). No hay que retocar el PNG ni el WebP a mano: `npm run build:desktop-art` recompone la placa cada vez y el resultado es el mismo byte a byte.

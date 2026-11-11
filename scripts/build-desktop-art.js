@@ -14,7 +14,9 @@
  * descentraria el dibujo y desalinearia las areas tactiles.
  *
  * Piezas del tema MeridianoBet Crush:
- *   design/d1.png -> public/src/assets/d1.webp  (1033 x 843) marco del tablero
+ *   design/d1.png -> public/src/assets/d1.webp  (1033 x 863) marco del tablero
+ *                    (relacion del dibujo, 1,197:1: el lienzo anterior de
+ *                    1033 x 843 recortaba la cresta de nieve del toldo)
  *   design/d2.png -> public/src/assets/d2.webp  ( 655 x 928) columna lateral:
  *                    nube del logo + 3 placas + consola completa (− / lectura
  *                    / + / MAX · GIRAR · FEVER · AUTO) en una sola pieza
@@ -53,7 +55,7 @@ const PIECES = [
   {
     name: 'd1',
     label: 'marco del tablero',
-    canvas: { width: 1033, height: 843 },
+    canvas: { width: 1033, height: 863 },
     quality: 90,
     maxBytes: 300 * 1024
   },

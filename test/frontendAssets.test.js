@@ -24,8 +24,8 @@ const THEME_PATH = path.join(PUBLIC_DIR, 'src', 'css', 'theme.css');
 const INDEX_PATH = path.join(PUBLIC_DIR, 'index.html');
 const LOGO_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'MERIDIANOBET-CRUSH-LOGO.webp');
 const LOGO_MASTER_PATH = path.join(ROOT_DIR, 'design', 'MeridianoBet Sports Crush Logo.png');
-const WIN_ART_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_deportiva.webp');
-const WIN_MASTER_PATH = path.join(ROOT_DIR, 'design', 'victoria_deportiva.png');
+const WIN_ART_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_navidena.webp');
+const WIN_MASTER_PATH = path.join(ROOT_DIR, 'design', 'victoria_navidena.png');
 const WIN_SOUND_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'AUDIO-WIN-NEW-stadium-applause.MP3');
 const MUSIC_SOUND_PATH = path.join(
   PUBLIC_DIR,
@@ -649,21 +649,50 @@ test('el cartel de victoria se sirve en WebP con alfa y el maestro queda fuera d
   const html = read(INDEX_PATH);
   const css = read(STYLE_PATH);
   const ui = read(path.join(PUBLIC_DIR, 'ui', 'renderers', 'GameView.js'));
+  const masters = read(path.join(ROOT_DIR, 'scripts', 'build-santa-masters.js'));
+  const winBuild = read(path.join(ROOT_DIR, 'scripts', 'build-win-art.js'));
 
-  // El maestro (1,8 MB) se archiva en `design/`: no viaja al CDN ni se puede
+  // El maestro (2,7 MB) se archiva en `design/`: no viaja al CDN ni se puede
   // colar como respaldo en `public/src/assets`.
-  assert.ok(fs.existsSync(WIN_MASTER_PATH), 'Falta el maestro design/victoria_deportiva.png');
+  assert.ok(fs.existsSync(WIN_MASTER_PATH), 'Falta el maestro design/victoria_navidena.png');
   assert.ok(fs.statSync(WIN_MASTER_PATH).size > 0, 'El maestro del cartel esta vacio');
   assert.ok(
-    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'Victoria deportiva brillante.png')),
+    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'Victoria navideña con mono y regalos.png')),
     'El PNG maestro no debe quedarse en public/src/assets'
   );
   assert.ok(
     !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_dulce.webp')),
     'El cartel anterior (victoria_dulce.webp) ya no se sirve'
   );
+  // El cartel recortado a 1,847:1 (banda 1280 x 693) perdia la base del
+  // letrero: campanas, lazo y remate dorado. Ni el asset ni el maestro viejo
+  // vuelven a publicarse; el nombre nuevo ademas evita el `immutable` del CDN.
+  assert.ok(
+    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'victoria_deportiva.webp')),
+    'El cartel recortado (victoria_deportiva.webp) ya no se sirve'
+  );
+  assert.ok(
+    !fs.existsSync(path.join(ROOT_DIR, 'design', 'victoria_deportiva.png')),
+    'El maestro recortado (design/victoria_deportiva.png) ya no se conserva'
+  );
+  const victoriaSource = masters.slice(
+    masters.indexOf("wants('victoria')"),
+    masters.indexOf("wants('fondos')")
+  );
+  // Sin `cover` en el codigo: los comentarios del bloque explican justo ese
+  // recorte, asi que se descartan antes de mirar.
+  assert.doesNotMatch(
+    victoriaSource.replace(/\/\/[^\n]*/g, ''),
+    /fit: 'cover'/,
+    'build-santa-masters no debe recortar el cartel con `cover`: se come la base del letrero'
+  );
+  assert.match(
+    victoriaSource,
+    /\.trim\(\{ threshold: 8 \}\)/,
+    'El cartel se publica recortado al alfa, sin reencuadrar la relacion'
+  );
 
-  assert.ok(fs.existsSync(WIN_ART_PATH), 'Falta public/src/assets/victoria_deportiva.webp');
+  assert.ok(fs.existsSync(WIN_ART_PATH), 'Falta public/src/assets/victoria_navidena.webp');
   const binary = fs.readFileSync(WIN_ART_PATH);
   assert.equal(binary.toString('ascii', 0, 4), 'RIFF', 'El cartel debe ser un contenedor RIFF/WebP');
   assert.equal(binary.toString('ascii', 8, 12), 'WEBP', 'El cartel debe ser un WebP real');
@@ -679,30 +708,42 @@ test('el cartel de victoria se sirve en WebP con alfa y el maestro queda fuera d
     'El cartel debe ser un WebP lossy (VP8), no un PNG disfrazado'
   );
 
-  // Sin deformar. `build:win` recorta antes de reescalar, asi que la caja util
-  // del maestro es 1621 x 878 (el lienzo 1774 x 887 tiene aire transparente a
-  // los lados) y 1280 x 693 conserva esa relacion 1,846:1.
+  // Sin deformar y sin recortar: el maestro es el dibujo completo (mono +
+  // letrero + campanas) recortado al alfa, 1394 x 1066 (1,3077:1), y el WebP
+  // de 1200 x 918 conserva esa relacion.
   const master = fs.readFileSync(WIN_MASTER_PATH);
-  assert.equal(master.toString('ascii', 1, 4), 'PNG', 'design/victoria_deportiva.png debe ser el PNG maestro');
+  assert.equal(master.toString('ascii', 1, 4), 'PNG', 'design/victoria_navidena.png debe ser el PNG maestro');
   const masterWidth = master.readUInt32BE(16);
   const masterHeight = master.readUInt32BE(20);
   const width = binary.readUIntLE(chunks[0].offset + 12, 3) + 1;
   const height = binary.readUIntLE(chunks[0].offset + 15, 3) + 1;
 
-  assert.equal(masterWidth, 1774, 'El maestro deportivo mide 1774 px de ancho');
-  assert.equal(masterHeight, 887, 'El maestro deportivo mide 887 px de alto');
-  assert.equal(width, 1280, 'El cartel debe servirse a 1280 px de ancho (ver build:win)');
-  assert.equal(height, 693, 'El cartel debe servirse a 693 px de alto (caja recortada)');
+  assert.equal(masterWidth, 1394, 'El maestro del cartel mide 1394 px de ancho');
+  assert.equal(masterHeight, 1066, 'El maestro del cartel mide 1066 px de alto (dibujo completo)');
+  assert.equal(width, 1200, 'El cartel debe servirse a 1200 px de ancho (ver build:win)');
+  assert.equal(height, 918, 'El cartel debe servirse a 918 px de alto (relacion del dibujo)');
   assert.ok(
-    Math.abs(width / height - 1621 / 878) < 0.002,
-    `El cartel deforma la caja recortada del maestro: ${width}x${height} contra 1621x878`
+    Math.abs(width / height - masterWidth / masterHeight) < 0.002,
+    `El cartel deforma la caja del maestro: ${width}x${height} contra ${masterWidth}x${masterHeight}`
+  );
+  // El dibujo es apaisado pero no una banda: alto/ancho ~0,765. Si baja de
+  // 0,6 es que alguien recorto la base del letrero para servirlo como banner
+  // (el recorte anterior medía 693/1280 = 0,54 y dejaba el cartel a cuchillo).
+  assert.ok(
+    height / width > 0.6,
+    `La caja ${width}x${height} parece un recorte del cartel, no el dibujo completo`
   );
 
-  // Peso: el lienzo completo a q=90 pesa 816 KB y se pinta a 700 px CSS como
-  // maximo. 1280 px conservan el detalle retina y dejan el archivo en ~317 KB.
+  // Peso: el dibujo completo a q=76 pesa ~377 KB y se pinta a 720 px CSS como
+  // maximo; 1200 px conservan el detalle retina sin pasar del presupuesto.
   assert.ok(
     binary.length < 400 * 1024,
     `El cartel pesa ${(binary.length / 1024).toFixed(1)} KB (objetivo < 400 KB)`
+  );
+  assert.match(
+    winBuild,
+    /const TARGET_WIDTH = 1200;/,
+    'build:win publica el cartel a 1200 px (720 px CSS x 1,67 de retina)'
   );
 
   // Capa dedicada, con el arte, la lluvia y el importe que rellena `GameView`.
@@ -714,14 +755,14 @@ test('el cartel de victoria se sirve en WebP con alfa y el maestro queda fuera d
   );
   assert.match(
     html,
-    /src="\/src\/assets\/victoria_deportiva\.webp"/,
-    'La capa debe usar el WebP optimizado del cartel deportivo'
+    /src="\/src\/assets\/victoria_navidena\.webp"/,
+    'La capa debe usar el WebP optimizado del cartel navideño'
   );
   // La caja reservada por el HTML tiene que coincidir con el WebP (sin saltos).
   assert.match(
     html,
-    /width="1280" height="693"/,
-    'El HTML debe reservar la caja 1280x693 del cartel'
+    /width="1200" height="918"/,
+    'El HTML debe reservar la caja 1200x918 del cartel'
   );
   assert.match(html, /id="win-rain"/, 'Falta el contenedor de la lluvia de pelotas');
   assert.match(html, /id="win-amount"/, 'Falta el contador del premio');
@@ -738,11 +779,11 @@ test('el cartel de victoria se sirve en WebP con alfa y el maestro queda fuera d
     'Los rayos deben girar con `rotateRays`'
   );
 
-  // El cartel apaisado se centra y se adapta: techo de escritorio (700 px),
-  // ancho de movil (92vw) y alto disponible (54vh x 1,85).
+  // El cartel completo (1,307:1) se centra y se adapta: techo de escritorio
+  // (720 px), ancho de movil (92vw) y alto disponible (58vh x 1,307).
   assert.match(
     css,
-    /\.win__art\s*\{[^}]*width:\s*min\(700px,\s*92vw,\s*calc\(54vh \* 1\.85\)\);/,
+    /\.win__art\s*\{[^}]*width:\s*min\(720px,\s*92vw,\s*calc\(58vh \* 1\.307\)\);/,
     'El cartel debe escalar con sus tres techos (escritorio, movil y alto)'
   );
   assert.match(
@@ -871,7 +912,7 @@ test('la victoria llueve los balones del tablero en lugar de caramelos', () => {
   );
   assert.match(
     ui,
-    /const WIN_ART_SRC = '\/src\/assets\/victoria_deportiva\.webp';/,
+    /const WIN_ART_SRC = '\/src\/assets\/victoria_navidena\.webp';/,
     'La precarga debe apuntar al cartel nuevo'
   );
 });
@@ -1566,7 +1607,7 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   const pieces = [
     { name: 'marco_movil', size: '1392x1093', max: 300 * 1024, build: 'build-mobile-art.js' },
     { name: 'consola_movil', size: '1780x883', max: 512 * 1024, build: 'build-mobile-art.js' },
-    { name: 'd1', size: '1033x843', max: 300 * 1024, build: 'build-desktop-art.js' },
+    { name: 'd1', size: '1033x863', max: 300 * 1024, build: 'build-desktop-art.js' },
     { name: 'd2', size: '655x928', max: 560 * 1024, build: 'build-desktop-art.js' }
   ];
   const css = read(STYLE_PATH);
@@ -1660,7 +1701,7 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   }
   const windowBodies = bodies('\\.machine__table \\.board');
   assert.ok(windowBodies.length, 'El tablero debe declarar su caja sobre la ventana del marco');
-  for (const declaration of ['left: 5.3%;', 'top: 12.2%;', 'width: 89%;', 'height: 80.45%;']) {
+  for (const declaration of ['left: 5.8%;', 'top: 14.63%;', 'width: 88.32%;', 'height: 77.35%;']) {
     assert.ok(
       windowBodies.some((body) => body.includes(declaration)),
       `La ventana de d1 se cubre con \`${declaration}\``
@@ -1672,13 +1713,13 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   // separacion vertical entre ambas mitades.
   assert.match(
     css,
-    /--frame-h: min\([\s\S]{0,180}?\/ 1\.93120\)/,
-    'El marco descuenta la columna lateral con 1,22539 (d1) + 0,70582 (d2)'
+    /--frame-h: min\([\s\S]{0,180}?\/ 1\.90282\)/,
+    'El marco descuenta la columna lateral con 1,19700 (d1) + 0,70582 (d2)'
   );
   assert.match(
     css,
-    /--frame-w: calc\(var\(--frame-h\) \* 1\.22539\)/,
-    'El marco mide 1033/843 de su alto'
+    /--frame-w: calc\(var\(--frame-h\) \* 1\.19700\)/,
+    'El marco mide 1033/863 de su alto (relacion del dibujo, sin recortar el toldo)'
   );
   assert.match(
     css,
