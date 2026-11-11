@@ -1669,11 +1669,16 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   // en % del lienzo (las mismas medidas que imprime el script). Se buscan todas
   // las reglas del selector: las capas anteriores tambien declaran cajas para
   // estos botones y solo una lleva la geometria del arte.
+  //
+  // La URL lleva `?v=N` a proposito: `/src/assets/**` se sirve como
+  // `Cache-Control: immutable` (vercel.json), asi que republicar el WebP con el
+  // mismo nombre dejaria a los clientes con el lienzo viejo bajo los anclajes
+  // nuevos (textos y pulsadores desalineados).
   for (const name of ['d1', 'd2']) {
     assert.match(
       css,
-      new RegExp(`url\\('\\.\\.\\/assets\\/${name}\\.webp'\\) no-repeat center \\/ 100% 100%`),
-      `El CSS debe pintar ${name}.webp sin aire (100% 100%)`
+      new RegExp(`url\\('\\.\\.\\/assets\\/${name}\\.webp\\?v=\\d+'\\) no-repeat center \\/ 100% 100%`),
+      `El CSS debe pintar ${name}.webp sin aire (100% 100%) y con cache-busting ?v=N`
     );
   }
   // El tema anterior partia la columna en dos piezas: ambas quedan archivadas

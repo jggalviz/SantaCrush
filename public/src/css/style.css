@@ -6443,6 +6443,12 @@ body.is-demo .machine__side .controls .balance::after {
                            + consola entera (− / lectura / + / MAX · GIRAR ·
                            CRUSH · AUTO) en una sola pieza → columna izquierda
 
+   `vercel.json` sirve `/src/assets/**` con `Cache-Control: immutable` (un año),
+   asi que la URL de cada pieza lleva `?v=N`: al republicar el arte hay que subir
+   esa N a la vez que los anclajes, o el navegador sigue pintando el lienzo viejo
+   debajo de las cajas nuevas (textos y pulsadores desalineados).
+
+
    El tema anterior partia la columna en dos piezas (`d5`, modulo hero con la
    nube y las placas, y `d3`, la consola) y las apilaba con una separacion
    vertical. El arte nuevo las funde en `d2`, asi que la columna se ancla con un
@@ -6527,7 +6533,7 @@ body.is-demo .machine__side .controls .balance::after {
     height: var(--frame-h);
     min-width: 0;
     min-height: 0;
-    background: url('../assets/d2.webp') no-repeat center / 100% 100%;
+    background: url('../assets/d2.webp?v=2') no-repeat center / 100% 100%;
     overflow: visible;
   }
 
@@ -6741,7 +6747,7 @@ body.is-demo .machine__side .controls .balance::after {
     border: 0;
     border-radius: 999px;
     background-color: transparent;
-    background-image: url('../assets/d2.webp');
+    background-image: url('../assets/d2.webp?v=2');
     background-repeat: no-repeat;
     background-size: calc(100% * 100 / var(--art-w)) auto;
     background-position:
@@ -6915,7 +6921,7 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .controls #btn-feature,
   .machine__side .controls #btn-auto {
     background-color: transparent;
-    background-image: url('../assets/d2.webp');
+    background-image: url('../assets/d2.webp?v=2');
     background-repeat: no-repeat;
     background-size: calc(100% * 100 / var(--art-w)) auto;
     background-position:
@@ -7271,7 +7277,7 @@ body.is-demo .machine__side .controls .balance::after {
     padding: 0;
     border: 0;
     border-radius: 0;
-    background: url('../assets/d1.webp') no-repeat center / 100% 100%;
+    background: url('../assets/d1.webp?v=2') no-repeat center / 100% 100%;
     box-shadow: none;
     /* Sin contenedor de tamaño: el alto lo fija `--frame-h`. */
     container-type: normal;
