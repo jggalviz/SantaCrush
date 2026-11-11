@@ -1,0 +1,21 @@
+# Arte y audio como binarios: git no los fusiona por lineas (un conflicto en un
+# WebP o un MP3 lo deja corrupto) y no les reescribe los finales de linea al
+# hacer checkout en otro sistema operativo. No altera los blobs ya versionados.
+*.webp binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mp3 binary
+*.MP3 binary
+*.ogg binary
+*.wav binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.pdf binary
+*.psd binary
+*.ai binary

@@ -6,7 +6,10 @@ npm-debug.log*
 *.log
 .DS_Store
 coverage/
-dist/
+# `dist/` SI se versiona: es el paquete compilado que el equipo de backend
+# descarga con `git pull` en la rama `development` y publica en produccion sin
+# instalar Node ni ejecutar la build. Se regenera completo con `npm run build`
+# (ver docs/GIT_INTEGRATION.md), asi que no se ignora ningun archivo suyo.
 .vercel
 .sim/
 .sim-chrome/

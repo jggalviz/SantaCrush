@@ -8,6 +8,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "build": "node scripts/build-game-config.js && node scripts/build-ui.js && node scripts/build-minify.js && node scripts/build-index-html.js && node scripts/build-dist.js",
     "start": "node server/index.js",
     "prestart": "node scripts/build-game-config.js && node scripts/build-ui.js && node scripts/build-minify.js && node scripts/build-index-html.js",
     "dev": "node --watch server/index.js",

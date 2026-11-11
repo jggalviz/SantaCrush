@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="meridianobet">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Santa Crush: slot de pagos por dispersion con motor autoritativo en servidor. RTP 95%, ganancia maxima 10.000x." />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#c8102e" />
+  <!-- Endpoint del motor. Vacio = mismo origen. Para el motor externo:
+       <meta name="game-api-base" content="https://engine.latingames.net" /> -->
+  <meta name="game-api-base" content="" />
+  <title>Santa Crush</title>
+  <link rel="stylesheet" href="/src/css/style.min.css" />
+  <!-- Capa de marca (Meridianobet). Solo tokens, superficies y acentos; no
+       toca la maqueta ni el arte del juego. Se carga despues de style.min.css y
+       se activa con `data-theme="meridianobet"` en <html>: quitando ese
+       atributo la hoja queda inerte y el juego vuelve al look candy
+       (ver docs/REBRANDING.md).
+
+       Los `.min.css` los genera `npm run build:css` desde las fuentes de
+       `public/src/css` (que siguen legibles para editarlas a mano). -->
+  <link rel="stylesheet" href="/src/css/theme.min.css" />
+
+  <!-- Tipografia candy: Fredoka viste la interfaz y Lilita One la marca.
+       Los WOFF2 se sirven del propio origen (la CSP es `font-src 'self'`), se
+       precargan sin bloquear el render y el CSS usa `font-display: swap`. -->
+  <link rel="preload" as="font" type="font/woff2"
+        href="/src/assets/fonts/fredoka-latin.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2"
+        href="/src/assets/fonts/lilita-one-latin.woff2" crossorigin />
+  <!-- Fondo del escenario: es la pieza mas grande del primer pintado, asi que se
+       precarga solo la variante que el viewport va a usar (el navegador ignora
+       la otra por `media`). Ambas rutas son las que pinta style.css. -->
+  <link rel="preload" as="image" type="image/webp"
+        href="/src/assets/fondo_desk_meridino_crush.webp" media="(min-width: 900px)" />
+  <link rel="preload" as="image" type="image/webp"
+        href="/src/assets/marco_movil.webp" media="(max-width: 899px)" />
+  <!-- Critico: sin scroll vertical mientras se descarga la hoja de estilos completa.
+       El color de respaldo es el azul marino del estadio (el mismo de `html` en
+       style.css) para que la espera no destelle en gris claro. -->
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background-color: #0a1c4a;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- La barra no lleva marca ni fondo: solo los controles del juego. El
+         nombre del producto vive en el logo de la maquina y en la pestaña del
+         navegador; aqui queda solo un `<h1>` para lectores de pantalla, que es
+         el unico encabezado de nivel 1 del documento. -->
+    <header class="topbar">
+      <h1 class="sr-only">Santa Crush</h1>
+
+      <div class="topbar__right">
+        <button class="btn btn--demo" id="btn-demo" type="button" aria-pressed="false"
+                title="Jugar gratis con fichas virtuales, sin dinero real">
+          <span class="btn__coin" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <circle cx="12" cy="12" r="9.2" fill="#ffd45e" stroke="#c8102e" stroke-width="1.7" />
+              <path d="M12 6.6v10.8" fill="none" stroke="#8f0a1f" stroke-width="1.6"
+                    stroke-linecap="round" />
+              <path d="M14.4 9.4a2.5 2.5 0 0 0-4.4 1.2c0 2.9 4.6 1.3 4.6 4a2.5 2.5 0 0 1-4.6.6"
+                    fill="none" stroke="#8f0a1f" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="btn__title">Fichas de Prueba</span>
+          <span class="btn__sub" id="demo-sub">1.000,00 VES</span>
+        </button>
+
+        <!-- Controles de audio: una sola capsula para los dos iconos. El estado
+             de silencio lo pinta `style.css` leyendo `aria-pressed`; el SVG
+             cambia de ondas a cruz sin que el JS toque su contenido. -->
+        <div class="topbar__audio" role="group" aria-label="Audio y ayuda">
+          <button class="icon-btn icon-btn--sound" id="btn-sound" type="button" aria-pressed="true"
+                  title="Silenciar sonido" aria-label="Activar o desactivar sonido">
+            <svg class="icon-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path class="icon-btn__speaker" d="M4 9.2h3.2L12.4 5.6v12.8L7.2 14.8H4z" />
+              <path class="icon-btn__wave" d="M15.6 9.2a4 4 0 0 1 0 5.6" />
+              <path class="icon-btn__wave icon-btn__wave--far" d="M18.2 6.6a7.8 7.8 0 0 1 0 10.8" />
+              <path class="icon-btn__mute" d="M15.8 9.8l4.6 4.4M20.4 9.8l-4.6 4.4" />
+            </svg>
+          </button>
+          <!-- Tabla de pagos: el antiguo interrogante no decia que abre el
+               documento de premios. El boton lleva ahora el icono de tabla y su
+               nombre visible, con la misma placa 3D del resto de la barra. -->
+          <button class="icon-btn icon-btn--help icon-btn--paytable" id="btn-help" type="button"
+                  title="Reglas y tabla de pagos" aria-label="Reglas y tabla de pagos"
+                  aria-haspopup="dialog" aria-controls="modal">
+            <svg class="icon-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <rect x="3.6" y="4.6" width="16.8" height="14.8" rx="3" />
+              <path d="M3.6 9.4h16.8M3.6 14.6h16.8M9.6 9.4v10" />
+            </svg>
+            <span class="icon-btn__label" aria-hidden="true">Tabla de pagos</span>
+            <span class="icon-btn__label icon-btn__label--short" aria-hidden="true">Pagos</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="stage">
+      <section class="machine" aria-label="Máquina de juego">
+        <!-- ==================================================================
+             Columna izquierda · Bloques 1-3
+             Bloque 1: logo · Bloque 2: indicadores · Bloque 3: saldo y controles
+             ================================================================== -->
+        <div class="machine__side">
+          <!-- Bloque 1 · Logo principal (flotacion continua via CSS) -->
+          <div class="machine__hero">
+            <span class="machine__spark machine__spark--left" aria-hidden="true">✦</span>
+            <img class="machine__logo" src="/src/assets/MERIDIANOBET-CRUSH-LOGO.webp"
+                 alt="Santa Crush" width="480" height="240" fetchpriority="high" />
+            <span class="machine__spark machine__spark--right" aria-hidden="true">✦</span>
+          </div>
+
+          <!-- Bloque 2 · Indicadores de partida -->
+          <div class="hud">
+            <div class="hud__cell">
+              <span class="hud__label">Apuesta</span>
+              <span class="hud__value" id="bet-value">1,00</span>
+            </div>
+            <div class="hud__cell hud__cell--win">
+              <span class="hud__label">Ganancia</span>
+              <span class="hud__value" id="win-value">0,00</span>
+            </div>
+            <div class="hud__cell">
+              <span class="hud__label">Multiplicador</span>
+              <span class="hud__value hud__value--mx" id="mx-value">—</span>
+            </div>
+          </div>
+
+          <!-- Bloque 3 · Panel de control y saldo -->
+          <div class="controls">
+            <div class="controls__wallet">
+              <div class="balance" aria-live="polite">
+                <span class="balance__label" id="balance-label">Saldo</span>
+                <span class="balance__value" id="balance-value">—</span>
+                <span class="balance__currency" id="balance-currency">EUR</span>
+              </div>
+            </div>
+
+            <div class="controls__bet">
+              <button class="chip gbtn gbtn--pink" id="btn-bet-down" type="button" aria-label="Bajar apuesta">
+                <svg class="chip__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <rect x="4" y="10" width="16" height="4.5" rx="2.2" fill="#fff" />
+                </svg>
+                <i class="shine" aria-hidden="true"></i>
+              </button>
+              <div class="bet-readout">
+                <span class="bet-readout__label">Apuesta</span>
+                <strong class="bet-readout__value" id="bet-readout">1,00</strong>
+              </div>
+              <button class="chip gbtn gbtn--pink" id="btn-bet-up" type="button" aria-label="Subir apuesta">
+                <svg class="chip__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <rect x="4" y="10" width="16" height="4.5" rx="2.2" fill="#fff" />
+                  <rect x="9.75" y="4.25" width="4.5" height="16" rx="2.2" fill="#fff" />
+                </svg>
+                <i class="shine" aria-hidden="true"></i>
+              </button>
+              <button class="chip chip--max gbtn gbtn--gold" id="btn-bet-max" type="button" aria-label="Apuesta máxima">
+                <span class="chip__label">MAX</span>
+                <i class="shine" aria-hidden="true"></i>
+              </button>
+            </div>
+
+            <div class="controls__actions">
+              <!-- El amarillo configura y el azul ejecuta: este pulsador abre la
+                   hoja de giros rapidos y anuncia el catalogo (x5 x10 x25) en su
+                   propio cuerpo. `GameView.paintQuickSpinsOptions_` resalta el
+                   paquete vigente. -->
+              <button class="btn btn--feature gbtn gbtn--gold" id="btn-feature" type="button"
+                      aria-haspopup="dialog" aria-controls="fever-sheet" aria-expanded="false"
+                      aria-label="Autogiro · paquetes de 5, 10 o 25 tiradas automáticas. Pulsa para elegir paquete.">
+                <span class="btn__main">
+                  <svg class="btn__glyph" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                    <path d="M9 1.4l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L1.8 6.7l5-.7z" />
+                  </svg>
+                  <span class="btn__title">AUTOGIRO</span>
+                  <!-- Los tres paquetes del selector, de un vistazo. Es texto
+                       decorativo: el nombre accesible del boton ya los enumera y
+                       en movil rotan sobre la placa del pie. -->
+                  <span class="btn__opts" id="feature-options" aria-hidden="true">
+                    <span class="btn__opt" data-spins="5">x5</span>
+                    <span class="btn__opt" data-spins="10">x10</span>
+                    <span class="btn__opt" data-spins="25">x25</span>
+                  </span>
+                </span>
+                <i class="shine" aria-hidden="true"></i>
+              </button>
+
+              <button class="btn btn--spin gbtn gbtn--pink" id="btn-spin" type="button">
+                <span class="btn__spin-icon" aria-hidden="true">
+                  <svg viewBox="0 0 46 46" aria-hidden="true" focusable="false">
+                    <defs>
+                      <marker id="spin-head" viewBox="0 0 10 10" refX="7.5" refY="5"
+                              markerWidth="3.2" markerHeight="3.2" orient="auto">
+                        <path d="M0 0 10 5 0 10Z" fill="#fff" />
+                      </marker>
+                    </defs>
+                    <path d="M36.6 16.8A14.6 14.6 0 1 0 37.4 27.2" marker-end="url(#spin-head)" />
+                  </svg>
+                </span>
+                <span class="btn__spin-label" id="spin-label">GIRAR</span>
+                <span class="spin-spark spin-spark--a" aria-hidden="true">✦</span>
+                <span class="spin-spark spin-spark--b" aria-hidden="true">✦</span>
+                <span class="spin-spark spin-spark--c" aria-hidden="true">✦</span>
+                <i class="shine" aria-hidden="true"></i>
+              </button>
+
+              <button class="btn btn--auto gbtn gbtn--blue" id="btn-auto" type="button"
+                      aria-pressed="false"
+                      aria-label="AUTO · 10 tiradas automáticas. Pulsa para jugarlas seguidas.">
+                <span class="btn__main">
+                  <span class="btn__title">AUTO</span>
+                  <span class="btn__chev" aria-hidden="true">▶</span>
+                </span>
+                <!-- Paquete configurado en el pulsador amarillo, con la misma
+                     notacion de sus chips (`x5` / `x10` / `x25`); en marcha
+                     muestra las tiradas que quedan. -->
+                <span class="pill"><span id="auto-count">x10</span></span>
+                <i class="shine" aria-hidden="true"></i>
+              </button>
+            </div>
+
+            <!-- Pie del panel: estado del motor y version. Mismos ids que
+                 consulta el cliente; solo cambia su posicion en el layout. -->
+            <div class="statusbar">
+              <span class="statusbar__item" id="status-text">Conectando…</span>
+              <span class="statusbar__item statusbar__item--right" id="engine-text"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================================
+             Columna derecha · Bloque 4 (cuadricula 6x5)
+             ================================================================== -->
+        <div class="machine__table">
+          <div class="board">
+            <div class="grid" id="grid" role="img" aria-label="Cuadrícula de 6 columnas y 5 filas"></div>
+            <div class="board__overlay" id="board-overlay" aria-live="polite">
+              <div class="banner" id="banner">
+                <span class="banner__level" id="banner-level"></span>
+                <span class="banner__amount" id="banner-amount"></span>
+              </div>
+              <div class="spin-tag" id="spin-tag"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Auditoria de la ronda. Se mantiene en el DOM (los ids los usa el
+           cliente); en la maqueta de dos columnas queda oculta por CSS. -->
+      <aside class="panel" aria-label="Información de la ronda">
+        <div class="panel__block">
+          <h2 class="panel__title">Ronda</h2>
+          <dl class="kv">
+            <dt>Estado</dt><dd id="info-state">—</dd>
+            <dt>Ronda</dt><dd id="info-round" class="mono">—</dd>
+            <dt>Hash servidor</dt><dd id="info-seedhash" class="mono mono--wrap">—</dd>
+            <dt>Semilla cliente</dt><dd id="info-clientseed" class="mono">—</dd>
+            <dt>Extracciones RNG</dt><dd id="info-draws">—</dd>
+          </dl>
+        </div>
+
+        <div class="panel__block">
+          <h2 class="panel__title">Últimas tiradas</h2>
+          <ul class="history" id="history"></ul>
+        </div>
+
+        <div class="panel__block panel__block--muted">
+          <h2 class="panel__title">Certificación</h2>
+          <dl class="kv">
+            <dt>RTP base</dt><dd id="info-rtp-base">—</dd>
+            <dt>RTP bonus</dt><dd id="info-rtp-feature">—</dd>
+            <dt>Tope por ronda</dt><dd id="info-cap">10.000×</dd>
+          </dl>
+          <p class="disclaimer">
+            Entorno de demostración con saldo virtual. Los resultados se generan en el
+            servidor con un CSPRNG; el cliente solo reproduce la animación.
+          </p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Capa decorativa de game feel: chispas, destellos, lluvia de pelotas y
+       cartel de gran premio. La rellena `fx.js` y nunca recibe eventos. -->
+  <div class="fx" id="fx" aria-hidden="true"></div>
+
+  <!-- Pantalla de victoria (GRAN PREMIO / MEGA / EPICA). Se muestra encima del
+       juego con la animacion WIN (Santa, letrero dorado y regalos), rayos
+       giratorios y pelotas cayendo por los laterales; `uiManager` la cierra
+       sola a los 3-4 s o con un toque.
+       Es decorativa para lectores de pantalla (`aria-hidden`): la cifra y el
+       nivel los anuncia el banner del tablero, que es la region viva. -->
+  <div class="win" id="win-overlay" hidden aria-hidden="true">
+    <div class="win__rays" aria-hidden="true"></div>
+    <div class="win__rain" id="win-rain" aria-hidden="true"></div>
+    <div class="win__stage">
+      <div class="win__art-wrap">
+        <!-- WebP animado (3 fotogramas de 350 ms en bucle) y, debajo, su
+             fotograma fijo. El CSS cambia uno por otro con
+             `prefers-reduced-motion`: un WebP animado se reproduce solo y
+             ninguna regla de animacion puede pararlo. Los dos comparten la caja
+             724x724 que reserva el HTML, asi que el cambio no mueve nada. -->
+        <img class="win__art win__art--anim" id="win-art" src="/src/assets/win_celebracion.webp"
+             alt="" width="724" height="724" decoding="async" loading="lazy" />
+        <img class="win__art win__art--still" src="/src/assets/win_celebracion_still.webp"
+             alt="" width="724" height="724" decoding="async" loading="lazy" />
+      </div>
+      <strong class="win__amount">
+        <span id="win-amount">0,00</span>
+        <span class="win__cur" id="win-currency">EUR</span>
+      </strong>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toasts" aria-live="assertive"></div>
+
+  <!-- Tabla de pagos. La placa, el boton de cierre y las tablas las pinta
+       `style.css` (maqueta y material) y `theme.css` (consola marina + oro).
+       El JS solo rellena `#modal-body` con el HTML de `/api/game`; el titulo lo
+       fija `GameView.showInfo`. -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal__head">
+        <h2 id="modal-title">Tabla de pagos</h2>
+        <button class="icon-btn" id="btn-modal-close" type="button" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Hoja de configuracion de autogiros: los paquetes del boton amarillo.
+       El amarillo la abre (pide cuantas tiradas quiere) y el azul las juega.
+       `GameView.renderFeverSheet_` pinta un boton por paquete publicado en
+       `bets.quickSpins` (marcando el vigente) y
+       `GameView.paintQuickSpinsOptions_` resalta ese mismo chip en el amarillo
+       y escribe la pildora del azul. -->
+  <div class="fever" id="fever-sheet" hidden>
+    <div class="fever__backdrop" id="fever-backdrop" data-close="1"></div>
+    <div class="fever__card" role="dialog" aria-modal="true"
+         aria-labelledby="fever-title" aria-describedby="fever-lead">
+      <header class="fever__head">
+        <span class="fever__flame" aria-hidden="true">
+          <svg class="fever__flame-icon" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+            <path d="M9 1.4l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L1.8 6.7l5-.7z" />
+          </svg>
+        </span>
+        <h2 class="fever__title" id="fever-title">Giros Rápidos</h2>
+        <button class="icon-btn fever__close" id="btn-fever-close" type="button" aria-label="Cerrar">✕</button>
+      </header>
+
+      <p class="fever__lead" id="fever-lead"></p>
+
+      <!-- Paquetes de tiradas: un boton por valor de `bets.quickSpins`. Los
+           pinta el renderer en cada apertura, por eso el contenedor esta vacio.
+           Elegir uno no gira: el paquete queda configurado y lo juega AUTO. -->
+      <div class="fever__options" id="fever-options" role="group" aria-labelledby="fever-title"></div>
+
+      <p class="fever__summary" id="fever-summary"></p>
+    </div>
+  </div>
+
+  <script type="module" src="/ui/main.js"></script>
+</body>
+</html>
+

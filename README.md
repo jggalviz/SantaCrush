@@ -55,9 +55,16 @@ npm start        # servidor (compila antes con prestart)
 npm run dev      # servidor con --watch
 npm test         # suite completa
 npm run simulate # simulacion del motor
+npm run build        # paquete completo para produccion -> dist/ (se versiona)
 npm run build:index  # obligatorio tras editar public/index.html
 npm run build:ui     # obligatorio tras editar ui/
 ```
+
+`npm run build` encadena config, espejo de la UI, CSS minificado, HTML generado y
+el staging final en `dist/`. **`dist/` se versiona** (no esta en `.gitignore`):
+el equipo de backend lo descarga con `git pull` de la rama `development` y lo
+publica tal cual. Flujo, remotos y checklist en
+[`docs/GIT_INTEGRATION.md`](docs/GIT_INTEGRATION.md).
 
 ## Rebranding
 
@@ -81,5 +88,6 @@ assets, y la tabla de alcance de `docs/REBRANDING.md` indica cuales son.
 - [`docs/REBRANDING.md`](docs/REBRANDING.md) — paleta, logotipo, textos, checklist.
 - [`docs/DEMO_MODE.md`](docs/DEMO_MODE.md) — "Fichas de Prueba" (saldo virtual).
 - [`docs/DEPLOY_VERCEL.md`](docs/DEPLOY_VERCEL.md) — despliegue en Vercel.
+- [`docs/GIT_INTEGRATION.md`](docs/GIT_INTEGRATION.md) — remotos, rama `development` y entrega de `dist/` al backend.
 - [`docs/MATH_MODEL.md`](docs/MATH_MODEL.md) — modelo matematico y RTP.
 - [`ui/README.md`](ui/README.md) — arquitectura del cliente.

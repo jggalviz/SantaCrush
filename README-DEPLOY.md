@@ -399,19 +399,21 @@ No es necesario para un despliegue normal: los WebP/WOFF2/PNG ya están versiona
 
 ### 3.4 Generación de la build final estática
 
-El proyecto **no tiene bundler**: la build final es el contenido de `public/` tal cual, con dos pasos previos de generación (`npm run build:ui` y `npm run build:css`) que ya corren en `prestart`, `predev` y `vercel-build`. El staging a `dist/` lo hace un script:
+El proyecto **no tiene bundler**: la build final es el contenido de `public/` tal cual, con dos pasos previos de generación (`npm run build:ui` y `npm run build:css`) que ya corren en `prestart`, `predev` y `vercel-build`. El staging a `dist/` lo hace un script (o `npm run build`, que encadena los cinco pasos y es el comando de entrega):
 
 ```powershell
 npm run build:dist
 ```
 
-`dist/` (en `.gitignore`) es exactamente lo que se sincroniza con el bucket o se copia a `public/pana-crush/` en el proyecto del operador. `scripts/build-dist.js` copia `public/` y deja fuera:
+`dist/` es exactamente lo que se sincroniza con el bucket o se copia a `public/pana-crush/` en el proyecto del operador. `scripts/build-dist.js` copia `public/` y deja fuera:
 
 - `src/css/style.css` y `src/css/theme.css` (las fuentes legibles: el HTML enlaza los `.min.css`);
 - `.preview-*.html` (maquetas internas de comparación de temas);
 - `*.map`, `*.log` y `.DS_Store`.
 
 Además escribe `dist/asset-manifest.json` con el inventario y el peso de cada archivo, útil para verificar una subida.
+
+> **`dist/` está versionado en git** (no aparece en `.gitignore`): el equipo de backend hace `git pull` de la rama `development` y publica el paquete sin instalar dependencias ni ejecutar la build. `test/gitIntegration.test.js` compara `dist/` contra `public/` y pone la suite en rojo si el staging queda desfasado. Flujo, remotos y checklist en [`docs/GIT_INTEGRATION.md`](GIT_INTEGRATION.md).
 
 Salida esperada:
 
