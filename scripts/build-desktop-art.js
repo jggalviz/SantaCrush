@@ -17,9 +17,10 @@
  *   design/d1.png -> public/src/assets/d1.webp  (1033 x 863) marco del tablero
  *                    (relacion del dibujo, 1,197:1: el lienzo anterior de
  *                    1033 x 843 recortaba la cresta de nieve del toldo)
- *   design/d2.png -> public/src/assets/d2.webp  ( 655 x 928) columna lateral:
- *                    nube del logo + 3 placas + consola completa (− / lectura
- *                    / + / MAX · GIRAR · FEVER · AUTO) en una sola pieza
+ *   design/d2.png -> public/src/assets/d2.webp  ( 655 x 1091) columna lateral:
+ *                    corona de Adviento + 3 placas + consola completa
+ *                    (− / lectura / + / MAX · GIRAR · AUTOGIRO · AUTO) en una
+ *                    sola pieza
  *
  * El tema anterior repartia la columna en dos piezas (`d5`, modulo hero con la
  * nube y las placas, y `d3`, la consola). Ambas quedan archivadas en `design/`:
@@ -64,6 +65,18 @@ const DEPLOY_DIR = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets
  */
 const WEBP = { alphaQuality: 80, effort: 6, smartSubsample: true, preset: 'photo' };
 
+/**
+ * Ajuste propio de `d2`. El arte nuevo de la columna (corona de Adviento +
+ * consola) llega con mucho mas detalle fino —ramas, lazos, purpurina— y a q=90
+ * con el preset de foto se iba a 205 KB, que dejaba `public/src/assets` en 3,01
+ * MB y rompia el presupuesto de 3 MB (`test/assetBudget.test.js`). En esta
+ * pieza se apaga el submuestreo inteligente de croma y se cuantiza el alfa en
+ * pasos de 4 niveles: el alfa apenas importa porque 91750 de sus 714605 px son
+ * opacos de borde, y el croma va sobre un dibujo de trazo grueso. Baja a ~183 KB
+ * sin que el ojo note el cambio (mismo q=90).
+ */
+const WEBP_COLUMNA = { alphaQuality: 60, smartSubsample: false };
+
 const PIECES = [
   {
     name: 'd1',
@@ -72,20 +85,21 @@ const PIECES = [
     quality: 90,
     maxBytes: 300 * 1024
   },
-  // La columna lateral entera (655 x 928, escala uniforme del dibujo de 1036 x
-  // 1495 px que llega en el maestro) se publica sin reescalar: en 1920 px el
-  // panel se pinta a ~670 px de ancho y el arte va sobrado para DPR 2.
+  // La columna lateral entera (655 x 1091, escala uniforme del dibujo de 944 x
+  // 1572 px que llega en el maestro) se publica sin reescalar: en 1920 px el
+  // panel se pinta a ~600 px de ancho y el arte va sobrado para DPR 2.
   // `paint` completa el arte antes de recortar: el maestro deja la franja del
   // GIRAR en el verde de la tarjeta y `scripts/lib/girarPlate.js` dibuja ahi la
   // placa roja (aro dorado, bisel y sombra) con el mismo lenguaje que los otros
   // cinco controles. Se aplica sobre la copia, nunca sobre `design/d2.png`.
   {
     name: 'd2',
-    label: 'columna lateral (hero + consola)',
-    canvas: { width: 655, height: 928 },
+    label: 'columna lateral (corona + consola)',
+    canvas: { width: 655, height: 1091 },
     paint: paintGirarPlate,
     quality: 90,
-    maxBytes: 560 * 1024
+    webp: WEBP_COLUMNA,
+    maxBytes: 700 * 1024
   }
 ];
 
@@ -119,7 +133,7 @@ async function bboxOf(buffer) {
   return alphaBox(data, info.width, info.height, info.channels);
 }
 
-async function build({ name, label, canvas, quality, maxBytes, paint }) {
+async function build({ name, label, canvas, quality, maxBytes, paint, webp }) {
   const source = path.join(ROOT, 'design', `${name}.png`);
   const target = path.join(ASSETS_DIR, `${name}.webp`);
   if (!fs.existsSync(source)) {
@@ -171,7 +185,7 @@ async function build({ name, label, canvas, quality, maxBytes, paint }) {
     .ensureAlpha()
     .extract({ left: box.left, top: box.top, width: box.width, height: box.height })
     .resize(canvas.width, canvas.height, { fit: 'fill' })
-    .webp({ quality, ...WEBP })
+    .webp({ quality, ...WEBP, ...webp })
     .toBuffer();
 
   const out = await sharp(trimmed).metadata();
@@ -198,7 +212,7 @@ async function build({ name, label, canvas, quality, maxBytes, paint }) {
   // hoja de estilo para que cualquier recalibracion sea trazable.
   console.log(
     `  -> ${path.relative(ROOT, target)}  ${out.width}x${out.height}  ${kb(trimmed.length)} ` +
-      `(q=${quality}, alfa ${WEBP.alphaQuality})  fuente ${kb(fs.statSync(source).size)}`
+      `(q=${quality}, alfa ${(webp && webp.alphaQuality) || WEBP.alphaQuality})  fuente ${kb(fs.statSync(source).size)}`
   );
   console.log(
     `     bbox en el maestro: x ${box.left} (${pct(box.left, meta.width)}) · ` +

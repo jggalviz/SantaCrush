@@ -106,24 +106,27 @@ async function fitInk(file, canvas) {
 
   /* ---------------------------------------------------------------- d2 ---- */
   if (wants('d2')) {
-    // Columna lateral: nube del logo + tres placas + consola entera en una
-    // sola pieza. El maestro util mide 1036 x 1495 (0,6930:1) y se publica en
-    // el lienzo 655 x 928 con escala uniforme (0,2 % de diferencia de eje).
+    // Columna lateral: corona de Adviento + tres placas + consola entera en una
+    // sola pieza. El maestro util mide 944 x 1572 (0,60051:1) y se publica en
+    // el lienzo 655 x 1091 con escala uniforme (0,02 % de diferencia de eje).
     //
-    // Antes se estiraba al lienzo y luego se reasignaban ocho franjas de filas
-    // para clavar placas y pulsadores en su caja del CSS. La ultima franja
-    // (filas 827..860 -> 878..928) dejaba fuera las 68 filas de abajo, que son
-    // justo la base del marco: las estrellas, el lazo central, las campanas y
-    // los adornos del pie se publicaban guillotinados. Ahora el lienzo lleva el
-    // dibujo completo y los anclajes del CSS se volvieron a medir sobre el
-    // mismo (aquel remapeo era invertible, asi que cada % antiguo tiene su
-    // equivalente exacto en el lienzo nuevo).
+    // El arte anterior (`Interfaz Navideña con Campanas Doradas.png`) tenia
+    // otra relacion (1036 x 1495, 0,6930:1) y se publicaba en 655 x 928; al
+    // cambiar el dibujo hay que volver a medir TODOS los anclajes del CSS
+    // (placas del HUD, discos, capsulas y placa del GIRAR), porque cada uno es
+    // un % de este lienzo. Las medidas nuevas estan en el bloque de escritorio
+    // de `style.css` y en `scripts/lib/girarPlate.js`.
+    //
+    // Nunca se estira en un solo eje: `fitInk` recorta al alfa y reescala con
+    // `fit: 'fill'` sobre un lienzo de la MISMA relacion, asi que el dibujo
+    // entra sin deformarse (con el remapeo de franjas antiguo el pie del marco
+    // se publicaba guillotinado).
     const d2 = await fitInk(
-      path.join(ROOT, 'desk', 'Interfaz Navideña con Campanas Doradas.png'),
-      { width: 655, height: 928 }
+      path.join(ROOT, 'desk', 'Marco de tragaperras navideño festivo.png'),
+      { width: 655, height: 1091 }
     );
     fs.writeFileSync(path.join(DESIGN, 'd2.png'), d2);
-    console.log('design/d2.png  655x928 (escala uniforme, base del marco completa)');
+    console.log('design/d2.png  655x1091 (escala uniforme, corona y pie completos)');
   }
 
   /* ------------------------------------------------------- marco_movil ---- */

@@ -6444,10 +6444,11 @@ body.is-demo .machine__side .controls .balance::after {
                            derecha. El lienzo sigue la relacion del dibujo
                            (1,197:1); el anterior (1,2254:1) recortaba 27 px
                            del toldo y la nieve se veia cortada a cuchillo.
-     d2.webp ·  655 x 928  columna lateral completa: nube del logo (x 20-80 % ·
-                           y 12-33 %) + tres placas (x 6,3-94 % · y 35,3-45,5 %)
-                           + consola entera (− / lectura / + / MAX · GIRAR ·
-                           CRUSH · AUTO) en una sola pieza → columna izquierda
+     d2.webp ·  655 x 1091 columna lateral completa: corona de Adviento en el
+                           hero (la chapa del logo se apoya en la banda de
+                           nieve) + tres placas (x 6,46-93,11 % · y 36,32-43,45
+                           %) + consola entera (− / lectura / + / MAX · GIRAR ·
+                           AUTOGIRO · AUTO) en una sola pieza → columna izquierda
 
    `vercel.json` sirve `/src/assets/**` con `Cache-Control: immutable` (un año),
    asi que la URL de cada pieza lleva `?v=N`: al republicar el arte hay que subir
@@ -6462,7 +6463,7 @@ body.is-demo .machine__side .controls .balance::after {
 
    El reparto del alto es una sola medida (`--frame-h`): el marco y la columna
    lateral comparten alto y la lateral deduce su ancho de su propia relacion
-   (655/928). Asi el conjunto nunca desborda el viewport (sin scroll) y todas
+   (655/1091). Asi el conjunto nunca desborda el viewport (sin scroll) y todas
    las capas superpuestas escalan con el dibujo.
    ========================================================================== */
 
@@ -6487,16 +6488,18 @@ body.is-demo .machine__side .controls .balance::after {
     --d-avail-pad: clamp(16px, 3vw, 44px);
 
     /* Alto del marco: el menor entre el que deja el viewport y el que deja el
-       ancho. 1,90282 = 1,19700 (relacion de d1, 1033/863) + 0,70582 (ancho de
-       la columna lateral por unidad de alto: 655/928, ver mas abajo). */
+       ancho. 1,79737 = 1,19700 (relacion de d1, 1033/863) + 0,60037 (ancho de
+       la columna lateral por unidad de alto: 655/1091, ver mas abajo). */
     --frame-h: min(
       calc(100dvh - var(--d-chrome) - var(--d-bleed)),
-      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.90282)
+      calc((min(100vw, 1760px) - var(--d-avail-pad) - var(--d-gap-x)) / 1.79737)
     );
     --frame-w: calc(var(--frame-h) * 1.19700);
-    /* 1,41679 = 928/655: la columna lateral es una sola pieza, asi que su ancho
-       sale directamente del alto comun, sin descontar ninguna separacion. */
-    --side-w: calc(var(--frame-h) / 1.41679);
+    /* 1,66565 = 1091/655: la columna lateral es una sola pieza, asi que su ancho
+       sale directamente del alto comun, sin descontar ninguna separacion. Con
+       el arte nuevo (mas estrecho y alto que el anterior) la columna cede ~15 %
+       de ancho al tablero para el mismo alto de marco. */
+    --side-w: calc(var(--frame-h) / 1.66565);
     /* Escala tipografica de cada mitad del dibujo. Ya no son altos de piezas
        separadas (d2 lo funde todo): solo fijan los cuerpos de letra que se
        apoyan sobre la nube y sobre la consola. */
@@ -6539,7 +6542,7 @@ body.is-demo .machine__side .controls .balance::after {
     height: var(--frame-h);
     min-width: 0;
     min-height: 0;
-    background: url('../assets/d2.webp?v=2') no-repeat center / 100% 100%;
+    background: url('../assets/d2.webp?v=3') no-repeat center / 100% 100%;
     overflow: visible;
   }
 
@@ -6572,26 +6575,22 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .machine__hero::before { display: none; }
   .machine__side .machine__spark { display: none; }
 
-  /* La pegatina del logo, centrada en la nube y MONTANDO sobre su borde dorado.
-     La placa de d2.webp arranca en el 50,1 % del lienzo (655 x 928) y su cuerpo
-     azul mide 394 px de ancho (x 131..525) con el aro dorado en ~414 px, asi que
-     414 px son el liston: el logo tiene que pasar de ahi para pisar el aro en vez
-     de flotar dentro del hueco. El lockup de MeridianoBet es 2:1 (900 x 450; el
-     arte ocupa 883 x 442 px y va pegado al borde derecho, solo 17 px de aire a la
-     izquierda), asi que con 80 % de ancho la caja mide 524 x 262 px y el arte
-     514,1 x 257,3 px: sobresale 50 px por cada lado del aro y lo tapa entero, que
-     es la jerarquia que se pide — el simbolo que mejor paga manda en la nube.
-     80 % es ademas el techo: con 84 % el arte ya se come la base de la corona y
-     su filo inferior se queda a 6 px de la barra superior del HUD (35,02 %). Con
-     80 % el arte va de 6,6 a 34,3 % del alto del lienzo, ~7 px de aire sobre las
-     placas, y la respiracion se acota aqui en -4 px y 2 %
-     (`pana-logo-breathe-side`) para que el pico no las roce. */
+  /* La chapa del logo, centrada sobre la banda de nieve de la corona.
+     El arte nuevo (655 x 1091) ya no trae placa para el logo: la corona de
+     Adviento ocupa el 0-33 % del lienzo y la unica franja despejada es la nieve
+     que queda bajo el lazo central (y 24-32,5 %). Ahi se apoya la chapa.
+     El lockup de MeridianoBet es 2:1 (900 x 450; el arte ocupa 883 x 442 px y va
+     pegado al borde derecho, solo 17 px de aire a la izquierda), asi que con 70 %
+     de ancho la caja mide 458,5 x 229,3 px de lienzo = 21,0 % del alto: centrada
+     en 21,4 % va de 10,9 a 31,9 % y deja 0,6 % (~4 px de lienzo) sobre la cresta
+     del toldo, que arranca en 32,51 %. La respiracion se acota aqui en -4 px y
+     2 % (`pana-logo-breathe-side`) para que el pico no roce el toldo. */
   .machine__side .machine__logo {
     position: absolute;
     left: 50%;
-    top: 20.47%;
+    top: 21.4%;
     z-index: 6;
-    width: 80%;
+    width: 70%;
     height: auto;
     aspect-ratio: 2 / 1;
     max-width: none;
@@ -6609,27 +6608,28 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* ------------------------------------------------------------------------
-     Bloque 2 · Las tres placas azules del hero (dibujadas en d2)
+     Bloque 2 · Las tres placas del hero (dibujadas en d2)
      d2.webp trae las placas vacias y con borde dorado. Medidas sobre el lienzo
-     (655 x 928): x 8,24-33,74 · 37,71-62,60 · 66,72-92,06 % y banda y
-     36,96-43,96 %. `.hud` se ajusta a la union de las tres (x 8,24 %, ancho
-     83,82 %) y los tracks se declaran en % del propio `.hud` —30,42 / 29,70 /
-     30,23 % con separaciones de 4,74 y 4,92 %—, de modo que cada celda cae
-     exactamente sobre su placa y el texto nunca se sale del borde dorado.
+     nuevo (655 x 1091): los cuerpos rojos van de x 6,46 a 93,11 % (27,12 % de
+     ancho cada uno) y de y 36,32 a 43,45 %. `.hud` se ajusta a la union de los
+     tres (x 6,46 %, ancho 86,65 %, alto 7,13 %) y los tracks se declaran en %
+     del propio `.hud` —31,30 % cada uno con una separacion de 3,06 %—, de modo
+     que cada celda cae exactamente sobre su placa y el texto nunca se sale del
+     borde dorado.
      ------------------------------------------------------------------------ */
   .machine__side .hud {
     position: absolute;
-    left: 8.24%;
-    top: 35.02%;
-    width: 83.82%;
-    height: 7%;
+    left: 6.46%;
+    top: 36.32%;
+    width: 86.65%;
+    height: 7.13%;
     /* Sobre el dibujo de la columna (`z-index: 2`), que es su hermano. */
     z-index: 5;
     display: grid;
-    grid-template-columns: 30.42% 29.70% 30.23%;
+    grid-template-columns: 31.3% 31.3% 31.3%;
     grid-template-rows: 100%;
     align-items: stretch;
-    column-gap: 4.83%;
+    column-gap: 3.06%;
     row-gap: 0;
     margin: 0;
     padding: 0;
@@ -6702,7 +6702,7 @@ body.is-demo .machine__side .controls .balance::after {
      d2 trae los siete pulsadores vacios (salvo los signos − y + de los discos y
      una estrella en cada capsula): el CSS solo coloca encima la capa tactil de
      cada uno y sus lecturas. `.controls` ocupa el lienzo completo para que los
-     anclajes en % de sus hijos sean los medidos sobre d2.webp (655 x 928).
+     anclajes en % de sus hijos sean los medidos sobre d2.webp (655 x 1091).
      ------------------------------------------------------------------------ */
   .machine__side .controls {
     position: absolute;
@@ -6753,7 +6753,7 @@ body.is-demo .machine__side .controls .balance::after {
     border: 0;
     border-radius: 999px;
     background-color: transparent;
-    background-image: url('../assets/d2.webp?v=2');
+    background-image: url('../assets/d2.webp?v=3');
     background-repeat: no-repeat;
     background-size: calc(100% * 100 / var(--art-w)) auto;
     background-position:
@@ -6838,78 +6838,81 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* --- Geometria de los siete pulsadores ----------------------------------
-     Cada caja es el bbox del pulsador dibujado en d2.webp (655 x 928), medido
-     por color y componente conexa. Las cajas de CRUSH y AUTO se solapan un poco
-     en vertical (una capsula queda mas alta que la otra) pero nunca en
-     horizontal, asi que sus areas tactiles no se pisan. */
-  /* Disco − · x 10,23-23,97 % · y 51,30-61,75 % */
+     Cada caja es el bbox COMPLETO del pulsador dibujado en d2.webp (655 x
+     1091), medido por componente conexa sobre la mascara "no verde" del panel:
+     incluye el aro, para que la copia recortada del lienzo cubra el caramelo
+     entero y el hundimiento (`scale`) no deje fuera del encogimiento el filo
+     del dibujo del padre. Las dos capsulas del pie comparten banda y alto (y
+     81,87-91,03 %) y no se tocan en horizontal, asi que sus areas tactiles no
+     se pisan. */
+  /* Disco − · x 9,00-23,41 % · y 52,61-61,13 % */
   .machine__side .controls__bet #btn-bet-down {
-    --art-x: 10.23;
-    --art-y: 51.3;
-    --art-w: 13.74;
-    --art-h: 10.45;
-    left: 10.23%;
-    top: 51.3%;
-    width: 13.74%;
-    height: 10.45%;
+    --art-x: 9;
+    --art-y: 52.61;
+    --art-w: 14.41;
+    --art-h: 8.52;
+    left: 9%;
+    top: 52.61%;
+    width: 14.41%;
+    height: 8.52%;
     border-radius: 28%;
   }
 
-  /* Disco + · x 62,75-75,73 % · y 51,41-61,63 % */
+  /* Disco + · x 63,03-77,01 % · y 52,61-61,26 % */
   .machine__side .controls__bet #btn-bet-up {
-    --art-x: 62.75;
-    --art-y: 51.41;
-    --art-w: 12.98;
-    --art-h: 10.22;
-    left: 62.75%;
-    top: 51.41%;
-    width: 12.98%;
-    height: 10.22%;
+    --art-x: 63.03;
+    --art-y: 52.61;
+    --art-w: 13.98;
+    --art-h: 8.65;
+    left: 63.03%;
+    top: 52.61%;
+    width: 13.98%;
+    height: 8.65%;
     border-radius: 28%;
   }
 
-  /* Placa MAX · x 76,79-89,31 % · y 51,41-61,63 % */
+  /* Placa MAX · x 78,07-90,78 % · y 52,61-61,13 % */
   .machine__side .controls__bet #btn-bet-max {
-    --art-x: 76.79;
-    --art-y: 51.41;
-    --art-w: 12.52;
-    --art-h: 10.22;
-    left: 76.79%;
-    top: 51.41%;
-    width: 12.52%;
-    height: 10.22%;
+    --art-x: 78.07;
+    --art-y: 52.61;
+    --art-w: 12.71;
+    --art-h: 8.52;
+    left: 78.07%;
+    top: 52.61%;
+    width: 12.71%;
+    height: 8.52%;
     border-radius: 26%;
   }
 
-  /* Capsula GIRAR · x 9,16-89,92 % · y 62,50-78,77 %
+  /* Capsula GIRAR · x 9,16-89,92 % · y 64,89-80,48 %
      Va por `#btn-spin` a proposito: la regla candy
      `.machine__side .controls .btn--spin.gbtn` (linea ~4508) suma cuatro clases
      y gana a cualquier selector de tres, y trae `border-radius: 999px`,
      `border: 5px solid transparent` y `background-clip: padding-box`. Con eso el
-     trozo de `d2.webp` se recortaba en capsula (78 px de lienzo) y se pintaba
-     sobre el padding box, 10 px mas pequeño que la caja: el aro dorado aparecia
-     mordido en las cuatro esquinas y desplazado respecto al dibujo del padre.
+     trozo de `d2.webp` se recortaba en capsula y se pintaba sobre el padding
+     box, 10 px mas pequeño que la caja: el aro dorado aparecia mordido en las
+     cuatro esquinas y desplazado respecto al dibujo del padre.
 
      El velo (`border-radius`) va sincronizado con la placa que pinta
-     `scripts/lib/girarPlate.js`: 7,18 % del ancho y 25,17 % del alto son 38 px
-     sobre 529 x 151 del lienzo, dos px por fuera del aro de 36 para no morder su
+     `scripts/lib/girarPlate.js`: 8,13 % del ancho y 25,29 % del alto son 43 px
+     sobre 529 x 170 del lienzo, dos px por fuera del aro de 41 para no morder su
      filo marron. El test compara este valor con `GIRAR_PLATE.maskCss`. */
   .machine__side .controls #btn-spin {
     --art-x: 9.16;
-    --art-y: 62.5;
+    --art-y: 64.89;
     --art-w: 80.76;
-    --art-h: 16.27;
+    --art-h: 15.58;
     left: 9.16%;
-    top: 62.50%;
+    top: 64.89%;
     width: 80.76%;
-    height: 16.27%;
+    height: 15.58%;
     min-width: 0;
     min-height: 0;
     max-height: none;
     gap: 0.55em;
     padding: 0;
     border: 0;
-    border-radius: 7.18% / 25.17%;
+    border-radius: 8.13% / 25.29%;
     background-color: transparent;
     /* Sin esto la copia del lienzo se ancla al padding box y no a la caja. */
     background-clip: border-box;
@@ -6927,7 +6930,7 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .controls #btn-feature,
   .machine__side .controls #btn-auto {
     background-color: transparent;
-    background-image: url('../assets/d2.webp?v=2');
+    background-image: url('../assets/d2.webp?v=3');
     background-repeat: no-repeat;
     background-size: calc(100% * 100 / var(--art-w)) auto;
     background-position:
@@ -6937,16 +6940,16 @@ body.is-demo .machine__side .controls .balance::after {
     animation: none;
   }
 
-  /* CRUSH · x 10,23-48,55 % · y 81,70-88,28 % */
+  /* Capsula AUTOGIRO · x 8,79-49,26 % · y 81,87-91,03 % */
   .machine__side .controls #btn-feature {
-    --art-x: 10.23;
-    --art-y: 81.7;
-    --art-w: 38.32;
-    --art-h: 6.58;
-    left: 10.23%;
-    top: 81.7%;
-    width: 38.32%;
-    height: 6.58%;
+    --art-x: 8.79;
+    --art-y: 81.87;
+    --art-w: 40.47;
+    --art-h: 9.16;
+    left: 8.79%;
+    top: 81.87%;
+    width: 40.47%;
+    height: 9.16%;
     min-width: 0;
     min-height: 0;
     max-height: none;
@@ -6954,16 +6957,16 @@ body.is-demo .machine__side .controls .balance::after {
     gap: 0.25em;
   }
 
-  /* AUTO · x 50,69-89,47 % · y 79,85-89,12 % */
+  /* Capsula AUTO · x 50,53-91,00 % · y 81,87-91,03 % */
   .machine__side .controls #btn-auto {
-    --art-x: 50.69;
-    --art-y: 79.85;
-    --art-w: 38.78;
-    --art-h: 9.27;
-    left: 50.69%;
-    top: 79.85%;
-    width: 38.78%;
-    height: 9.27%;
+    --art-x: 50.53;
+    --art-y: 81.87;
+    --art-w: 40.47;
+    --art-h: 9.16;
+    left: 50.53%;
+    top: 81.87%;
+    width: 40.47%;
+    height: 9.16%;
     min-width: 0;
     min-height: 0;
     max-height: none;
@@ -6975,19 +6978,21 @@ body.is-demo .machine__side .controls .balance::after {
     to { background-position: -60% 0; }
   }
 
-  /* --- Lectura de saldo · franja libre sobre los discos --------------------
-     d2 no dibuja placa para el saldo: la unica franja limpia de la consola es
-     la que queda entre el filete dorado superior del panel y la fila de discos
-     (− / lectura / + / MAX), x 8,5-91,5 % · y 49,32-51,31 %. Ahi se centra como
-     el credito de una maquina de arcade, en una sola linea y sin fondo propio. */
+  /* --- Lectura de saldo · franja libre bajo los discos --------------------
+     d2 no dibuja placa para el saldo. El arte nuevo deja libre el verde que
+     queda entre la fila de discos (que acaba en 61,13 %) y la capsula del GIRAR
+     (que arranca en 64,89 %): ahi va el credito, x 8,5-91,5 % · y 62,15-64,75 %,
+     en una sola linea y sin fondo propio. Antes se apoyaba en el filete dorado
+     del panel (y 49,3-51,3 %), justo encima del toldo, y el texto se cruzaba con
+     el dibujo y con el borde de la placa del GIRAR. */
   .machine__side .controls .balance,
   body.is-demo .machine__side .controls .balance {
     position: absolute;
     left: 8.5%;
-    top: 49.32%;
+    top: 62.15%;
     z-index: 5;
     width: 83%;
-    height: 1.99%;
+    height: 2.6%;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -7052,17 +7057,17 @@ body.is-demo .machine__side .controls .balance::after {
     background: none;
   }
 
-  /* --- Lectura de apuesta · placa azul entre los discos -------------------
-     x 25,04-61,68 % · y 51,41-61,05 %: el hueco oscuro que d2 deja entre el
-     disco − y el disco +. */
+  /* --- Lectura de apuesta · placa dorada entre los discos ------------------
+     x 24,47-62,18 % · y 52,86-61,13 %: el campo que d2 dibuja entre el disco −
+     y el disco +. */
   .machine__side .controls .bet-readout,
   .machine__side .controls__bet .bet-readout {
     position: absolute;
-    left: 25.04%;
-    top: 51.41%;
+    left: 24.47%;
+    top: 52.86%;
     z-index: 5;
-    width: 36.64%;
-    height: 9.64%;
+    width: 37.71%;
+    height: 8.27%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -7151,24 +7156,26 @@ body.is-demo .machine__side .controls .balance::after {
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 
-  /* `AUTOGIRO` + los tres paquetes en el mismo caramelo (38,3 % del panel). El
-     rotulo baja un punto para dejar sitio a los chips; la estrella de la
-     izquierda ya viene dibujada en `d2.webp` y el glyph del DOM sigue oculto. */
+  /* `AUTOGIRO` + los tres paquetes en el mismo caramelo (40,47 % del panel). La
+     columna es ~15 % mas estrecha que con el arte anterior, asi que el rotulo y
+     los chips bajan de cuerpo para no llegar al recorte con puntos suspensivos
+     (`AUTOGI…`) en portatiles de 1024 px. La estrella de la izquierda ya viene
+     dibujada en `d2.webp` y el glyph del DOM sigue oculto. */
   .machine__side .controls #btn-feature .btn__main {
     gap: 0.3em;
   }
 
   .machine__side .controls #btn-feature .btn__main .btn__title {
-    font-size: clamp(9px, calc(var(--cons-scale) * 0.049), 18px);
+    font-size: clamp(8px, calc(var(--cons-scale) * 0.042), 17px);
   }
 
   .machine__side .controls .btn__opts {
-    gap: 0.14em;
+    gap: 0.1em;
   }
 
   .machine__side .controls .btn__opt {
-    padding: 0.1em 0.4em;
-    font-size: clamp(7.5px, calc(var(--cons-scale) * 0.028), 12px);
+    padding: 0.08em 0.3em;
+    font-size: clamp(6.5px, calc(var(--cons-scale) * 0.024), 11px);
     letter-spacing: 0;
     color: rgba(94, 44, 0, 0.82);
     background: rgba(255, 255, 255, 0.38);
@@ -7219,19 +7226,15 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* La placa dorada del MAX lleva su rotulo en tinta tostada.
-     La caja tactil se ancla con `--art-x` 76,79-89,31 % (centro 83,05 %), pero
-     la placa dibujada en d2.webp va de x 510 a 598 del lienzo de 655: su centro
-     real es 84,52 %, 1,47 % del ancho de la consola a la derecha (~9 px a 1920).
-     El rotulo lo centra el flex en la caja, asi que caia ese pelo a la izquierda
-     de la placa; `left` devuelve la tinta a su sitio (1,47 / 12,52 = 11,7 % de la
-     caja). Solo mueve el texto: ni la caja, ni el recorte del lienzo, ni la zona
-     tactil cambian. En vertical la placa (centro 56,22 %) y la caja (56,52 %)
-     difieren 0,3 % del alto de la consola, pero el cajetin de linea deja el hueco
-     del descendente arriba, asi que la tinta ya cae a medio px del centro de la
-     placa y no se toca. */
+     En el arte nuevo la caja tactil es el bbox COMPLETO de la placa (x 78,07-90,78
+     % del lienzo de 655 x 1091, medido por componente conexa e incluido el aro),
+     asi que su centro coincide con el centro del dibujo y el rotulo no necesita
+     correccion: el flex lo centra en la caja y la tinta cae sobre la placa. El
+     desvio de 11,7 % que pedia el arte anterior (alli la caja era solo el cuerpo
+     rojo y la placa quedaba 1,47 % a la derecha) se retira. */
   .machine__side .controls__bet #btn-bet-max .chip__label {
     position: relative;
-    left: 11.7%;
+    left: 0;
     display: block;
     padding: 0;
     font-size: clamp(10px, calc(var(--cons-scale) * 0.050), 20px);
@@ -7392,13 +7395,12 @@ body.is-demo .machine__side .controls .balance::after {
 
 /* --------------------------------------------------------------------------
    Escritorio bajo (≤660 px de alto): el lienzo de d2 se queda en ~340 px de
-   ancho. El logo mantiene el 80 % —tiene que seguir montando sobre el borde
-   dorado de la nube— y solo se recentra en 21,8 % para ganar el aire que pierde
-   arriba.
+   ancho. El logo mantiene el 70 % y solo se recentra en 21,6 % para ganar el
+   aire que pierde arriba.
    -------------------------------------------------------------------------- */
 @media (min-width: 900px) and (max-height: 660px) {
   .machine__side .machine__hero { display: block; }
-  .machine__side .machine__logo { width: 80%; top: 20.66%; }
+  .machine__side .machine__logo { width: 70%; top: 21.6%; }
 }
 
 /* Ventanas de menos de 470 px de alto: la placa del hero mide ~50 px y el

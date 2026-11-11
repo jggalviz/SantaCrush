@@ -1602,13 +1602,13 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   //
   // Movil (`build-mobile-art.js`): marco y consola recortados al alfa.
   // Escritorio (`build-desktop-art.js`): d1 (marco del tablero) y d2 (columna
-  // lateral entera: nube del logo + placas + consola), a q=90 y con el mismo
+  // lateral entera: corona + placas + consola), a q=90 y con el mismo
   // contrato de lienzo.
   const pieces = [
     { name: 'marco_movil', size: '1392x1038', max: 300 * 1024, build: 'build-mobile-art.js' },
     { name: 'consola_movil', size: '1780x883', max: 512 * 1024, build: 'build-mobile-art.js' },
     { name: 'd1', size: '1033x863', max: 300 * 1024, build: 'build-desktop-art.js' },
-    { name: 'd2', size: '655x928', max: 560 * 1024, build: 'build-desktop-art.js' }
+    { name: 'd2', size: '655x1091', max: 700 * 1024, build: 'build-desktop-art.js' }
   ];
   const css = read(STYLE_PATH);
 
@@ -1698,7 +1698,7 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
     .map((match) => match[1]);
   const spinBodies = bodies('\\.machine__side \\.controls (?:\\.btn--spin|#btn-spin)');
   assert.ok(spinBodies.length, 'La capsula GIRAR debe declarar su caja');
-  for (const declaration of ['left: 9.16%;', 'top: 62.50%;', 'width: 80.76%;', 'height: 16.27%;']) {
+  for (const declaration of ['left: 9.16%;', 'top: 64.89%;', 'width: 80.76%;', 'height: 15.58%;']) {
     assert.ok(
       spinBodies.some((body) => body.includes(declaration)),
       `El GIRAR se ancla al dibujo con \`${declaration}\``
@@ -1713,13 +1713,13 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
     );
   }
 
-  // Geometria de la columna lateral (d2 · 655 x 928): el hero y la consola son
+  // Geometria de la columna lateral (d2 · 655 x 1091): la corona y la consola son
   // una sola pieza, asi que el ancho sale del alto comun y no queda ninguna
   // separacion vertical entre ambas mitades.
   assert.match(
     css,
-    /--frame-h: min\([\s\S]{0,180}?\/ 1\.90282\)/,
-    'El marco descuenta la columna lateral con 1,19700 (d1) + 0,70582 (d2)'
+    /--frame-h: min\([\s\S]{0,180}?\/ 1\.79737\)/,
+    'El marco descuenta la columna lateral con 1,19700 (d1) + 0,60037 (d2)'
   );
   assert.match(
     css,
@@ -1728,8 +1728,8 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   );
   assert.match(
     css,
-    /--side-w: calc\(var\(--frame-h\) \/ 1\.41679\)/,
-    'La columna lateral mide 655/928 de su alto'
+    /--side-w: calc\(var\(--frame-h\) \/ 1\.66565\)/,
+    'La columna lateral mide 655/1091 de su alto'
   );
 
   const sideBodies = bodies('\\.machine__side');
@@ -1749,12 +1749,12 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   const hudBodies = bodies('\\.machine__side \\.hud');
   assert.ok(hudBodies.length, 'Las placas deben declarar su banda sobre el dibujo');
   for (const declaration of [
-    'left: 8.24%;',
-    'top: 35.02%;',
-    'width: 83.82%;',
-    'height: 7%;',
-    'grid-template-columns: 30.42% 29.70% 30.23%;',
-    'column-gap: 4.83%;'
+    'left: 6.46%;',
+    'top: 36.32%;',
+    'width: 86.65%;',
+    'height: 7.13%;',
+    'grid-template-columns: 31.3% 31.3% 31.3%;',
+    'column-gap: 3.06%;'
   ]) {
     assert.ok(
       hudBodies.some((body) => body.includes(declaration)),
@@ -1764,24 +1764,24 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
 
   const logoBodies = bodies('\\.machine__side \\.machine__logo');
   assert.ok(logoBodies.length, 'El logo debe declarar su caja sobre la nube');
-  // 80 % es el ancho con el que el logo MONTA sobre el borde dorado de la nube:
-  // la placa mide 394 px de ancho (aro ~414 px) sobre el lienzo de 655 x 928 y el
-  // arte del lockup mide 514,1 px, asi que se sale 50 px por cada lado y tapa el
-  // aro en vez de flotar dentro del hueco. Es el techo: al 84 % ya se come la base
-  // de la corona y su filo inferior roza la barra del HUD.
-  for (const declaration of ['left: 50%;', 'top: 20.47%;', 'width: 80%;', 'aspect-ratio: 2 / 1;']) {
+  // 70 % es el ancho con el que la chapa se apoya en la banda de nieve de la
+  // corona: el lienzo nuevo (655 x 1091) no trae placa para el logo, asi que el
+  // lockup se centra en 21,4 % (y 10,9-31,9 %) y deja ~4 px de lienzo sobre la
+  // cresta del toldo, que arranca en 32,51 %. Con mas ancho el arte se come la
+  // corona de arriba y roza las placas del HUD.
+  for (const declaration of ['left: 50%;', 'top: 21.4%;', 'width: 70%;', 'aspect-ratio: 2 / 1;']) {
     assert.ok(
       logoBodies.some((body) => body.includes(declaration)),
       `El logo se apoya en la nube de d2 con \`${declaration}\``
     );
   }
   assert.ok(
-    logoBodies.some((body) => body.includes('top: 20.47%;') && body.includes('width: 80%;')),
-    'El logo monta sobre el borde dorado de la nube de d2 (80 % del ancho)'
+    logoBodies.some((body) => body.includes('top: 21.4%;') && body.includes('width: 70%;')),
+    'El logo se apoya en la banda de nieve de d2 (70 % del ancho)'
   );
   assert.ok(
-    logoBodies.some((body) => body.includes('width: 80%;') && body.includes('top: 20.66%;')),
-    'En ventanas bajas el logo mantiene el 80 % y recentra la chapa en 20,66 %'
+    logoBodies.some((body) => body.includes('width: 70%;') && body.includes('top: 21.6%;')),
+    'En ventanas bajas el logo mantiene el 70 % y recentra la chapa en 21,6 %'
   );
   // La respiracion del escritorio va acotada en su propio juego de keyframes
   // (-4 px y 2 %): con los -7 px y el 3 % de la animacion movil el pico del
@@ -1836,8 +1836,8 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
   const lib = read(libPath);
   assert.match(
     lib,
-    /const BOX = \{ left: 60, top: 580, width: 529, height: 151 \};/,
-    'La placa vive en la caja del pulsador sobre el lienzo de d2 (655 x 928)'
+    /const BOX = \{ left: 60, top: 708, width: 529, height: 170 \};/,
+    'La placa vive en la caja del pulsador sobre el lienzo de d2 (655 x 1091)'
   );
   assert.match(
     lib,
@@ -1872,9 +1872,9 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
   assert.ok(spinBodies.length, 'La capsula GIRAR debe declarar su caja');
   const anchors = [
     ['left', 60, 655],
-    ['top', 580, 928],
+    ['top', 708, 1091],
     ['width', 529, 655],
-    ['height', 151, 928]
+    ['height', 170, 1091]
   ];
   for (const [property, pixels, total] of anchors) {
     const declaration = `${property}: ${((pixels / total) * 100).toFixed(2)}%;`;
@@ -1946,10 +1946,10 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
     const index = (y * info.width + x) * info.channels;
     return [data[index], data[index + 1], data[index + 2]];
   };
-  const [r, g, b] = sample(324, 680);
+  const [r, g, b] = sample(324, 793);
   assert.ok(
     r > 150 && g < 80 && b < 80,
-    `La cara del GIRAR debe ser roja en (324, 680): rgb(${r}, ${g}, ${b})`
+    `La cara del GIRAR debe ser roja en (324, 793): rgb(${r}, ${g}, ${b})`
   );
 });
 
@@ -1967,7 +1967,7 @@ test('el maestro de d2 conserva el pie del marco (estrellas, lazo y campanas)', 
     'El maestro de d2 se encaja con escala uniforme: no se reasignan franjas de filas'
   );
 
-  const source = path.join(ROOT_DIR, 'desk', 'Interfaz Navideña con Campanas Doradas.png');
+  const source = path.join(ROOT_DIR, 'desk', 'Marco de tragaperras navideño festivo.png');
   assert.ok(fs.existsSync(source), 'El arte de origen de d2 debe seguir en desk/');
   const { data, info } = await sharp(source).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   // Misma caja de tinta que `inkBox` del generador (alfa >= 16).
@@ -1987,20 +1987,20 @@ test('el maestro de d2 conserva el pie del marco (estrellas, lazo y campanas)', 
   const fitted = await sharp(source)
     .ensureAlpha()
     .extract({ left, top, width: right - left + 1, height: bottom - top + 1 })
-    .resize(655, 928, { fit: 'fill', kernel: 'lanczos3' })
+    .resize(655, 1091, { fit: 'fill', kernel: 'lanczos3' })
     .raw()
     .toBuffer({ resolveWithObject: true });
   const master = await sharp(path.join(ROOT_DIR, 'design', 'd2.png'))
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  assert.equal(`${master.info.width}x${master.info.height}`, '655x928', 'El maestro de d2 mide 655 x 928');
+  assert.equal(`${master.info.width}x${master.info.height}`, '655x1091', 'El maestro de d2 mide 655 x 1091');
 
   // Banda inferior: el pie del dibujo (lazo, campanas y estrellas).
   const band = 64;
   let diff = 0;
   let samples = 0;
-  for (let y = 928 - band; y < 928; y += 1) {
+  for (let y = 1091 - band; y < 1091; y += 1) {
     for (let x = 0; x < 655; x += 1) {
       const a = (y * 655 + x) * master.info.channels;
       const b = (y * 655 + x) * fitted.info.channels;
