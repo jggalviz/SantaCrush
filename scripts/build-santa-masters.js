@@ -6,7 +6,7 @@
  *
  *   desk/Marco navideño de caramelos brillantes.png    -> design/d1.png (1033x863)
  *   desk/Interfaz Navideña con Campanas Doradas.png    -> design/d2.png ( 655x928)
- *   movil/Marco navideño de campanas doradas.png       -> design/marco_movil.png (1392x1093)
+ *   movil/Marco navideño de campanas doradas.png       -> design/marco_movil.png (1392x1038)
  *   movil/Panel navideño brillante con Santa y reno.png -> design/consola_movil.png (1780x883)
  *   Victoria navideña con mono y regalos.png           -> design/victoria_navidena.png
  *
@@ -70,36 +70,6 @@ async function inkOf(file) {
 
 
 /**
- * Reencaja la tinta para que su HUECO caiga sobre el rectangulo que mide el CSS
- * (`dstHole`, en px del lienzo) y recorta el excedente del borde exterior.
- */
-async function alignByHole(file, canvas, srcHole, dstHole) {
-  const { data, info } = await inkOf(file);
-  const sx = dstHole.width / srcHole.width;
-  const sy = dstHole.height / srcHole.height;
-  const scaledW = Math.round(info.width * sx);
-  const scaledH = Math.round(info.height * sy);
-  const left = Math.round(dstHole.left - srcHole.left * sx);
-  const top = Math.round(dstHole.top - srcHole.top * sy);
-  const ex = -left;
-  const ey = -top;
-  if (ex < 0 || ey < 0 || ex + canvas.width > scaledW || ey + canvas.height > scaledH) {
-    throw new Error(
-      `la tinta reencajada (${scaledW}x${scaledH} en ${left},${top}) no cubre el lienzo ` +
-        `${canvas.width}x${canvas.height}: el arte dejaria un borde transparente`
-    );
-  }
-  const scaled = await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
-    .resize(scaledW, scaledH, { fit: 'fill', kernel: 'lanczos3' })
-    .png()
-    .toBuffer();
-  return sharp(scaled)
-    .extract({ left: ex, top: ey, width: canvas.width, height: canvas.height })
-    .png()
-    .toBuffer();
-}
-
-/**
  * Recorta el alfa y encaja el dibujo en `canvas` con escala uniforme. El lienzo
  * comparte la relacion del bbox (la comprueba `build-desktop-art.js`), asi que
  * `fill` no deforma: solo reescala.
@@ -158,21 +128,23 @@ async function fitInk(file, canvas) {
 
   /* ------------------------------------------------------- marco_movil ---- */
   if (wants('marco_movil')) {
-    // La ventana del marco movil debe caer en la caja del tablero
-    // (7,20-92,90 % · 39,40-92,40 %) para que la cuadricula no se meta bajo el aro.
-    const marco = await alignByHole(
+    // El marco movil se publica con la relacion de SU dibujo (1443 x 1076 tras
+    // recortar el alfa -> lienzo 1392 x 1038) y escala uniforme, igual que d1 y
+    // d2. Antes se reencajaba su ventana al hueco que pedia el CSS escalando los
+    // dos ejes por separado (x 0,988 · y 1,113): el dibujo salia estirado un
+    // 12,7 % en vertical y el recorte del sobrante se comia 77 px del cielo, asi
+    // que las campanas, el gorro de Santa y el aro de la esquina llegaban
+    // guillotinados al filo superior del marco.
+    //
+    // El lienzo nuevo lleva el cielo completo y el CSS se volvio a medir sobre
+    // el (ventana del tablero, franja del HUD y cielo del logo), de modo que los
+    // anclajes siguen siendo trazables sobre el dibujo.
+    const marco = await fitInk(
       path.join(ROOT, 'movil', 'Marco navideño de campanas doradas.png'),
-      { width: 1392, height: 1093 },
-      { left: 117, top: 456, width: 1208, height: 520 },
-      {
-        left: Math.round(1392 * 0.072),
-        top: Math.round(1093 * 0.394),
-        width: Math.round(1392 * (0.929 - 0.072)),
-        height: Math.round(1093 * (0.924 - 0.394))
-      }
+      { width: 1392, height: 1038 }
     );
     fs.writeFileSync(path.join(DESIGN, 'marco_movil.png'), marco);
-    console.log('design/marco_movil.png  1392x1093');
+    console.log('design/marco_movil.png  1392x1038 (escala uniforme, cielo completo)');
   }
 
   /* ----------------------------------------------------- consola_movil ---- */

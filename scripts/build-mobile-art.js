@@ -14,7 +14,7 @@
  * descentraria el dibujo y desalinearia las areas tactiles.
  *
  * Piezas:
- *   design/marco_movil.png   -> public/src/assets/marco_movil.webp   (1392 x 1093)
+ *   design/marco_movil.png   -> public/src/assets/marco_movil.webp   (1392 x 1038)
  *   design/consola_movil.png -> public/src/assets/consola_movil.webp (1780 x 883)
  *
  * Los dos maestros vigentes son el marco deportivo (focos, banderines y monedas
@@ -52,8 +52,10 @@ const DEPLOY_DIR = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets
  * visible muy por debajo de 92.
  *
  * Presupuesto (el arte nuevo trae mas detalle que el anterior):
- *   - el marco deportivo pesa 325 kB a q=90 y 304 kB a q=88; a q=86 se queda en
- *     290 kB y el tope de 300 kB del test sigue intacto;
+ *   - el marco deportivo mide 1392 x 1038 desde que se publica con escala
+ *     uniforme (antes 1392 x 1093 estirado) y pesa 289 kB a q=86; a q=82 se
+ *     queda en 262 kB, que es lo que deja el total servido (arte + audio) por
+ *     debajo de los 3 MB que vigila el test;
  *   - el panel azul con corona es la pieza movil mas rica (1780x883, 28 % mas
  *     pixeles que la anterior) y a q=92 pesa 482 kB: su tope sube a 512 kB en
  *     vez de bajar la calidad y arriesgar banding en el azul y el dorado (d5 de
@@ -62,8 +64,8 @@ const DEPLOY_DIR = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets
 const PIECES = [
   {
     name: 'marco_movil',
-    canvas: { width: 1392, height: 1093 },
-    quality: 86,
+    canvas: { width: 1392, height: 1038 },
+    quality: 82,
     maxBytes: 300 * 1024
   },
   {

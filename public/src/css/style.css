@@ -4866,7 +4866,7 @@ body.is-demo .machine__side .controls .balance::after {
 /* ==========================================================================
    MARCO Y CONSOLA · la máquina móvil se dibuja con dos piezas de arte (≤899px)
    --------------------------------------------------------------------------
-   La vista estrecha usa los maestros `assets/marco_movil.webp` (1392 x 1093) y
+   La vista estrecha usa los maestros `assets/marco_movil.webp` (1392 x 1038) y
    `assets/consola_movil.webp` (1780 x 883), ambos recortados al bbox de alfa
    por `npm run build:art`. El marco es UN solo dibujo deportivo —focos,
    banderines y monedas sobre el estadio— que ya incluye las tres placas del HUD
@@ -4874,10 +4874,13 @@ body.is-demo .machine__side .controls .balance::after {
    misma celda de la rejilla y se ciñen a su zona con porcentajes medidos sobre
    el recorte. La consola es la segunda fila y comparte eje X con el marco.
 
-   La caja del marco conserva la relación EXACTA del recorte (1392 / 1093): el
+   La caja del marco conserva la relación EXACTA del recorte (1392 / 1038): el
    dibujo se pinta con `100% 100%` y no se deforma ni un punto, de modo que los
-   % medidos sobre el recorte (ventana 7,61-92,53 % · 39,80-92,04 %, placas del
-   HUD 30,03-91,95 % · 22,96-31,90 %) valen tal cual a cualquier escala.
+   % medidos sobre el recorte (ventana 8,12-91,67 % · 42,29-90,46 %, placas del
+   HUD 30,46-90,88 % · 27,37-35,53 %) valen tal cual a cualquier escala. El
+   maestro se publica con escala uniforme (ver `build:santa-masters`): el cielo
+   del estadio llega completo y las campanas, el gorro de Santa y el aro de la
+   esquina no se cortan contra el filo superior.
 
    Todo se resuelve con CSS sobre el DOM existente: no se añade, quita ni
    renombra un solo nodo, id o handler. Los contenedores del Bloque 3
@@ -4928,8 +4931,8 @@ body.is-demo .machine__side .controls .balance::after {
     /* El aire lateral ya lo pone `.app`: aqui no se resta ancho al tablero. */
     padding: 0;
     /* Ancho de la máquina: el menor entre el que cabe a lo ancho y el que deja
-       el alto libre. El divisor 1,2813 es la suma de las relaciones alto/ancho
-       de las dos piezas —marco 1093 / 1392 = 0,7852 y consola 883 / 1780 =
+       el alto libre. El divisor 1,2418 es la suma de las relaciones alto/ancho
+       de las dos piezas —marco 1038 / 1392 = 0,7457 y consola 883 / 1780 =
        0,4961—; la separación entre ambas se resta del alto antes de dividir y
        no forma parte del divisor. `--m-w` es además la unidad de medida de todo
        lo que se superpone al arte (`calc(var(--m-w) * k)`), de modo que cada
@@ -4941,12 +4944,12 @@ body.is-demo .machine__side .controls .balance::after {
        quedara 12 px por debajo de sus placas). Con unidades de contenedor
        `--m-w` es una longitud y mide lo mismo en cualquier propiedad. */
     --m-w: 100cqw;
-    --m-w: min(100cqw, calc((100cqh - clamp(4px, 1.2dvh, 10px)) / 1.2813));
-    /* Alto del marco (aspect-ratio 1392 / 1093, la relación exacta del recorte:
+    --m-w: min(100cqw, calc((100cqh - clamp(4px, 1.2dvh, 10px)) / 1.2418));
+    /* Alto del marco (aspect-ratio 1392 / 1038, la relación exacta del recorte:
        el arte no se estira). Los % verticales de las capas superpuestas se
        miden con `--frame-h`, porque el alto no es proporcional a `--m-w` en
        ninguna otra propiedad. */
-    --frame-h: calc(var(--m-w) * 0.7852);
+    --frame-h: calc(var(--m-w) * 0.7457);
     /* Chrome del tablero (padding 4+4 + filo 2+2): lo consulta la regla base
        de escritorio al calcular el ancho con `cqh`. */
     --board-overhead: 12px;
@@ -4961,7 +4964,7 @@ body.is-demo .machine__side .controls .balance::after {
      El cielo del estadio (la franja superior del marco) sostiene el logo
      centrado y las tres placas doradas del HUD sostienen las tres lecturas. Ambas
      capas se superponen a la celda `frame` y se ciñen a su zona con % del recorte
-     de 1392 x 1093 convertidos a `calc(var(--m-w) * k)`: así no dependen de la
+     de 1392 x 1038 convertidos a `calc(var(--m-w) * k)`: así no dependen de la
      altura de la celda ni de que la fila conserve la relación del dibujo.
      ------------------------------------------------------------------------ */
   .machine__side .machine__hero {
@@ -4974,7 +4977,7 @@ body.is-demo .machine__side .controls .balance::after {
     /* Aire real que queda por encima del ancla del logo, en px: la mitad del
        sobrante vertical de la maquina (la rejilla esta centrada, asi que reparte
        a partes iguales entre arriba y abajo) mas lo que sube el propio marco
-       desde su base hasta la base del logo (19,87 % de su alto, ver `bottom`
+       desde su base hasta la base del logo (24,55 % de su alto, ver `bottom`
        mas abajo).
 
        La consola se descuenta con su relacion propia (1780 / 883 = 0,4961) y no
@@ -4984,7 +4987,7 @@ body.is-demo .machine__side .controls .balance::after {
        `.machine` (la maquina lo llena y no tiene padding). */
     --logo-sky: calc(
       (100cqh - (var(--frame-h) + var(--row-gap) + var(--m-w) * 0.4961)) / 2
-      + var(--frame-h) * 0.1987
+      + var(--frame-h) * 0.2455
     );
     /* El arte es un lockup horizontal 2:1 (900 x 450, sin aire en el PNG), asi
        que la caja toma su misma proporcion: el ancho manda y el alto es su
@@ -5025,11 +5028,11 @@ body.is-demo .machine__side .controls .balance::after {
        `left` se mide contra el padding box de `.machine`) y el segundo centra el
        logo dentro del marco. */
     left: calc((100% - var(--m-w)) / 2 + (var(--m-w) - var(--logo-w)) / 2);
-    /* Anclado por abajo y 4 % mas bajo que el borde superior de las placas del
-       HUD (0,8013 = 1 - 0,1987): la base del logo se monta sobre la franja de
+    /* Anclado por abajo y 2,2 % mas bajo que el borde superior de las placas del
+       HUD (0,7545 = 1 - 0,2455): la base del logo se monta sobre la franja de
        banderines y monedas decorativas del marco, que es donde tiene que
        integrarse, y lo que crezca va hacia arriba. */
-    bottom: calc(var(--frame-h) * 0.8013);
+    bottom: calc(var(--frame-h) * 0.7545);
     margin: 0;
     padding: 0;
     overflow: visible;
@@ -5096,17 +5099,17 @@ body.is-demo .machine__side .controls .balance::after {
     position: relative;
     z-index: 3;
     display: block;
-    /* Franja exacta de las tres placas del HUD: x 30,03-91,95 % · y
-       22,96-31,90 % del recorte (medido sobre `marco_movil.webp`). El logo ocupa
+    /* Franja exacta de las tres placas del HUD: x 30,46-90,88 % · y
+       27,37-35,53 % del recorte (medido sobre `marco_movil.webp`). El logo ocupa
        el cielo de la izquierda, así que la franja arranca donde termina.
        El alto y el margen se miden con `--frame-h` porque son % del ALTO del
        marco: usando `--m-w` la franja caía por debajo de su placa. */
-    width: calc(var(--m-w) * 0.6192);
-    height: calc(var(--frame-h) * 0.0894);
+    width: calc(var(--m-w) * 0.6043);
+    height: calc(var(--frame-h) * 0.0816);
     justify-self: start;
     align-self: start;
-    margin-left: calc((100% - var(--m-w)) / 2 + var(--m-w) * 0.3003);
-    margin-top: calc(var(--frame-h) * 0.2296);
+    margin-left: calc((100% - var(--m-w)) / 2 + var(--m-w) * 0.3046);
+    margin-top: calc(var(--frame-h) * 0.2737);
     min-height: 0;
     padding: 0;
     border: 0;
@@ -5161,8 +5164,8 @@ body.is-demo .machine__side .controls .balance::after {
     text-shadow: 0 1px 1px rgba(30, 0, 20, 0.85);
   }
 
-  /* Los dos renglones tienen que caber en 8,94 % del alto del marco (~24 px a
-     390 px de ancho): 6,2 px de rótulo + 13,3 px de dato dejan 4,5 px de aire
+  /* Los dos renglones tienen que caber en 8,16 % del alto del marco (~23 px a
+     390 px de ancho): 6,1 px de rótulo + 11,7 px de dato dejan ~4 px de aire
      sobre las placas nuevas del HUD. */
   .machine__side .hud__value,
   .machine__side .hud__cell--win .hud__value {
@@ -5180,8 +5183,8 @@ body.is-demo .machine__side .controls .balance::after {
   /* ------------------------------------------------------------------------
      3) Tablero dentro de la ventana del marco
      `.machine__table` pinta el dibujo del marco y `.board` tapa su hueco
-     transparente (x 7,69-92,53 %, y 39,80-92,04 % del recorte). Se usa el hueco
-     medido con un pelo de aire por fuera (7,20 % / 39,40 % / 85,70 % / 53,00 %)
+     transparente (x 8,12-91,67 %, y 42,29-90,46 % del recorte). Se usa el hueco
+     medido con un pelo de aire por fuera (8,10 % / 42,23 % / 83,80 % / 48,50 %)
      para que el filo del tablero se meta bajo el aro dorado del marco y no
      quede ni una linea de fondo asomando por la ventana. Al ser % de la propia
      caja del marco, la ventana se respeta a cualquier escala y la cuadricula
@@ -5193,10 +5196,10 @@ body.is-demo .machine__side .controls .balance::after {
     z-index: 1;
     display: block;
     width: var(--m-w);
-    /* Relación exacta del recorte (1392 x 1093): el arte no se estira, así que
+    /* Relación exacta del recorte (1392 x 1038): el arte no se estira, así que
        los banderines y las monedas conservan su forma y los % de la ventana caen
        donde se midieron. */
-    aspect-ratio: 1392 / 1093;
+    aspect-ratio: 1392 / 1038;
     justify-self: center;
     align-self: start;
     min-height: 0;
@@ -5210,10 +5213,10 @@ body.is-demo .machine__side .controls .balance::after {
 
   .machine__table .board {
     position: absolute;
-    left: 7.20%;
-    top: 39.40%;
-    width: 85.70%;
-    height: 53.00%;
+    left: 8.10%;
+    top: 42.23%;
+    width: 83.80%;
+    height: 48.50%;
     margin: 0;
     /* El aire del tablero se recorta al mínimo: cada píxel que se lleva el
        padding es alto que pierden las cinco filas. Medidas atadas a `--m-w`
@@ -5286,9 +5289,9 @@ body.is-demo .machine__side .controls .balance::after {
    cuando el arco se apoya en el borde superior de la maquina: el logo se salia
    por arriba y `overflow: hidden` lo cortaba contra la barra superior. Con el
    tope comun (`--logo-sky`) dejo de cortarse, pero en tablet vertical el marco
-   se estira hasta tocar la barra superior, asi que su unico cielo es el 19,87 %
+   se estira hasta tocar la barra superior, asi que su unico cielo es el 24,55 %
    del arte que queda sobre las placas del HUD: a 768 x 1024 la chapa se queda
-   en 192 px, el 27,5 % del marco, MENOS que en un telefono de 390 px (295 px) y
+   en 261 px, el 34,9 % del marco, MENOS que en un telefono de 390 px (295 px) y
    por debajo del 32 % que ocupa en escritorio a partir de 900 px. Ese es el
    tramo que se veia pequeno.
 
@@ -5296,20 +5299,23 @@ body.is-demo .machine__side .controls .balance::after {
    la maquina un aire vertical (`--logo-air`) que el `min()` de `--m-w` descuenta
    del alto libre. La rejilla esta centrada, asi que el aire se reparte a partes
    iguales arriba y abajo; la mitad de arriba entra en `--logo-sky` y la chapa
-   crece con ella. Con el 8 % del alto del escenario (78 px como maximo):
+   crece con ella. Con el 5 % del alto del escenario (48 px como maximo):
 
-     · 768 x 1024 · 953 px de escenario → 76 px de aire → maquina 678 px (−8 %),
-       logo 247 x 124 px = 36,5 % del marco;
-     · 899 x 1200 · 1129 px → 78 px → maquina 812 px (−7 %), logo 289 x 145 px =
-       35,6 % del marco.
+     · 768 x 1024 · 967 px de escenario → 48 px de aire → maquina 732 px (−2 %),
+       logo 274 x 137 px = 37,5 % del marco;
+     · 899 x 1200 · 1129 px → 48 px → maquina 862 px (−4 %), logo 330 x 165 px =
+       38,2 % del marco.
 
-   Es decir, la chapa se queda entre el 35 y el 37 % del marco en todo el tramo
-   (lo mismo que ya lucia en 600 x 900, 37,6 %, donde manda el ancho) y a la
-   altura del logo del telefono alto y del escritorio. Donde el ancho manda
+   Es decir, la chapa se queda entre el 36 y el 38 % del marco en todo el tramo
+   (lo mismo que ya lucia en 600 x 900, 36,4 %, donde manda el ancho) y a la
+   altura del logo del telefono alto y del escritorio. El aire baja del 8 % al
+   5 % porque el arte nuevo trae mas cielo sobre las placas (24,55 % del alto
+   frente al 19,87 % del recorte estirado anterior): con la reserva antigua la
+   chapa pasaba del 41 % del marco. Donde el ancho manda
    (600 x 900, 640 x 960, cualquier telefono) el `min()` se queda con `100cqw` y
    no cambia nada; en las tablets muy altas (768 x 1366) el sobrante real ya
    supera al aire reservado y el logo pasa del 60 % del marco sin tocar el tope.
-   La base del logo no se mueve (`0.8013` del marco): la holgura sobre las
+   La base del logo no se mueve (`0.7545` del marco): la holgura sobre las
    placas del HUD y bajo la barra superior se mantiene igual.
 
    Queda fuera el horizontal bajo (`min-height: 521px`): ahi manda la regla de
@@ -5321,13 +5327,13 @@ body.is-demo .machine__side .controls .balance::after {
 
 @media (min-width: 600px) and (max-width: 899px) and (min-height: 521px) {
   .machine {
-    /* 8 % del alto del escenario, con 78 px de techo: suficiente para que la
+    /* 5 % del alto del escenario, con 48 px de techo: suficiente para que la
        chapa recupere la presencia del resto de los tramos y lo bastante corto
-       para que el tablero no pierda mas del 8 % de su ancho. */
-    --logo-air: clamp(0px, calc(100cqh * 0.08), 78px);
+       para que el tablero no pierda mas del 5 % de su ancho. */
+    --logo-air: clamp(0px, calc(100cqh * 0.05), 48px);
     --m-w: min(
       100cqw,
-      calc((100cqh - var(--row-gap) - var(--logo-air)) / 1.2813)
+      calc((100cqh - var(--row-gap) - var(--logo-air)) / 1.2418)
     );
   }
 }
@@ -5496,15 +5502,15 @@ body.is-demo .machine__side .controls .balance::after {
   /* El saldo viaja a la primera placa del HUD: es la lectura que tiene que
      estar siempre a la vista y su placa del pie pasa a ser el pulsador MÁS
      (sección 6). La caja copia la de `.hud__cell:nth-child(1)`
-     (x 30,03-48,78 % · y 22,96-31,90 % del marco) subida por encima de la
-     consola, que es su bloque contenedor: el alto del marco (77,04 % hasta la
+     (x 30,46-48,76 % · y 27,37-35,53 % del marco) subida por encima de la
+     consola, que es su bloque contenedor: el alto del marco (72,63 % hasta la
      franja del HUD) más la separación de la rejilla. */
   .machine__side .controls .balance,
   body.is-demo .machine__side .controls .balance {
-    left: 30.03%;
-    top: calc(-1 * (var(--frame-h) * 0.7704 + var(--row-gap)));
-    width: 18.75%;
-    height: calc(var(--frame-h) * 0.0894);
+    left: 30.46%;
+    top: calc(-1 * (var(--frame-h) * 0.7263 + var(--row-gap)));
+    width: 18.30%;
+    height: calc(var(--frame-h) * 0.0816);
     gap: clamp(1px, calc(var(--m-w) * 0.003), 2px);
     padding: 0 1%;
     /* Sobre el arte del marco (`z-index: 1`) y por debajo de la pegatina del
