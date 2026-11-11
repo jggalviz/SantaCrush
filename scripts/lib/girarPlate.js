@@ -22,14 +22,14 @@
  *     alto, destellos de cuatro puntas y sombra proyectada bajo la placa.
  *
  * GEOMETRIA · La placa va CENTRADA en la caja que el CSS reserva al pulsador
- * (x 60, y 611, 529 x 156 px del lienzo 655 x 928 = 9,16 % / 65,84 % / 80,76 %
- * / 16,81 %): 4 px de aire a los lados y 7 arriba y abajo. Centrada, el centro
+ * (x 60, y 580, 529 x 151 px del lienzo 655 x 928 = 9,16 % / 62,50 % / 80,76 %
+ * / 16,27 %): 4 px de aire a los lados y 7 arriba y abajo. Centrada, el centro
  * de la placa coincide con el de la caja tactil y el velo de recorte del CSS
  * (`border-radius`, medido sobre esa misma caja) puede seguir su curvatura.
  *
- * El radio exterior (37 px) y el grosor del aro (10 px) repiten la proporcion
+ * El radio exterior (36 px) y el grosor del aro (10 px) repiten la proporcion
  * medida sobre las capsulas del arte (radio 0,26 del alto total y aro 0,07), y
- * la cara es el rectangulo concentrico que queda dentro del aro (radio 27).
+ * la cara es el rectangulo concentrico que queda dentro del aro (radio 26).
  *
  * MASCARA · El pulsador recorta su `background-image` con `border-radius`; con
  * el valor antiguo (`999px`, capsula de 78 px) el velo mordia 10 px de cada
@@ -46,8 +46,8 @@
 const sharp = require('sharp');
 
 /* Caja del pulsador sobre el lienzo de d2 (655 x 928). Son los mismos
-   porcentajes que declara el CSS: 9,16 % · 65,84 % · 80,76 % · 16,81 %. */
-const BOX = { left: 60, top: 611, width: 529, height: 156 };
+   porcentajes que declara el CSS: 9,16 % · 62,50 % · 80,76 % · 16,27 %. */
+const BOX = { left: 60, top: 580, width: 529, height: 151 };
 
 /* Aire alrededor de la placa para que la sombra proyectada respire. El fondo
    es la tarjeta verde, opaca, asi que solo se pinta dentro de esta ventana. */
@@ -63,9 +63,9 @@ const PLATE = {
   y: PAD + INSET_Y,
   w: BOX.width - INSET_X * 2,
   h: BOX.height - INSET_Y * 2,
-  /* Radio exterior: 0,26 del alto total, como el aro dibujado del AUTO
-     (27 px de radio sobre 105 px de capsula). */
-  r: 37,
+  /* Radio exterior: 0,26 del alto de la placa (dibujo de 137 px), como el aro
+     del AUTO (27 px de radio sobre 105 px de capsula). */
+  r: 36,
   /* Grosor del aro dorado: 0,07 del alto, como el del AUTO (7/105). */
   rim: 10
 };

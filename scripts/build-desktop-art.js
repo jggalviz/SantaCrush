@@ -50,7 +50,20 @@ const DEPLOY_DIR = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets
  * asi que el recorte visible tiene que medir exactamente lo mismo. La calidad
  * es la del contrato (`q = 90`): los degradados dorados y los brillos de
  * caramelo hacen banding visible por debajo.
+ *
+ * El resto de perillas del codificador se afina para que las dos piezas quepan
+ * en el presupuesto de 3 MB de `public/src/assets` sin perder nada visible:
+ *   · `preset: 'photo'` elige los filtros de libwebp para ilustracion (mismo
+ *     error medio que el preset por defecto, ~5 % menos bytes);
+ *   · `alphaQuality: 80` cuantiza el canal alfa en pasos de 2 niveles de 255
+ *     —error medido <= 2, invisible en el filo del marco— y ahorra ~20 KB en
+ *     `d1`, cuyo interior es casi todo transparente;
+ *   · `smartSubsample` se queda en `true`: desactivarlo sube el error medio un
+ *     12 % a cambio de 6 % menos bytes, y aqui manda el dibujo;
+ *   · `effort: 6` es la busqueda mas lenta y la que mejor comprime.
  */
+const WEBP = { alphaQuality: 80, effort: 6, smartSubsample: true, preset: 'photo' };
+
 const PIECES = [
   {
     name: 'd1',
@@ -59,9 +72,9 @@ const PIECES = [
     quality: 90,
     maxBytes: 300 * 1024
   },
-  // La columna lateral entera (655 x 928 de alfa sobre un maestro de 657 x 942)
-  // se publica sin reescalar: en 1920 px el panel se pinta a ~670 px de ancho y
-  // el arte va sobrado para DPR 2.
+  // La columna lateral entera (655 x 928, escala uniforme del dibujo de 1036 x
+  // 1495 px que llega en el maestro) se publica sin reescalar: en 1920 px el
+  // panel se pinta a ~670 px de ancho y el arte va sobrado para DPR 2.
   // `paint` completa el arte antes de recortar: el maestro deja la franja del
   // GIRAR en el verde de la tarjeta y `scripts/lib/girarPlate.js` dibuja ahi la
   // placa roja (aro dorado, bisel y sombra) con el mismo lenguaje que los otros
@@ -158,7 +171,7 @@ async function build({ name, label, canvas, quality, maxBytes, paint }) {
     .ensureAlpha()
     .extract({ left: box.left, top: box.top, width: box.width, height: box.height })
     .resize(canvas.width, canvas.height, { fit: 'fill' })
-    .webp({ quality, alphaQuality: 100, effort: 6, smartSubsample: true })
+    .webp({ quality, ...WEBP })
     .toBuffer();
 
   const out = await sharp(trimmed).metadata();
@@ -185,7 +198,7 @@ async function build({ name, label, canvas, quality, maxBytes, paint }) {
   // hoja de estilo para que cualquier recalibracion sea trazable.
   console.log(
     `  -> ${path.relative(ROOT, target)}  ${out.width}x${out.height}  ${kb(trimmed.length)} ` +
-      `(q=${quality}, alfa intacto)  fuente ${kb(fs.statSync(source).size)}`
+      `(q=${quality}, alfa ${WEBP.alphaQuality})  fuente ${kb(fs.statSync(source).size)}`
   );
   console.log(
     `     bbox en el maestro: x ${box.left} (${pct(box.left, meta.width)}) · ` +

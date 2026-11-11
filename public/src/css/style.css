@@ -6570,14 +6570,14 @@ body.is-demo .machine__side .controls .balance::after {
      514,1 x 257,3 px: sobresale 50 px por cada lado del aro y lo tapa entero, que
      es la jerarquia que se pide — el simbolo que mejor paga manda en la nube.
      80 % es ademas el techo: con 84 % el arte ya se come la base de la corona y
-     su filo inferior se queda a 5 px de la barra superior del HUD (36,96 %). Con
-     80 % el arte va de 7,8 a 35,4 % del alto del lienzo, ~22 unidades de aire
-     sobre las placas, y la respiracion se acota aqui en -4 px y 2 %
+     su filo inferior se queda a 6 px de la barra superior del HUD (35,02 %). Con
+     80 % el arte va de 6,6 a 34,3 % del alto del lienzo, ~7 px de aire sobre las
+     placas, y la respiracion se acota aqui en -4 px y 2 %
      (`pana-logo-breathe-side`) para que el pico no las roce. */
   .machine__side .machine__logo {
     position: absolute;
     left: 50%;
-    top: 21.6%;
+    top: 20.47%;
     z-index: 6;
     width: 80%;
     height: auto;
@@ -6608,7 +6608,7 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .hud {
     position: absolute;
     left: 8.24%;
-    top: 36.96%;
+    top: 35.02%;
     width: 83.82%;
     height: 7%;
     /* Sobre el dibujo de la columna (`z-index: 2`), que es su hermano. */
@@ -6830,46 +6830,46 @@ body.is-demo .machine__side .controls .balance::after {
      por color y componente conexa. Las cajas de CRUSH y AUTO se solapan un poco
      en vertical (una capsula queda mas alta que la otra) pero nunca en
      horizontal, asi que sus areas tactiles no se pisan. */
-  /* Disco − · x 10,23-23,97 % · y 55,39-65,09 % */
+  /* Disco − · x 10,23-23,97 % · y 51,30-61,75 % */
   .machine__side .controls__bet #btn-bet-down {
     --art-x: 10.23;
-    --art-y: 55.39;
+    --art-y: 51.3;
     --art-w: 13.74;
-    --art-h: 9.7;
+    --art-h: 10.45;
     left: 10.23%;
-    top: 55.39%;
+    top: 51.3%;
     width: 13.74%;
-    height: 9.7%;
+    height: 10.45%;
     border-radius: 28%;
   }
 
-  /* Disco + · x 62,75-75,73 % · y 55,5-64,98 % */
+  /* Disco + · x 62,75-75,73 % · y 51,41-61,63 % */
   .machine__side .controls__bet #btn-bet-up {
     --art-x: 62.75;
-    --art-y: 55.5;
+    --art-y: 51.41;
     --art-w: 12.98;
-    --art-h: 9.48;
+    --art-h: 10.22;
     left: 62.75%;
-    top: 55.5%;
+    top: 51.41%;
     width: 12.98%;
-    height: 9.48%;
+    height: 10.22%;
     border-radius: 28%;
   }
 
-  /* Placa MAX · x 76,79-89,31 % · y 55,5-64,98 % */
+  /* Placa MAX · x 76,79-89,31 % · y 51,41-61,63 % */
   .machine__side .controls__bet #btn-bet-max {
     --art-x: 76.79;
-    --art-y: 55.5;
+    --art-y: 51.41;
     --art-w: 12.52;
-    --art-h: 9.48;
+    --art-h: 10.22;
     left: 76.79%;
-    top: 55.5%;
+    top: 51.41%;
     width: 12.52%;
-    height: 9.48%;
+    height: 10.22%;
     border-radius: 26%;
   }
 
-  /* Capsula GIRAR · x 9,16-89,92 % · y 65,84-82,65 %
+  /* Capsula GIRAR · x 9,16-89,92 % · y 62,50-78,77 %
      Va por `#btn-spin` a proposito: la regla candy
      `.machine__side .controls .btn--spin.gbtn` (linea ~4508) suma cuatro clases
      y gana a cualquier selector de tres, y trae `border-radius: 999px`,
@@ -6879,25 +6879,25 @@ body.is-demo .machine__side .controls .balance::after {
      mordido en las cuatro esquinas y desplazado respecto al dibujo del padre.
 
      El velo (`border-radius`) va sincronizado con la placa que pinta
-     `scripts/lib/girarPlate.js`: 7,37 % del ancho y 25 % del alto son 39 px
-     sobre 529 x 156 del lienzo, dos px por fuera del aro de 37 para no morder su
+     `scripts/lib/girarPlate.js`: 7,18 % del ancho y 25,17 % del alto son 38 px
+     sobre 529 x 151 del lienzo, dos px por fuera del aro de 36 para no morder su
      filo marron. El test compara este valor con `GIRAR_PLATE.maskCss`. */
   .machine__side .controls #btn-spin {
     --art-x: 9.16;
-    --art-y: 65.84;
+    --art-y: 62.5;
     --art-w: 80.76;
-    --art-h: 16.81;
+    --art-h: 16.27;
     left: 9.16%;
-    top: 65.84%;
+    top: 62.50%;
     width: 80.76%;
-    height: 16.81%;
+    height: 16.27%;
     min-width: 0;
     min-height: 0;
     max-height: none;
     gap: 0.55em;
     padding: 0;
     border: 0;
-    border-radius: 7.37% / 25.00%;
+    border-radius: 7.18% / 25.17%;
     background-color: transparent;
     /* Sin esto la copia del lienzo se ancla al padding box y no a la caja. */
     background-clip: border-box;
@@ -6925,16 +6925,16 @@ body.is-demo .machine__side .controls .balance::after {
     animation: none;
   }
 
-  /* CRUSH · x 10,23-48,55 % · y 85,99-93,64 % */
+  /* CRUSH · x 10,23-48,55 % · y 81,70-88,28 % */
   .machine__side .controls #btn-feature {
     --art-x: 10.23;
-    --art-y: 85.99;
+    --art-y: 81.7;
     --art-w: 38.32;
-    --art-h: 7.65;
+    --art-h: 6.58;
     left: 10.23%;
-    top: 85.99%;
+    top: 81.7%;
     width: 38.32%;
-    height: 7.65%;
+    height: 6.58%;
     min-width: 0;
     min-height: 0;
     max-height: none;
@@ -6942,16 +6942,16 @@ body.is-demo .machine__side .controls .balance::after {
     gap: 0.25em;
   }
 
-  /* AUTO · x 50,69-89,47 % · y 83,84-94,62 % */
+  /* AUTO · x 50,69-89,47 % · y 79,85-89,12 % */
   .machine__side .controls #btn-auto {
     --art-x: 50.69;
-    --art-y: 83.84;
+    --art-y: 79.85;
     --art-w: 38.78;
-    --art-h: 10.78;
+    --art-h: 9.27;
     left: 50.69%;
-    top: 83.84%;
+    top: 79.85%;
     width: 38.78%;
-    height: 10.78%;
+    height: 9.27%;
     min-width: 0;
     min-height: 0;
     max-height: none;
@@ -6966,16 +6966,16 @@ body.is-demo .machine__side .controls .balance::after {
   /* --- Lectura de saldo · franja libre sobre los discos --------------------
      d2 no dibuja placa para el saldo: la unica franja limpia de la consola es
      la que queda entre el filete dorado superior del panel y la fila de discos
-     (− / lectura / + / MAX), x 8,5-91,5 % · y 52,1-55,4 %. Ahi se centra como
+     (− / lectura / + / MAX), x 8,5-91,5 % · y 49,32-51,31 %. Ahi se centra como
      el credito de una maquina de arcade, en una sola linea y sin fondo propio. */
   .machine__side .controls .balance,
   body.is-demo .machine__side .controls .balance {
     position: absolute;
     left: 8.5%;
-    top: 52.1%;
+    top: 49.32%;
     z-index: 5;
     width: 83%;
-    height: 3.3%;
+    height: 1.99%;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -7041,16 +7041,16 @@ body.is-demo .machine__side .controls .balance::after {
   }
 
   /* --- Lectura de apuesta · placa azul entre los discos -------------------
-     x 25,04-61,68 % · y 55,5-64,44 %: el hueco oscuro que d2 deja entre el
+     x 25,04-61,68 % · y 51,41-61,05 %: el hueco oscuro que d2 deja entre el
      disco − y el disco +. */
   .machine__side .controls .bet-readout,
   .machine__side .controls__bet .bet-readout {
     position: absolute;
     left: 25.04%;
-    top: 55.5%;
+    top: 51.41%;
     z-index: 5;
     width: 36.64%;
-    height: 8.94%;
+    height: 9.64%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -7374,7 +7374,7 @@ body.is-demo .machine__side .controls .balance::after {
    -------------------------------------------------------------------------- */
 @media (min-width: 900px) and (max-height: 660px) {
   .machine__side .machine__hero { display: block; }
-  .machine__side .machine__logo { width: 80%; top: 21.8%; }
+  .machine__side .machine__logo { width: 80%; top: 20.66%; }
 }
 
 /* Ventanas de menos de 470 px de alto: la placa del hero mide ~50 px y el

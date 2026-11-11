@@ -13,7 +13,8 @@
  * Los maestros se reencajan para que el hueco/ventana del arte caiga donde el
  * CSS mide los anclajes, pero SIEMPRE con escala uniforme: recortar o estirar
  * un solo eje para clavar una caja antes se comia la cresta de la nieve del
- * toldo (d1) y la base del letrero del premio (victoria).
+ * toldo (d1), la base del letrero del premio (victoria) y el pie del marco con
+ * las estrellas y el lazo central (d2).
  */
 
 const fs = require('node:fs');
@@ -66,31 +67,6 @@ async function inkOf(file) {
   return { ...ink, box };
 }
 
-/** Lienzo del tamano pedido a partir de tiras reescaladas (remap de filas). */
-async function rowRemap(base, canvas, strips) {
-  const inputs = [];
-  for (const strip of strips) {
-    const height = Math.max(1, strip.srcBottom - strip.srcTop);
-    const target = Math.max(1, strip.tgtBottom - strip.tgtTop);
-    const input = await sharp(base)
-      .extract({ left: 0, top: strip.srcTop, width: canvas.width, height })
-      .resize(canvas.width, target, { fit: 'fill' })
-      .png()
-      .toBuffer();
-    inputs.push({ input, left: 0, top: strip.tgtTop });
-  }
-  return sharp({
-    create: {
-      width: canvas.width,
-      height: canvas.height,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 }
-    }
-  })
-    .composite(inputs)
-    .png()
-    .toBuffer();
-}
 
 
 /**
@@ -160,27 +136,24 @@ async function fitInk(file, canvas) {
 
   /* ---------------------------------------------------------------- d2 ---- */
   if (wants('d2')) {
-    // Columna lateral: el arte se estira al lienzo y luego se reasignan las
-    // franjas para que placas, discos y pastillas caigan en su caja del CSS.
-    const d2Ink = await inkOf(path.join(ROOT, 'desk', 'Interfaz Navideña con Campanas Doradas.png'));
-    const fitted = await sharp(d2Ink.data, {
-      raw: { width: d2Ink.info.width, height: d2Ink.info.height, channels: 4 }
-    })
-      .resize(655, 928, { fit: 'fill', kernel: 'lanczos3' })
-      .png()
-      .toBuffer();
-    const d2 = await rowRemap(fitted, { width: 655, height: 928 }, [
-      { srcTop: 0, srcBottom: 325, tgtTop: 0, tgtBottom: 343 },
-      { srcTop: 325, srcBottom: 386, tgtTop: 343, tgtBottom: 404 },
-      { srcTop: 386, srcBottom: 446, tgtTop: 404, tgtBottom: 464 },
-      { srcTop: 446, srcBottom: 476, tgtTop: 464, tgtBottom: 514 },
-      { srcTop: 476, srcBottom: 573, tgtTop: 514, tgtBottom: 604 },
-      { srcTop: 573, srcBottom: 741, tgtTop: 604, tgtBottom: 778 },
-      { srcTop: 741, srcBottom: 827, tgtTop: 778, tgtBottom: 878 },
-      { srcTop: 827, srcBottom: 860, tgtTop: 878, tgtBottom: 928 }
-    ]);
+    // Columna lateral: nube del logo + tres placas + consola entera en una
+    // sola pieza. El maestro util mide 1036 x 1495 (0,6930:1) y se publica en
+    // el lienzo 655 x 928 con escala uniforme (0,2 % de diferencia de eje).
+    //
+    // Antes se estiraba al lienzo y luego se reasignaban ocho franjas de filas
+    // para clavar placas y pulsadores en su caja del CSS. La ultima franja
+    // (filas 827..860 -> 878..928) dejaba fuera las 68 filas de abajo, que son
+    // justo la base del marco: las estrellas, el lazo central, las campanas y
+    // los adornos del pie se publicaban guillotinados. Ahora el lienzo lleva el
+    // dibujo completo y los anclajes del CSS se volvieron a medir sobre el
+    // mismo (aquel remapeo era invertible, asi que cada % antiguo tiene su
+    // equivalente exacto en el lienzo nuevo).
+    const d2 = await fitInk(
+      path.join(ROOT, 'desk', 'Interfaz Navideña con Campanas Doradas.png'),
+      { width: 655, height: 928 }
+    );
     fs.writeFileSync(path.join(DESIGN, 'd2.png'), d2);
-    console.log('design/d2.png  655x928');
+    console.log('design/d2.png  655x928 (escala uniforme, base del marco completa)');
   }
 
   /* ------------------------------------------------------- marco_movil ---- */

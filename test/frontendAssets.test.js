@@ -1693,7 +1693,7 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
     .map((match) => match[1]);
   const spinBodies = bodies('\\.machine__side \\.controls (?:\\.btn--spin|#btn-spin)');
   assert.ok(spinBodies.length, 'La capsula GIRAR debe declarar su caja');
-  for (const declaration of ['left: 9.16%;', 'top: 65.84%;', 'width: 80.76%;', 'height: 16.81%;']) {
+  for (const declaration of ['left: 9.16%;', 'top: 62.50%;', 'width: 80.76%;', 'height: 16.27%;']) {
     assert.ok(
       spinBodies.some((body) => body.includes(declaration)),
       `El GIRAR se ancla al dibujo con \`${declaration}\``
@@ -1745,7 +1745,7 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   assert.ok(hudBodies.length, 'Las placas deben declarar su banda sobre el dibujo');
   for (const declaration of [
     'left: 8.24%;',
-    'top: 36.96%;',
+    'top: 35.02%;',
     'width: 83.82%;',
     'height: 7%;',
     'grid-template-columns: 30.42% 29.70% 30.23%;',
@@ -1764,19 +1764,19 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   // arte del lockup mide 514,1 px, asi que se sale 50 px por cada lado y tapa el
   // aro en vez de flotar dentro del hueco. Es el techo: al 84 % ya se come la base
   // de la corona y su filo inferior roza la barra del HUD.
-  for (const declaration of ['left: 50%;', 'top: 21.6%;', 'width: 80%;', 'aspect-ratio: 2 / 1;']) {
+  for (const declaration of ['left: 50%;', 'top: 20.47%;', 'width: 80%;', 'aspect-ratio: 2 / 1;']) {
     assert.ok(
       logoBodies.some((body) => body.includes(declaration)),
       `El logo se apoya en la nube de d2 con \`${declaration}\``
     );
   }
   assert.ok(
-    logoBodies.some((body) => body.includes('top: 21.6%;') && body.includes('width: 80%;')),
+    logoBodies.some((body) => body.includes('top: 20.47%;') && body.includes('width: 80%;')),
     'El logo monta sobre el borde dorado de la nube de d2 (80 % del ancho)'
   );
   assert.ok(
-    logoBodies.some((body) => body.includes('width: 80%;') && body.includes('top: 21.8%;')),
-    'En ventanas bajas el logo mantiene el 80 % y recentra la chapa en 21,8 %'
+    logoBodies.some((body) => body.includes('width: 80%;') && body.includes('top: 20.66%;')),
+    'En ventanas bajas el logo mantiene el 80 % y recentra la chapa en 20,66 %'
   );
   // La respiracion del escritorio va acotada en su propio juego de keyframes
   // (-4 px y 2 %): con los -7 px y el 3 % de la animacion movil el pico del
@@ -1831,7 +1831,7 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
   const lib = read(libPath);
   assert.match(
     lib,
-    /const BOX = \{ left: 60, top: 611, width: 529, height: 156 \};/,
+    /const BOX = \{ left: 60, top: 580, width: 529, height: 151 \};/,
     'La placa vive en la caja del pulsador sobre el lienzo de d2 (655 x 928)'
   );
   assert.match(
@@ -1867,9 +1867,9 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
   assert.ok(spinBodies.length, 'La capsula GIRAR debe declarar su caja');
   const anchors = [
     ['left', 60, 655],
-    ['top', 611, 928],
+    ['top', 580, 928],
     ['width', 529, 655],
-    ['height', 156, 928]
+    ['height', 151, 928]
   ];
   for (const [property, pixels, total] of anchors) {
     const declaration = `${property}: ${((pixels / total) * 100).toFixed(2)}%;`;
@@ -1941,10 +1941,74 @@ test('la placa roja del GIRAR se compone sobre d2 dentro de la caja tactil', asy
     const index = (y * info.width + x) * info.channels;
     return [data[index], data[index + 1], data[index + 2]];
   };
-  const [r, g, b] = sample(150, 720);
+  const [r, g, b] = sample(324, 680);
   assert.ok(
     r > 150 && g < 80 && b < 80,
-    `La cara del GIRAR debe ser roja en (150, 720): rgb(${r}, ${g}, ${b})`
+    `La cara del GIRAR debe ser roja en (324, 680): rgb(${r}, ${g}, ${b})`
+  );
+});
+
+test('el maestro de d2 conserva el pie del marco (estrellas, lazo y campanas)', async () => {
+  // El generador estiraba el arte al lienzo y luego reasignaba ocho franjas de
+  // filas para clavar placas y pulsadores. La ultima franja (827..860 ->
+  // 878..928) se comia las 68 filas del pie: la base del marco, con las
+  // estrellas, el lazo central, las campanas y los adornos, se publicaba
+  // guillotinada. El maestro se encaja ahora con escala uniforme, asi que el
+  // pie tiene que coincidir con el del arte de origen reescalado.
+  const masters = read(path.join(ROOT_DIR, 'scripts', 'build-santa-masters.js'));
+  assert.doesNotMatch(
+    masters,
+    /rowRemap|srcTop/,
+    'El maestro de d2 se encaja con escala uniforme: no se reasignan franjas de filas'
+  );
+
+  const source = path.join(ROOT_DIR, 'desk', 'Interfaz Navideña con Campanas Doradas.png');
+  assert.ok(fs.existsSync(source), 'El arte de origen de d2 debe seguir en desk/');
+  const { data, info } = await sharp(source).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  // Misma caja de tinta que `inkBox` del generador (alfa >= 16).
+  let left = info.width;
+  let top = info.height;
+  let right = -1;
+  let bottom = -1;
+  for (let y = 0; y < info.height; y += 1) {
+    for (let x = 0; x < info.width; x += 1) {
+      if (data[(y * info.width + x) * info.channels + 3] < 16) continue;
+      if (x < left) left = x;
+      if (x > right) right = x;
+      if (y < top) top = y;
+      if (y > bottom) bottom = y;
+    }
+  }
+  const fitted = await sharp(source)
+    .ensureAlpha()
+    .extract({ left, top, width: right - left + 1, height: bottom - top + 1 })
+    .resize(655, 928, { fit: 'fill', kernel: 'lanczos3' })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const master = await sharp(path.join(ROOT_DIR, 'design', 'd2.png'))
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  assert.equal(`${master.info.width}x${master.info.height}`, '655x928', 'El maestro de d2 mide 655 x 928');
+
+  // Banda inferior: el pie del dibujo (lazo, campanas y estrellas).
+  const band = 64;
+  let diff = 0;
+  let samples = 0;
+  for (let y = 928 - band; y < 928; y += 1) {
+    for (let x = 0; x < 655; x += 1) {
+      const a = (y * 655 + x) * master.info.channels;
+      const b = (y * 655 + x) * fitted.info.channels;
+      diff += Math.abs(master.data[a] - fitted.data[b]);
+      diff += Math.abs(master.data[a + 1] - fitted.data[b + 1]);
+      diff += Math.abs(master.data[a + 2] - fitted.data[b + 2]);
+      samples += 3;
+    }
+  }
+  const mean = diff / samples;
+  assert.ok(
+    mean < 6,
+    `El pie de design/d2.png debe ser el del arte de origen (diferencia media ${mean.toFixed(2)})`
   );
 });
 
