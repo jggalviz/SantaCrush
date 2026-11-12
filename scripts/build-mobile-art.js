@@ -14,19 +14,24 @@
  * descentraria el dibujo y desalinearia las areas tactiles.
  *
  * Piezas:
- *   design/marco_movil.png   -> public/src/assets/marco_movil.webp   (1392 x 1038)
+ *   design/marco_movil.png   -> public/src/assets/marco_movil.webp   (1244 x 1216)
  *   design/consola_movil.png -> public/src/assets/consola_movil.webp (1780 x 883)
  *
- * Los dos maestros vigentes son el marco deportivo (focos, banderines y monedas
- * alrededor de las tres placas del HUD) y el panel azul con corona dorada (cinco
- * discos y cuatro placas de pie). Los nombres de destino NO cambian: el CSS y el
- * HTML siguen apuntando a `marco_movil.webp` y `consola_movil.webp`, asi que el
- * cambio de arte no toca el mapeo de los componentes.
+ * Los dos maestros vigentes son el marco de baston de caramelo (adornos de
+ * Navidad arriba, cenefa tricolor, tres placas rojas del HUD y una ventana
+ * interior alta) y el panel azul con corona dorada (cinco discos y cuatro placas
+ * de pie). Los nombres de destino NO cambian: el CSS y el HTML siguen apuntando
+ * a `marco_movil.webp` y `consola_movil.webp`, asi que el cambio de arte no toca
+ * el mapeo de los componentes. El WebP del marco se sirve con `?v=2` en el CSS
+ * y en el `preload` porque `/src/assets/**` viaja como `immutable`.
  *
- * `design/marco_movil_v1.png` es el maestro anterior (toldo con la nube rosa a
- * la izquierda, 1325 x 941 tras el recorte). Se conserva como referencia: el
- * dueño del marco vigente es siempre `design/marco_movil.png`, de modo que el
- * CSS y esta tabla hablan siempre de la misma pieza.
+ * `design/marco_movil_v1.png` es el toldo con la nube rosa (el marco mas
+ * antiguo, 1325 x 941 tras el recorte). El arte del marco anterior al de baston
+ * (el estadio con focos y banderines) se sigue pudiendo regenerar desde su
+ * maestro de origen, `movil/Marco navideño de campanas doradas.png`. Se
+ * conservan como referencia: el dueño del marco vigente es siempre
+ * `design/marco_movil.png`, de modo que el CSS y esta tabla hablan siempre de la
+ * misma pieza.
  *
  * El script, para cada pieza:
  *   1. mide el bbox de los pixeles con alfa visible;
@@ -52,10 +57,13 @@ const DEPLOY_DIR = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets
  * visible muy por debajo de 92.
  *
  * Presupuesto (el arte nuevo trae mas detalle que el anterior):
- *   - el marco deportivo mide 1392 x 1038 desde que se publica con escala
- *     uniforme (antes 1392 x 1093 estirado) y pesa 289 kB a q=86; a q=82 se
- *     queda en 262 kB, que es lo que deja el total servido (arte + audio) por
- *     debajo de los 3 MB que vigila el test;
+ *   - el marco de baston se publica en 1244 x 1216 (la relacion de su dibujo,
+ *     1443 x 1414 tras el recorte de alfa) y a q=82 pesa ~256 kB. El lienzo se
+ *     quedo en 1244 px de ancho justo por esto: a 1447 px el mismo dibujo pedia
+ *     ~308 kB y el total servido (arte + audio) se pasaba de los 3 MB que vigila
+ *     `test/assetBudget.test.js`. Un telefono a 3x pinta el marco a 1170 px de
+ *     dispositivo y la tablet del tramo movil no pasa de ~532 CSS px, asi que
+ *     1244 px de origen siguen siendo de sobra;
  *   - el panel azul con corona es la pieza movil mas rica (1780x883, 28 % mas
  *     pixeles que la anterior) y a q=92 pesa 482 kB: su tope sube a 512 kB en
  *     vez de bajar la calidad y arriesgar banding en el azul y el dorado (d5 de
@@ -64,9 +72,9 @@ const DEPLOY_DIR = path.join(ROOT, '.vercel', 'output', 'static', 'src', 'assets
 const PIECES = [
   {
     name: 'marco_movil',
-    canvas: { width: 1392, height: 1038 },
+    canvas: { width: 1244, height: 1216 },
     quality: 82,
-    maxBytes: 300 * 1024
+    maxBytes: 280 * 1024
   },
   {
     name: 'consola_movil',

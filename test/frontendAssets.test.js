@@ -1501,33 +1501,35 @@ test('los rotulos del case no se repintan: el DOM solo guarda nombre accesible y
 test('la consola y el tablero comparten el mismo eje X en movil', () => {
   const css = read(STYLE_PATH);
 
-  // 1) Una sola columna: el marco (marca + HUD + tablero) y la consola son las
-  //    dos filas de la maquina y las dos se ciñen a `--m-w`, asi que su eje X
-  //    no puede separarse.
+  // 1) Una sola columna: el logo, el marco (HUD + tablero) y la consola son las
+  //    tres filas de la maquina y las dos piezas de arte se ciñen a `--m-w`, así
+  //    que su eje X no puede separarse.
   const machineGrid = css.match(
-    /\.machine\s*\{[^}]*grid-template-areas:\s*"frame"\s*"console";[^}]*\}/
+    /\.machine\s*\{[^}]*grid-template-areas:\s*"logo"\s*"frame"\s*"console";[^}]*\}/
   );
-  assert.ok(machineGrid, 'La maquina movil debe apilar marco y consola en una columna');
+  assert.ok(machineGrid, 'La maquina movil debe apilar logo, marco y consola en una columna');
   assert.match(machineGrid[0], /display:\s*grid;/, 'La maquina centra por rejilla');
   assert.match(machineGrid[0], /grid-template-columns:\s*minmax\(0, 1fr\);/, 'Una sola pista de ancho');
-  assert.match(machineGrid[0], /justify-items:\s*center;/, 'Las dos filas se centran en la columna');
+  assert.match(machineGrid[0], /justify-items:\s*center;/, 'Las tres filas se centran en la columna');
   assert.match(
     machineGrid[0],
     /padding:\s*0;/,
     'Sin padding propio: el sangrado lateral lo hace `.stage` con `--m-pad-x`'
   );
-  // El ancho sale del alto libre menos la separacion, repartido entre la
-  // relacion del marco (1038 / 1392 = 0,7457, la del recorte sin estirar) y la
-  // de la consola (883 / 1780 = 0,4961): 1,2418 en total. La separacion se lee
-  // del token de la rejilla (`--row-gap`), que en movil vale 0: la junta va a
-  // tope (ver el test de la junta marco-consola).
+  // El ancho sale del alto libre menos la separacion y el colchon del balanceo,
+  // repartido entre la relacion del logo (0,36: caja 2:1 al 72 % del ancho), la
+  // del marco (1216 / 1244 = 0,9775) y la de la consola (883 / 1780 = 0,4961):
+  // 1,8336 en total. La fila del logo es imprescindible desde el marco de baston
+  // porque su franja superior está ocupada de arte y la chapa ya no puede
+  // pegarse encima. La separacion se lee del token de la rejilla (`--row-gap`),
+  // que en movil vale 0: la junta va a tope (ver el test de la junta).
   // `cqw`/`cqh` en lugar de `%`: dentro de una custom property un `%` se
   // resuelve contra la propiedad que la usa, y el mismo token medía el ancho en
   // `width` y el alto en `height` (el HUD caía 12 px bajo sus placas).
   assert.match(
     machineGrid[0],
-    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - var\(--row-gap\)\) \/ 1\.2418\)\);/,
-    'El ancho de la maquina descuenta marco + separacion + consola del alto libre'
+    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - var\(--row-gap\) - 20px\) \/ 1\.8336\)\);/,
+    'El ancho de la maquina descuenta logo + marco + separacion + consola del alto libre'
   );
 
   // El escenario devuelve el aire lateral de `.app` con el mismo `--m-pad-x`:
@@ -1560,17 +1562,19 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
 
   // 2) Las dos piezas se miden con esa unidad y con la relacion exacta de su
   //    lienzo (`contain` sobre una caja con esa relacion llena el 100%).
-  const frameRule = css.match(/\.machine__table\s*\{[^}]*aspect-ratio:\s*1392 \/ 1038;[^}]*\}/);
-  assert.ok(frameRule, 'El marco debe declarar la relacion exacta de su recorte, 1392/1038');
+  const frameRule = css.match(/\.machine__table\s*\{[^}]*aspect-ratio:\s*1244 \/ 1216;[^}]*\}/);
+  assert.ok(frameRule, 'El marco debe declarar la relacion exacta de su recorte, 1244/1216');
   assert.match(frameRule[0], /width:\s*var\(--m-w\);/, 'El marco se mide con `--m-w`');
-  // El lienzo del recorte trae 23 px transparentes a cada lado, asi que el
-  // dibujo se pinta un 3,4175 % mas ancho (1392 / 1346) y centrado: el filo
-  // pintado del caramelo cae en el filo de la caja y el aire sobrante se sale de
-  // ella. Sin ese estiramiento quedaba una franja de fondo a los lados.
+  // El WebP se publica recortado al alfa (sin aire a los lados), asi que el
+  // dibujo entra a sangre con `100% 100%` sobre una caja con su misma relacion.
+  // La URL lleva `?v=2` porque `/src/assets/**` se sirve como `immutable`:
+  // republicar el marco con el mismo nombre dejaria a los clientes con el arte
+  // viejo bajo los anclajes nuevos. El `preload` de `index.html` lleva la misma
+  // version.
   assert.match(
     frameRule[0],
-    /background:\s*url\('\.\.\/assets\/marco_movil\.webp'\)\s*no-repeat\s*center\s*\/\s*103\.4175% 100%;/,
-    'El marco se pinta a sangre sobre el lienzo del recorte'
+    /background:\s*url\('\.\.\/assets\/marco_movil\.webp\?v=2'\)\s*no-repeat\s*center\s*\/\s*100% 100%;/,
+    'El marco se pinta a sangre sobre su propio lienzo (sin estiramientos)'
   );
 
   const caseRule = css.match(
@@ -1591,85 +1595,97 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   );
 
   // 3) El tablero tapa la ventana transparente del marco con % del recorte
-  //    (medido: x 8,12-91,67 %, y 42,29-90,46 %), con un pelo de aire por fuera
+  //    (medido: x 8,12-91,72 %, y 32,15-92,85 %), con un pelo de aire por fuera
   //    para que su filo se meta bajo el aro dorado y no asome el fondo.
-  //    Con el dibujo a sangre los dos % del eje X pasan por la escala del
-  //    estiramiento (x' = 1,0341753 · x − 1,70867 %): 8,10 → 6,66805 y
-  //    83,80 → 86,66389. El alto no cambia.
+  //    El selector declara caja en varias capas (maqueta base, tramos y
+  //    escritorio); solo una lleva la geometria del marco de baston.
+  const boardBodies = [...css.matchAll(/\.machine__table \.board\s*\{([^}]*)\}/g)].map((m) => m[1]);
+  const boardRule = boardBodies.find((body) =>
+    ['left: 7.94%;', 'top: 31.96%;', 'width: 83.95%;', 'height: 61.07%;'].every((d) => body.includes(d))
+  );
+  assert.ok(
+    boardRule,
+    'El tablero debe tapar la ventana del marco nuevo (7,94 % / 31,96 % / 83,95 % / 61,07 %)'
+  );
+  assert.match(
+    boardRule,
+    /border-radius:\s*clamp\(3px, calc\(var\(--m-w\) \* 0\.0153\), 9px\);/,
+    'El radio del tablero sigue al de las esquinas del hueco del arte (19 px de 1244)'
+  );
+  // El hueco nuevo es mucho mas alto que el del marco anterior (60,69 % del
+  // lienzo frente a 48,50 %): con el mismo ancho, las casillas de la grilla 6 x 5
+  // pasan de 2,06:1 a 1,17:1 y los simbolos crecen con ellas.
   assert.match(
     css,
-    /\.machine__table \.board\s*\{[^}]*position:\s*absolute;[^}]*left:\s*6\.66805%;[^}]*top:\s*42\.23%;[^}]*width:\s*86\.66389%;[^}]*height:\s*48\.50%;[^}]*\}/,
-    'El tablero se coloca en la ventana del marco, no en el flujo de la fila'
+    /\.machine__table \.grid\s*\{[^}]*aspect-ratio:\s*auto;[^}]*\}/,
+    'La grilla se reparte el hueco en lugar de imponer su relacion 6/5'
   );
 
-  // 4) La marca y el HUD caen sobre sus huecos del arte nuevo: el cielo del
-  //    estadio sostiene el logo centrado en el marco y la franja de las tres
-  //    placas doradas va de 28,23 a 88,58 % del ancho y de 26,01 a 32,47 % del
-  //    alto del recorte (bbox de los tres cuerpos rojos de `marco_movil.webp`).
-  //    Con el dibujo a sangre la franja se reasigna con la misma escala:
-  //    0,6035 → 0,624125 de ancho y 0,2823 → 0,27486 de arranque.
+  // 4) La marca y el HUD caen sobre sus huecos del arte nuevo: la franja de las
+  //    tres placas rojas va de 27,01 a 89,87 % del ancho y de 18,59 a 25,82 % del
+  //    alto del recorte (bbox del aro dorado de las tres placas medido sobre el
+  //    WebP de 1244 px). Son mas anchas y mas bajas que las del marco anterior,
+  //    asi que el dato sube de cuerpo y el bloque rotulo + dato sigue centrado.
   const hudRule = css.match(
-    /\.machine__side \.hud\s*\{[^}]*width:\s*calc\(var\(--m-w\) \* 0\.624125\);[^}]*\}/
+    /\.machine__side \.hud\s*\{[^}]*width:\s*calc\(var\(--m-w\) \* 0\.628617\);[^}]*\}/
   );
   assert.ok(hudRule, 'El HUD debe medir la franja exacta de las tres placas');
   assert.match(
     hudRule[0],
-    /height:\s*calc\(var\(--frame-h\) \* 0\.0646\);/,
+    /height:\s*calc\(var\(--frame-h\) \* 0\.07236\);/,
     'La franja mide el alto interior de las placas del HUD'
   );
   assert.match(
     hudRule[0],
-    /margin-left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ var\(--m-w\) \* 0\.27486\);/,
-    'La franja arranca en la primera placa del HUD (28,23 % del recorte, ya escalado)'
+    /margin-left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ var\(--m-w\) \* 0\.270096\);/,
+    'La franja arranca en el aro de la primera placa (27,01 % del recorte)'
   );
   assert.match(
     hudRule[0],
-    /margin-top:\s*calc\(var\(--frame-h\) \* 0\.2601\);/,
+    /margin-top:\s*calc\(var\(--frame-h\) \* 0\.18586\);/,
     'La franja cae sobre sus placas y no sobre la ventana'
   );
 
-  const heroRule = css.match(/\.machine__side \.machine__hero\s*\{[^}]*--logo-w:[\s\S]*?\n  \}/);
-  assert.ok(heroRule, 'La marca debe declarar su caja sobre el cielo del estadio');
-  assert.match(
-    heroRule[0],
-    /left:\s*calc\(\(100% - var\(--m-w\)\) \/ 2 \+ \(var\(--m-w\) - var\(--logo-w\)\) \/ 2\);/,
-    'El logo se centra en el marco con su ancho real, no con un porcentaje fijo'
-  );
-  assert.match(
-    heroRule[0],
-    /bottom:\s*calc\(var\(--frame-h\) \* 0\.7545\);/,
-    'La base del logo se apoya sobre la franja de banderines, por encima del HUD'
+  // Las tres celdas dentro de la franja: aros de 336-575, 578-828 y 832-1117 px
+  // del WebP de 1244 (30,69 % · 30,95 %+32,10 % · 63,43 %+36,57 %).
+  const hudCells = [...css.matchAll(/\.machine__side \.hud__cell:nth-child\((\d)\) \{([^}]*)\}/g)]
+    .map((m) => ({ index: m[1], body: m[2] }));
+  assert.deepEqual(
+    hudCells.map((c) => `${c.index}:${c.body.trim()}`),
+    [
+      '1:left: 0; width: 30.69%;',
+      '2:left: 30.95%; width: 32.10%;',
+      '3:left: 63.43%; width: 36.57%;'
+    ],
+    'Cada lectura se centra en su placa del marco nuevo'
   );
 
-  // 5) La chapa del logo: 78 % del ancho del marco y la caja con la proporcion
-  //    real del arte (2:1). `--logo-sky` es lo que hay entre el filo superior de
-  //    `.machine` y la base del logo: la mitad del sobrante vertical de la
-  //    rejilla (alto del escenario menos marco, separacion y consola) mas el
-  //    24,55 % del marco que queda por encima de la base. De ahi se descuentan
-  //    14 px (10 del balanceo + 4 de colchon), el resto se divide por 1,05 —lo
-  //    que trepa la esquina alta del PNG al girar -3° y crecer un 3 %— y se
-  //    duplica porque el ancho es el doble del alto. Sin ese tope el 78 % se
-  //    corta contra el filo en tablet vertical y en 320 px.
+  // 5) La chapa del logo tiene fila propia (`logo`) desde el marco de baston:
+  //    el arte ocupa la franja superior entera y ya no hay cielo donde pegarla.
+  //    La caja mantiene la proporcion 2:1 del PNG (900 x 450) al 72 % del ancho de
+  //    la maquina, y su alto (0,36 de `--m-w`) es uno de los sumandos del divisor
+  //    de `--m-w`, asi que entra en el reparto vertical y nunca se sale.
+  const heroRule = css.match(/\.machine__side \.machine__hero\s*\{[^}]*--logo-w:[\s\S]*?\n  \}/);
+  assert.ok(heroRule, 'La marca debe declarar su caja en la fila del logo');
+  assert.match(heroRule[0], /grid-area:\s*logo;/, 'El logo vive en su propia fila de la rejilla');
+  assert.match(heroRule[0], /position:\s*relative;/, 'La fila la dimensiona el logo, no una capa absoluta');
+  assert.match(heroRule[0], /justify-self:\s*center;/, 'La chapa se centra en la maquina');
   assert.match(
     heroRule[0],
-    /--logo-sky:\s*calc\(\s*\(100cqh - \(var\(--frame-h\) \+ var\(--row-gap\) \+ var\(--m-w\) \* 0\.4961\)\) \/ 2\s*\+ var\(--frame-h\) \* 0\.2455\s*\);/,
-    'El aire del logo se mide con el hueco real, no con un porcentaje fijo'
-  );
-  assert.match(
-    heroRule[0],
-    /--logo-w:\s*min\(\s*calc\(var\(--m-w\) \* 0\.78\),\s*max\(0px, \(var\(--logo-sky\) - 14px\) \* 2 \/ 1\.05\)\s*\);/,
-    'El logo apunta al 78 % del ancho del marco y nunca rebasa el filo superior'
+    /--logo-w:\s*calc\(var\(--m-w\) \* 0\.72\);/,
+    'El logo ocupa el 72 % del ancho de la maquina'
   );
   assert.match(
     heroRule[0],
     /--logo-h:\s*calc\(var\(--logo-w\) \/ 2\);/,
     'La caja del logo conserva la proporcion 2:1 del PNG (900 x 450)'
   );
-  assert.doesNotMatch(heroRule[0], /var\(--m-w\) \* 0\.44\b/, 'El logo ya no se ata al 44 % anterior');
+  assert.doesNotMatch(heroRule[0], /--logo-sky/, 'Sin cielo de arte, el aire del logo lo reparte la rejilla');
+  assert.doesNotMatch(heroRule[0], /bottom:\s*calc\(var\(--frame-h\)/, 'La chapa ya no se ancla sobre el dibujo');
   assert.equal(
-    (css.match(/--logo-w:\s*min\(/g) || []).length,
+    (css.match(/--logo-w:/g) || []).length,
     1,
-    'El tope del logo vive en una sola regla, comun a todo el rango movil'
+    'El ancho del logo se declara una sola vez en toda la hoja'
   );
 });
 
@@ -1684,9 +1700,9 @@ test('en movil la junta marco-consola va a tope, sin franja de fondo', () => {
   // marco con `--joint-tuck`, 1,2 % de `--m-w` (4,7 px a 390 px de ancho): lo
   // justo para tapar ese aire muerto sin comerse el filo del dibujo.
   const machineGrid = css.match(
-    /\.machine\s*\{[^}]*grid-template-areas:\s*"frame"\s*"console";[^}]*\}/
+    /\.machine\s*\{[^}]*grid-template-areas:\s*"logo"\s*"frame"\s*"console";[^}]*\}/
   );
-  assert.ok(machineGrid, 'La maquina movil debe apilar marco y consola en una columna');
+  assert.ok(machineGrid, 'La maquina movil debe apilar logo, marco y consola en una columna');
   assert.match(machineGrid[0], /--row-gap:\s*0px;/, 'La separacion marco-consola se anula');
   assert.match(machineGrid[0], /row-gap:\s*var\(--row-gap\);/, 'La rejilla consume el token');
   assert.match(
@@ -1697,7 +1713,7 @@ test('en movil la junta marco-consola va a tope, sin franja de fondo', () => {
 
   // La caja de la consola sube ese solape con margen negativo: con el `gap` a 0
   // el aire solo puede salir de la propia caja, y el margen no toca el reparto de
-  // `--m-w` (las dos relaciones del arte siguen mandando el alto).
+  // `--m-w` (las relaciones del arte siguen mandando el alto).
   const caseRule = css.match(
     /\.machine__side \.controls\s*\{[^}]*aspect-ratio:\s*1780 \/ 883;[^}]*\}/
   );
@@ -1710,10 +1726,17 @@ test('en movil la junta marco-consola va a tope, sin franja de fondo', () => {
 
   // El saldo vive dentro de la consola y se ancla al HUD del marco: si la caja
   // sube, su `top` tiene que descontar el mismo solape o la placa se desplaza.
+  // 0,81414 = 1 − 0,18586, el arranque de la franja de placas del marco nuevo
+  // (18,59 % del alto); la caja mide lo mismo que el aro (7,24 %).
   assert.match(
     css,
-    /top:\s*calc\(-1 \* \(var\(--frame-h\) \* 0\.7399 \+ var\(--row-gap\) - var\(--joint-tuck\)\)\);/,
+    /top:\s*calc\(-1 \* \(var\(--frame-h\) \* 0\.81414 \+ var\(--row-gap\) - var\(--joint-tuck\)\)\);/,
     'El saldo sigue clavado en la primera placa del HUD'
+  );
+  assert.match(
+    css,
+    /left:\s*27\.01%;[^}]*width:\s*19\.29%;[^}]*height:\s*calc\(var\(--frame-h\) \* 0\.07236\);/,
+    'La caja del saldo copia la primera placa del marco nuevo'
   );
 
   // El ajuste es exclusivo del tramo movil: el escritorio monta la consola en su
@@ -1723,51 +1746,42 @@ test('en movil la junta marco-consola va a tope, sin franja de fondo', () => {
   assert.doesNotMatch(desktopGrid[0], /joint-tuck|--row-gap/, 'El escritorio no hereda la junta movil');
 });
 
-test('el logo recupera presencia en tablets con aire reservado y sin mover su base', () => {
+test('el logo entra en el reparto vertical en todo el rango movil (sin aire reservado)', () => {
   const css = read(STYLE_PATH);
 
-  // En tablet vertical (600-899 px, alto de sobra) el marco se estira hasta la
-  // barra superior, asi que el unico cielo del logo es el 24,55 % del arte que
-  // queda sobre las placas del HUD: a 768 x 1024 la chapa medía 261 px, el 34,9 %
-  // del marco, menos que en un telefono de 390 px. Ese tramo reserva un aire
-  // vertical propio que `--m-w` descuenta del alto libre; como la rejilla esta
-  // centrada, la mitad de ese aire sube por encima del marco y entra en
-  // `--logo-sky`, que es quien gobierna el tope de la chapa.
-  const midStart = css.indexOf(
-    '@media (min-width: 600px) and (max-width: 899px) and (min-height: 521px)'
+  // Con el marco nuevo la chapa ya no se pega sobre el arte: tiene su propia fila
+  // ("logo") y su relacion alto/ancho (0,36) suma en el divisor de `--m-w`. Eso
+  // sustituye al `--logo-air` que el tramo 600-899 px necesitaba con el marco
+  // anterior, cuando el unico cielo era el que dejaba el dibujo.
+  const machineGrid = css.match(
+    /\.machine\s*\{[^}]*grid-template-areas:\s*"logo"\s*"frame"\s*"console";[^}]*\}/
   );
-  assert.notEqual(midStart, -1, 'El tramo 600-899 px debe declarar su breakpoint');
-  const midBlock = css.slice(midStart, css.indexOf('\n}', midStart) + 2);
-
+  assert.ok(machineGrid, 'La maquina movil apila logo, marco y consola');
   assert.match(
-    midBlock,
-    /--logo-air:\s*clamp\(0px,\s*calc\(100cqh \* 0\.05\),\s*48px\);/,
-    'El aire de la marca se mide con el alto del escenario y lleva techo'
-  );
-  const airRule = midBlock.match(/--logo-air:\s*clamp\(0px,\s*[^,]+,\s*(\d+)px\);/);
-  assert.ok(airRule, 'El aire debe estar acotado por arriba');
-  assert.ok(
-    Number(airRule[1]) <= 96,
-    'El techo del aire no puede comerse el tablero (<= 96 px)'
+    machineGrid[0],
+    /grid-template-rows:\s*auto auto auto;/,
+    'Las tres filas se miden por su contenido'
   );
 
+  // El divisor 1,8336 = 0,36 (logo) + 0,9775 (marco) + 0,4961 (consola) es el
+  // unico presupuesto vertical: si alguien cambia una relacion del arte o el
+  // ancho del logo, este numero tiene que seguirlo o el conjunto se sale.
+  const divisor = machineGrid[0].match(/\* 0\.977492\)/);
+  assert.ok(divisor, 'El alto del marco se deriva de su lienzo (1216 / 1244)');
   assert.match(
-    midBlock,
-    /--m-w:\s*min\(\s*100cqw,\s*calc\(\(100cqh - var\(--row-gap\) - var\(--logo-air\)\) \/ 1\.2418\)\s*\);/,
-    'El aire se descuenta del alto libre y el ancho del viewport sigue siendo el tope'
-  );
-  assert.match(
-    midBlock,
-    /var\(--row-gap\)/,
-    'La separacion marco-consola se resta una sola vez, con el token de la rejilla'
+    machineGrid[0],
+    /calc\(\(100cqh - var\(--row-gap\) - 20px\) \/ 1\.8336\)/,
+    'El alto libre descuenta la fila del logo y el colchon del balanceo'
   );
 
-  // El aire no toca ni la base del logo (sigue a 0,7545 del marco, por encima
-  // del HUD) ni el `--logo-sky`: es el mismo tope de todo el rango movil, que
-  // ahora recibe mas cielo porque la maquina es mas baja.
-  assert.doesNotMatch(midBlock, /--logo-sky/, 'El cielo se sigue derivando de la geometria real');
-  assert.doesNotMatch(midBlock, /--logo-w/, 'El tope del logo no se duplica en el tramo intermedio');
-  assert.doesNotMatch(midBlock, /\.machine__logo|\.machine__hero|\.hud/, 'El marco, el logo y el HUD no se recolocan aqui');
+  // El tramo intermedio (600-899 px) ya no necesita regla propia: el reparto es
+  // el mismo en todo el rango movil. Solo queda el modo compacto de paisaje.
+  assert.doesNotMatch(css, /--logo-air\s*:/, 'El aire reservado del logo ya no se declara');
+  assert.doesNotMatch(
+    css,
+    /@media \(min-width: 600px\) and \(max-width: 899px\) and \(min-height: 521px\)/,
+    'El tramo 600-899 px no duplica el reparto vertical'
+  );
 
   // El horizontal bajo queda fuera: ahi manda la regla de `max-height: 520px`,
   // que comprime la cabecera justo para devolverle alto al dibujo.
@@ -1788,7 +1802,7 @@ test('el arte de las dos maquinas se sirve con su lienzo exacto y los maestros q
   // lateral entera: corona + placas + consola), a q=90 y con el mismo
   // contrato de lienzo.
   const pieces = [
-    { name: 'marco_movil', size: '1392x1038', max: 300 * 1024, build: 'build-mobile-art.js' },
+    { name: 'marco_movil', size: '1244x1216', max: 280 * 1024, build: 'build-mobile-art.js' },
     { name: 'consola_movil', size: '1780x883', max: 512 * 1024, build: 'build-mobile-art.js' },
     { name: 'd1', size: '1033x863', max: 300 * 1024, build: 'build-desktop-art.js' },
     { name: 'd2', size: '655x1091', max: 700 * 1024, build: 'build-desktop-art.js' }

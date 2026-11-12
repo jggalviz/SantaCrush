@@ -154,25 +154,19 @@ el propio origen.
    proporcion y la imagen la rellena entera; si se cambia el arte por otro de
    distinta relacion hay que actualizar ambos sitios o el `object-fit: contain`
    devolvera el aire dentro de la caja.
-   La caja movil apunta al **78 % del ancho del marco** con un tope por el cielo
-   real (`--logo-sky`): en telefonos altos manda el 78 % y el logo se apoya sobre
-   la franja de monedas y banderines del marco, justo encima del HUD; en 320 px
-   manda el tope y la pegatina se queda con el aire justo, sin tocar la barra
-   superior ni generar scroll horizontal.
-   La caja va **centrada en el marco**: `left` reparte el sobrante con el ancho
-   real del logo (`--logo-w`), asi que la separacion a los dos filos es la misma
-   en cualquier telefono, tambien cuando manda el tope por alto y la caja es mas
-   corta que el 78 %.
-   Entre **600 y 899 px** (tablets verticales y escritorios pequenos con alto de
-   sobra, `min-height: 521px`) el marco se estira hasta la barra superior y su
-   unico cielo es ese 19,87 % del arte, asi que la chapa se quedaba en el 27 % del
-   marco. Ese tramo reserva un aire vertical propio (`--logo-air`: 8 % del alto
-   del escenario, 78 px de techo) que se descuenta del alto libre de la maquina
-   via `--m-w`; la mitad de arriba entra en `--logo-sky` y el logo sube al 36 %
-   del marco (247 px a 768 x 1024, 289 px a 899 x 1200) manteniendo su base, la
-   holgura sobre el HUD y el aire bajo la barra superior. El tablero pierde como
-   mucho un 8 % de ancho en ese tramo; por debajo de 600 px y por encima de
-   900 px no cambia nada.
+   La caja movil apunta al **72 % del ancho de la maquina** y vive en su propia
+   fila de la rejilla (`grid-template-areas: "logo" "frame" "console"`). Desde el
+   marco de baston de caramelo (`marco_movil.webp`, 1244 x 1216) el arte ocupa la
+   franja superior de tapa a tapa —Santa, reno, campanas, tren y casa de
+   jengibre—, asi que ya no queda cielo donde pegar la chapa: el logo entra en el
+   reparto vertical con su relacion alto/ancho (0,36, caja 2:1 al 72 %) y forma
+   parte del divisor de `--m-w` (1,8336 = logo 0,36 + marco 0,9775 + consola
+   0,4961). Ese reparto es el mismo en todo el rango movil, de modo que el tramo
+   600-899 px ya no necesita reglas propias: donde manda el ancho la chapa ocupa
+   el 72 % de la maquina y donde manda el alto encoge con ella, sin poder montarse
+   nunca sobre el marco ni sobre la barra superior.
+   La caja va **centrada** por la rejilla (`justify-self: center`), asi que la
+   separacion a los dos filos es la misma en cualquier telefono.
    La barra del navegador movil usa la meta `theme-color`, ya en rojo de marca:
    `<meta name="theme-color" content="#c8102e" />`.
 
@@ -182,18 +176,20 @@ el propio origen.
    hace `.app`, que es el que llega al filo). Como `--m-w` se mide con `100cqw`,
    al ensanchar el escenario ese ancho util pasa a ser el del viewport completo,
    asi que marco, tablero y consola comparten el ancho de la pantalla. El lienzo
-   de `marco_movil.webp` (1392 x 1038) trae ademas 23 px transparentes a cada
-   lado (el filo pintado del caramelo arranca en x = 23), de modo que el dibujo
-   se pinta al **103,4175 %** de ancho (1392 / 1346) y centrado: ese aire se sale
-   de la caja y el caramelo toca el filo. Los dos % horizontales que se apoyan en
-   el dibujo pasan por la misma escala (`x' = 1,0341753 · x − 1,70867 %`): la
-   ventana del tablero queda en 6,66805 % / 86,66389 % y la franja del HUD en
-   0,624125 de ancho con arranque 0,27486. El eje vertical no cambia (el HUD
-   sigue midiendose con `--frame-h`).
+   de `marco_movil.webp` (1244 x 1216) llega **recortado al alfa**, sin aire a los
+   lados, y se pinta a sangre con `background-size: 100% 100%` sobre una caja con
+   su misma relacion: cada % medido sobre el recorte vale tal cual, sin
+   estiramientos. (El marco anterior, 1392 x 1038, traia 23 px transparentes por
+   lado y necesitaba pintarse al 103,4175 %; ese apaño ya no existe.)
+   La ventana del tablero ocupa **7,94 % / 31,96 % / 83,95 % / 61,07 %** y la
+   franja del HUD 0,628617 de ancho con arranque 0,270096 y alto 0,07236 del
+   marco. El hueco interior mide 83,60 x 60,69 % del lienzo (frente a 83,80 x
+   48,50 % del anterior), asi que las casillas de la grilla 6 x 5 pasan de 2,06:1
+   a **1,17:1** —casi el 1,14:1 del tablero de escritorio— y los simbolos crecen
+   con ellas (44 px de alto a 390 px de ancho, frente a 27 px).
    Cuando manda el alto (movil apaisado, ventanas anchas y bajas) `--m-w` encoge
-   en proporcion y el conjunto vuelve a centrarse como antes; ahi el dibujo
-   conserva su estiramiento del 3,4 % y sobresale ~1,7 % de su caja por lado, que
-   es el unico resto del sangrado fuera del telefono vertical.
+   en proporcion y el conjunto vuelve a centrarse; el dibujo no se estira en
+   ningun eje.
 
    La **junta marco-consola** tambien va a tope. El dibujo del marco llega con
    tinta hasta su ultimo pixel, pero el recorte de `consola_movil.webp` trae el

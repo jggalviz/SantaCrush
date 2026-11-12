@@ -6,7 +6,7 @@
  *
  *   desk/Marco navideño de caramelos brillantes.png    -> design/d1.png (1033x863)
  *   desk/Marco de tragaperras navideño festivo.png   -> design/d2.png ( 655x1091)
- *   movil/Marco navideño de campanas doradas.png       -> design/marco_movil.png (1392x1038)
+ *   movil/Nuevo-Marco-navideño-de-campanas-doradas.png -> design/marco_movil.png (1244x1216)
  *   movil/Panel navideño brillante con Santa y reno.png -> design/consola_movil.png (1780x883)
  *   Santa WIN Celebration-Animation.gif                -> design/win_celebracion.gif
  *
@@ -132,23 +132,32 @@ async function fitInk(file, canvas) {
 
   /* ------------------------------------------------------- marco_movil ---- */
   if (wants('marco_movil')) {
-    // El marco movil se publica con la relacion de SU dibujo (1443 x 1076 tras
-    // recortar el alfa -> lienzo 1392 x 1038) y escala uniforme, igual que d1 y
-    // d2. Antes se reencajaba su ventana al hueco que pedia el CSS escalando los
-    // dos ejes por separado (x 0,988 · y 1,113): el dibujo salia estirado un
-    // 12,7 % en vertical y el recorte del sobrante se comia 77 px del cielo, asi
-    // que las campanas, el gorro de Santa y el aro de la esquina llegaban
-    // guillotinados al filo superior del marco.
+    // Marco vigente: baston de caramelo con la cenefa tricolor, los adornos de
+    // Navidad (Santa, reno, campanas, tren, casa de jengibre), las tres placas
+    // del HUD y una ventana interior mucho mas alta que la del marco anterior.
+    // El maestro util mide 1443 x 1414 tras recortar el alfa (0,9791 de alto por
+    // cada punto de ancho) y se publica en el lienzo 1244 x 1216, que conserva
+    // esa relacion (escala uniforme, 0,862 del dibujo original): el CSS vuelve a
+    // medir sobre el los anclajes (ventana del tablero, franja del HUD, casillas
+    // de la grilla), asi que cada % sigue siendo trazable sobre el dibujo.
     //
-    // El lienzo nuevo lleva el cielo completo y el CSS se volvio a medir sobre
-    // el (ventana del tablero, franja del HUD y cielo del logo), de modo que los
-    // anclajes siguen siendo trazables sobre el dibujo.
+    // El lienzo baja de 1447 a 1244 px de ancho para no romper el presupuesto de
+    // `test/assetBudget.test.js` (arte + audio < 3 MB): a 1244 px el WebP de
+    // `build:art` se queda en ~256 kB a q=82 y el total servido no pasa de 3 MB.
+    // A ese ancho el marco sigue yendo sobrado para un telefono a 3x (390 CSS px
+    // = 1170 px de dispositivo) y para la tablet del tramo movil, que nunca pinta
+    // el marco por encima de ~532 CSS px.
+    //
+    // El marco anterior (el estadio con focos y banderines, 1392 x 1038) se
+    // regenera desde `movil/Marco navideño de campanas doradas.png` apuntando
+    // esta llamada a ese lienzo; `design/marco_movil_v1.png` es el toldo con la
+    // nube rosa. El dueño del marco vigente es siempre `design/marco_movil.png`.
     const marco = await fitInk(
-      path.join(ROOT, 'movil', 'Marco navideño de campanas doradas.png'),
-      { width: 1392, height: 1038 }
+      path.join(ROOT, 'movil', 'Nuevo-Marco-navideño-de-campanas-doradas.png'),
+      { width: 1244, height: 1216 }
     );
     fs.writeFileSync(path.join(DESIGN, 'marco_movil.png'), marco);
-    console.log('design/marco_movil.png  1392x1038 (escala uniforme, cielo completo)');
+    console.log('design/marco_movil.png  1244x1216 (escala uniforme, marco de baston completo)');
   }
 
   /* ----------------------------------------------------- consola_movil ---- */
