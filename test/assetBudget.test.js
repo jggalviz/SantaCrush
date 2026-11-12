@@ -90,7 +90,9 @@ test('las hojas minificadas caben en 165 KB y las fuentes no se sirven de mas', 
   assert.ok(total < 165 * KB, `Las hojas minificadas pesan ${kb(total)}`);
 
   const html = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
-  const linked = [...html.matchAll(/href="\/src\/css\/([^"]+)"/g)].map((match) => match[1]);
+  const linked = [...html.matchAll(/href="\/src\/css\/([^"?]+)(?:\?v=[a-f0-9]+)?"/g)].map(
+    (match) => match[1]
+  );
   assert.deepEqual(
     linked,
     ['style.min.css', 'theme.min.css'],

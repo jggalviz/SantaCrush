@@ -16,13 +16,24 @@
  * Antes de escribir compara fuente y salida (llaves, parentesis, cadenas,
  * `url()` y at-rules) y aborta si el minificado perdio algo por el camino, de
  * modo que un CSS roto nunca llega a publicarse.
+ *
+ * Ademas sella `index.html` con `?v=<hash del contenido>` en cada hoja. Las
+ * hojas se sirven con `max-age=0, must-revalidate`, pero eso solo obliga a
+ * revalidar al navegador que decide hacerlo: una pestaña ya abierta, el
+ * `bfcache` de Safari/iOS o el proxy de un operador movil siguen sirviendo su
+ * copia y el jugador ve el diseño anterior aunque el deploy ya este en
+ * produccion. Con el hash en la URL cada cambio de CSS estrena URL (en el
+ * navegador y en el CDN de Vercel, que indexa por URL completa) y la version
+ * vieja deja de ser alcanzable.
  */
 
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT_DIR = path.join(__dirname, '..');
 const CSS_DIR = path.join(ROOT_DIR, 'public', 'src', 'css');
+const INDEX_PATH = path.join(ROOT_DIR, 'public', 'index.html');
 const SHEETS = ['style', 'theme'];
 
 /**
@@ -159,6 +170,69 @@ function assertEquivalent(source, minified, name) {
 }
 
 /**
+ * Hash corto del contenido publicado: identifica la version de la hoja.
+ *
+ * @param {string} text contenido exacto del `.min.css`
+ * @returns {string} 10 hex de SHA-256
+ */
+function contentHash(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 10);
+}
+
+/**
+ * Escapa un texto para usarlo literal dentro de un `RegExp`.
+ *
+ * @param {string} text texto a escapar
+ * @returns {string} texto seguro dentro de un `RegExp`
+ */
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Aplica (o corrige) el `?v=<hash>` de las hojas en un HTML. Pura: no toca
+ * disco, de modo que los tests puedan ejercitarla con HTML de ejemplo.
+ *
+ * Sustituye un `?v=` previo en vez de acumularlo, asi que es idempotente.
+ *
+ * @param {string} html documento
+ * @param {{ name: string, version: string }[]} entries hojas y su hash
+ * @returns {string} documento con los `<link>` sellados
+ */
+function stampHtml(html, entries) {
+  let next = html;
+
+  for (const { name, version } of entries) {
+    const pattern = new RegExp(`href="/src/css/${escapeRegExp(name)}(?:\\?v=[^"]*)?"`, 'g');
+    next = next.replace(pattern, `href="/src/css/${name}?v=${version}"`);
+  }
+
+  return next;
+}
+
+/**
+ * Sella los `<link>` de las hojas en `public/index.html` con `?v=<hash>`.
+ *
+ * Idempotente: si el hash no cambio, el HTML queda intacto (sin diffs
+ * ruidosos). Solo toca el `href` de las dos hojas minificadas; el resto del
+ * documento y el `?v=` de otros assets se respetan tal cual.
+ *
+ * @param {{ name: string, version: string }[]} results hojas minificadas
+ * @returns {{ changed: boolean, entries: { name: string, version: string }[] }}
+ */
+function stampIndexHtml(results) {
+  const entries = results.map((result) => ({ name: result.name, version: result.version }));
+  if (!fs.existsSync(INDEX_PATH)) return { changed: false, entries };
+
+  const html = fs.readFileSync(INDEX_PATH, 'utf8');
+  const next = stampHtml(html, entries);
+  const changed = next !== html;
+  if (changed) fs.writeFileSync(INDEX_PATH, next, 'utf8');
+
+  return { changed, entries };
+}
+
+/**
  * Minifica una hoja y escribe `<nombre>.min.css`.
  *
  * @param {string} name nombre sin extension (`style`, `theme`)
@@ -187,7 +261,8 @@ function minifySheet(name) {
     name: `${name}.min.css`,
     sourceBytes: Buffer.byteLength(source, 'utf8'),
     bytes: Buffer.byteLength(output, 'utf8'),
-    written: previous !== output
+    written: previous !== output,
+    version: contentHash(output)
   };
 }
 
@@ -206,6 +281,14 @@ function main() {
     );
   }
 
+  const stamp = stampIndexHtml(results);
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `[build:css] index.html ${stamp.changed ? 'sellado' : 'sin cambios'}:  ` +
+      stamp.entries.map((entry) => `${entry.name}?v=${entry.version}`).join('  ')
+  );
+
   // eslint-disable-next-line no-console
   console.log(
     `[build:css] ${SHEETS.length} hojas  total ${(sourceTotal / 1024).toFixed(1)} KB -> ` +
@@ -223,4 +306,15 @@ if (require.main === module) {
   }
 }
 
-module.exports = { CSS_DIR, SHEETS, minifyCss, minifySheet, assertEquivalent, main };
+module.exports = {
+  CSS_DIR,
+  SHEETS,
+  INDEX_PATH,
+  minifyCss,
+  minifySheet,
+  contentHash,
+  stampHtml,
+  stampIndexHtml,
+  assertEquivalent,
+  main
+};

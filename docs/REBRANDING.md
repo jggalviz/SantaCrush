@@ -298,9 +298,18 @@ backend).
 - `public/ui/**` es un espejo generado desde `ui/`: tras editar `ui/` ejecuta
   `npm run build:ui` (o `npm start`, que lo hace en `prestart`). El test
   `uiArchitecture.test.js` falla si el espejo queda desactualizado.
-- Ningun asset lleva hash en el nombre: Express sirve `public/**` con
-  `Cache-Control: no-cache` y `vercel.json` revalida `/src/(.*)` y `/ui/(.*)`.
-  Un cambio de CSS o JS se ve al recargar; no hay que tocar versiones.
+- Las dos hojas se enlazan versionadas: `build:css` sella `index.html` con
+  `?v=<10 hex del SHA-256 del .min.css>` (p. ej. `style.min.css?v=e24a5d1c3b`).
+  `Cache-Control` sigue siendo `no-cache`/`must-revalidate` (`vercel.json`
+  revalida `/src/(.*)` y `/ui/(.*)`), pero el sello cambia la URL en cada
+  edicion, asi que ni una pestaña abierta, ni el `bfcache` de iOS, ni el proxy
+  del operador, ni el CDN pueden devolver el diseño anterior. Lo escribe
+  `npm run build:css` (o cualquier `npm run build`) y `cssBuild.test.js` falla
+  si no coincide con el hash del archivo: no hay que tocarlo a mano.
+- El resto de assets no lleva hash en el nombre (`main.js`, el arte): Express
+  sirve `public/**` con `Cache-Control: no-cache` y `vercel.json` revalida
+  `/src/(.*)` y `/ui/(.*)`. `src/assets/**` va con un año e `immutable`, asi que
+  reemplazar un archivo de arte exige cambiarle el nombre.
 - `theme.css` vive en `public/src/css/`, cubierto por la regla `/src/(.*)` de
   `vercel.json`, asi que hereda la misma politica sin cambios de configuracion.
 

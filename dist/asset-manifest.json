@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-12T17:21:27.651Z",
+  "generatedAt": "2026-11-12T17:33:15.310Z",
   "files": {
-    "index.html": 20347,
+    "index.html": 20373,
     "src/assets/AUDIO-WIN-NEW-stadium-applause.MP3": 28541,
     "src/assets/avenida_fantastica_reino_caramelos.webp": 365788,
     "src/assets/consola_movil.webp": 480434,
@@ -47,5 +47,5 @@
     "ui/services/ApiClient.js": 7915,
     "ui/services/SessionManager.js": 7685
   },
-  "totalBytes": 3680405
+  "totalBytes": 3680431
 }

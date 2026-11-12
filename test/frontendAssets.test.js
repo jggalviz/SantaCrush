@@ -2604,7 +2604,7 @@ test('la capa de marca se sirve y se carga despues de style.css', () => {
   assert.ok(theme.length > 0, 'theme.css esta vacio');
   assert.match(
     html,
-    /<link rel="stylesheet" href="\/src\/css\/theme\.min\.css" \/>/,
+    /<link rel="stylesheet" href="\/src\/css\/theme\.min\.css(\?v=[a-f0-9]+)?" \/>/,
     'index.html debe enlazar la capa de marca minificada'
   );
   assert.ok(

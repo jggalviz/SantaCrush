@@ -21,7 +21,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { minifyCss } = require('../scripts/build-minify.js');
+const { minifyCss, contentHash, stampHtml } = require('../scripts/build-minify.js');
 
 const ROOT_DIR = path.join(__dirname, '..');
 const CSS_DIR = path.join(ROOT_DIR, 'public', 'src', 'css');
@@ -70,8 +70,16 @@ for (const name of ['style', 'theme']) {
 test('index.html carga las hojas minificadas en orden y no las fuentes', () => {
   const html = read(INDEX_PATH);
 
-  assert.match(html, /href="\/src\/css\/style\.min\.css"/, 'Falta style.min.css en index.html');
-  assert.match(html, /href="\/src\/css\/theme\.min\.css"/, 'Falta theme.min.css en index.html');
+  assert.match(
+    html,
+    /href="\/src\/css\/style\.min\.css(?:\?v=[a-f0-9]+)?"/,
+    'Falta style.min.css en index.html'
+  );
+  assert.match(
+    html,
+    /href="\/src\/css\/theme\.min\.css(?:\?v=[a-f0-9]+)?"/,
+    'Falta theme.min.css en index.html'
+  );
   assert.ok(
     html.indexOf('/src/css/style.min.css') < html.indexOf('/src/css/theme.min.css'),
     'El tema debe cargarse despues de la maqueta'
@@ -80,6 +88,53 @@ test('index.html carga las hojas minificadas en orden y no las fuentes', () => {
     html,
     /href="\/src\/css\/(style|theme)\.css"/,
     'index.html no debe cargar las fuentes sin minificar'
+  );
+});
+
+test('index.html sella cada hoja con el hash de su contenido', () => {
+  const html = read(INDEX_PATH);
+
+  for (const name of ['style', 'theme']) {
+    const version = contentHash(read(path.join(CSS_DIR, `${name}.min.css`)));
+    const expected = `href="/src/css/${name}.min.css?v=${version}"`;
+
+    /* Sin el sello, un navegador con la copia anterior (pestaña abierta,
+       bfcache o proxy del operador) sigue pintando el diseño viejo aunque el
+       deploy ya este en produccion: cada cambio de CSS debe estrenar URL. */
+    assert.ok(
+      html.includes(expected),
+      `index.html debe enlazar ${expected}: ejecuta npm run build:css`
+    );
+  }
+});
+
+test('el sello del HTML es idempotente y reemplaza versiones viejas', () => {
+  const sheets = [
+    { name: 'style.min.css', version: 'aaaaaaaaaa' },
+    { name: 'theme.min.css', version: 'bbbbbbbbbb' }
+  ];
+  const plain = '<link rel="stylesheet" href="/src/css/style.min.css" />';
+
+  assert.equal(
+    stampHtml(plain, sheets),
+    '<link rel="stylesheet" href="/src/css/style.min.css?v=aaaaaaaaaa" />',
+    'El sello debe añadirse cuando el HTML no lo lleva'
+  );
+
+  const stale = '<link rel="stylesheet" href="/src/css/style.min.css?v=0123456789" />';
+  assert.equal(
+    stampHtml(stale, sheets),
+    '<link rel="stylesheet" href="/src/css/style.min.css?v=aaaaaaaaaa" />',
+    'El sello debe reemplazar una version anterior, no acumular otra'
+  );
+
+  const stamped = stampHtml(plain, sheets);
+  assert.equal(stampHtml(stamped, sheets), stamped, 'Sellar dos veces no cambia nada');
+
+  assert.equal(
+    stampHtml('<img src="/src/css/otra.css" />', sheets),
+    '<img src="/src/css/otra.css" />',
+    'El sello no debe tocar rutas que no sean las hojas'
   );
 });
 
