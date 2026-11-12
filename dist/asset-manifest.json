@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-12T14:05:26.324Z",
+  "generatedAt": "2026-11-12T16:11:45.851Z",
   "files": {
-    "index.html": 20270,
+    "index.html": 20347,
     "src/assets/AUDIO-WIN-NEW-stadium-applause.MP3": 28541,
     "src/assets/avenida_fantastica_reino_caramelos.webp": 365788,
     "src/assets/consola_movil.webp": 480434,
@@ -13,8 +13,8 @@
     "src/assets/fonts/lilita-one-latin-ext.woff2": 1384,
     "src/assets/fonts/lilita-one-latin.woff2": 10672,
     "src/assets/marco_movil.webp": 262238,
-    "src/assets/MERIDIANOBET-CRUSH-LOGO.webp": 100224,
     "src/assets/N-AUDIO-meridiano-con-fade.mp3": 320156,
+    "src/assets/SANTA-CRUSH-LOGO-ANIMADO.webp": 273562,
     "src/assets/slot/s1.webp": 35542,
     "src/assets/slot/s10.webp": 46304,
     "src/assets/slot/s11.webp": 37790,
@@ -28,7 +28,7 @@
     "src/assets/slot/s9.webp": 45080,
     "src/assets/win_celebracion_still.webp": 100542,
     "src/assets/win_celebracion.webp": 289220,
-    "src/css/style.min.css": 154171,
+    "src/css/style.min.css": 154528,
     "src/css/theme.min.css": 10429,
     "ui/audio/sfx.js": 14670,
     "ui/components/GameControls.js": 3846,
@@ -47,5 +47,5 @@
     "ui/services/ApiClient.js": 7915,
     "ui/services/SessionManager.js": 7685
   },
-  "totalBytes": 3506570
+  "totalBytes": 3680342
 }

@@ -22,8 +22,8 @@ const FORMAT_PATH = path.join(PUBLIC_DIR, 'ui', 'lib', 'format.js');
 const STYLE_PATH = path.join(PUBLIC_DIR, 'src', 'css', 'style.css');
 const THEME_PATH = path.join(PUBLIC_DIR, 'src', 'css', 'theme.css');
 const INDEX_PATH = path.join(PUBLIC_DIR, 'index.html');
-const LOGO_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'MERIDIANOBET-CRUSH-LOGO.webp');
-const LOGO_MASTER_PATH = path.join(ROOT_DIR, 'design', 'MeridianoBet Sports Crush Logo.png');
+const LOGO_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'SANTA-CRUSH-LOGO-ANIMADO.webp');
+const LOGO_MASTER_PATH = path.join(ROOT_DIR, 'design', 'SANTA-CRUSH-LOGO-ANIMADO.gif');
 const WIN_ART_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'win_celebracion.webp');
 const WIN_ART_STILL_PATH = path.join(PUBLIC_DIR, 'src', 'assets', 'win_celebracion_still.webp');
 const WIN_MASTER_PATH = path.join(ROOT_DIR, 'design', 'win_celebracion.gif');
@@ -486,15 +486,16 @@ test('el import de arte mapea las piezas de marca a s10 y s11', async () => {
   }
 });
 
-test('el logotipo de MeridianoBet se sirve ligero y con su proporcion 2:1', () => {
+test('el logotipo animado se sirve en WebP animado, con su cadencia y su alfa', async () => {
   const html = read(INDEX_PATH);
+  const css = read(STYLE_PATH);
 
-  assert.ok(fs.existsSync(LOGO_PATH), 'Falta public/src/assets/MERIDIANOBET-CRUSH-LOGO.webp');
+  assert.ok(fs.existsSync(LOGO_PATH), 'Falta public/src/assets/SANTA-CRUSH-LOGO-ANIMADO.webp');
 
-  // El peso es parte del contrato: el maestro PNG pesa 1,8 MB y el WebP servido
-  // queda por debajo de 200 KB. Es un WebP estatico (VP8X + ALPH + VP8): el
-  // logotipo nuevo es un lockup fijo, no la animacion de cinco fotogramas del
-  // tema anterior.
+  // El maestro es el GIF de 2,4 MB que entrego diseno: monta el mono Santa y el
+  // emblema en un lienzo de 959 x 587 y repite el baile cada 1,88 s. El WebP
+  // servido conserva la animacion dentro de un `<img>` normal (WebP animado se
+  // reproduce solo), asi que no hace falta JS ni un sprite CSS con `steps()`.
   const binary = fs.readFileSync(LOGO_PATH);
   assert.equal(binary.toString('ascii', 0, 4), 'RIFF', 'El logo debe ser un contenedor RIFF/WebP');
   assert.equal(binary.toString('ascii', 8, 12), 'WEBP', 'El logo debe ser un contenedor RIFF/WebP');
@@ -503,54 +504,89 @@ test('el logotipo de MeridianoBet se sirve ligero y con su proporcion 2:1', () =
   assert.equal(chunks[0].fourCC, 'VP8X', 'El logo debe declarar caracteristicas extendidas (VP8X)');
 
   const flags = binary.readUInt8(chunks[0].offset + 8);
-  assert.equal((flags & 0x02) === 0, true, 'El logo no debe declarar animacion (bloque ANIM)');
+  assert.equal((flags & 0x02) !== 0, true, 'VP8X debe marcar la animacion (flag ANIM)');
   assert.equal((flags & 0x10) !== 0, true, 'El logo debe declarar canal alfa');
-  assert.ok(
-    chunks.some((chunk) => chunk.fourCC === 'ALPH'),
-    'El logo debe traer el plano alfa como bloque ALPH'
-  );
-  assert.equal(
-    chunks.some((chunk) => chunk.fourCC === 'ANMF'),
-    false,
-    'El logo estatico no debe traer fotogramas ANMF'
+
+  // Bucle infinito y los doce fotogramas con sus retardos originales: la
+  // cadencia del GIF es parte del arte (los fotogramas rapidos son el salto del
+  // mono), no un detalle del formato.
+  const anim = chunks.find((chunk) => chunk.fourCC === 'ANIM');
+  assert.ok(anim, 'El logo debe traer el bloque ANIM');
+  assert.equal(binary.readUInt16LE(anim.offset + 12), 0, 'El bucle debe ser infinito (loop 0)');
+
+  const frames = chunks.filter((chunk) => chunk.fourCC === 'ANMF');
+  assert.equal(frames.length, 12, 'El logo conserva los 12 fotogramas del maestro');
+  // ANMF: X (3) + Y (3) + ancho-1 (3) + alto-1 (3) + duracion (3) + flags (1).
+  assert.deepEqual(
+    frames.map((frame) => binary.readUIntLE(frame.offset + 20, 3)),
+    [270, 30, 230, 70, 200, 100, 170, 130, 130, 170, 100, 270],
+    'La cadencia del GIF se conserva fotograma a fotograma'
   );
 
-  // Lienzo: 900 x 450, la misma proporcion 2:1 del maestro. Se sirve a 240 px de
-  // ancho como maximo, asi que 900 cubre pantallas de alta densidad sin reescalar
-  // en el navegador y sin publicar el PNG completo.
+  // Lienzo del fotograma: 480 x 294 px, la misma proporcion 959:587 del maestro.
+  // El CSS pinta la chapa al 72 % del ancho de la maquina (281 px en un telefono
+  // de 390), asi que 480 cubre 1,7x sin reescalados visibles.
   const width = binary.readUIntLE(chunks[0].offset + 12, 3) + 1;
   const height = binary.readUIntLE(chunks[0].offset + 15, 3) + 1;
-  assert.equal(width, 900, 'El logo debe servirse a 900 px de ancho');
-  assert.equal(height, 450, 'El logo debe conservar la proporcion 2:1 (900 x 450)');
+  assert.equal(width, 480, 'El logo debe servirse a 480 px de ancho');
+  assert.equal(height, 294, 'El logo debe conservar la proporcion del maestro (959 x 587)');
+
+  const animated = await sharp(LOGO_PATH, { animated: true }).metadata();
+  assert.equal(animated.format, 'webp');
+  assert.equal(animated.pages, 12, 'El WebP debe declarar 12 paginas');
+  assert.equal(animated.pageHeight, 294, 'Cada pagina mide 294 px de alto (no es la tira del GIF)');
+  assert.deepEqual(
+    animated.delay,
+    [270, 30, 230, 70, 200, 100, 170, 130, 130, 170, 100, 270],
+    'sharp lee la misma cadencia que el GIF del diseno'
+  );
+  assert.equal(animated.loop, 0, 'El bucle se conserva en infinito');
+  assert.equal(animated.hasAlpha, true, 'El logo conserva el canal alfa');
 
   assert.ok(
-    binary.length < 200 * 1024,
-    `El logo debe pesar menos de 200 KB (pesa ${(binary.length / 1024).toFixed(1)} KB)`
+    binary.length < 400 * 1024,
+    `El logo debe pesar menos de 400 KB (pesa ${(binary.length / 1024).toFixed(1)} KB)`
   );
 
   assert.match(html, /<div class="machine__hero">/);
-  assert.match(html, /src="\/src\/assets\/MERIDIANOBET-CRUSH-LOGO\.webp"/);
+  assert.match(html, /src="\/src\/assets\/SANTA-CRUSH-LOGO-ANIMADO\.webp"/);
   assert.match(html, /alt="Santa Crush"/);
-  // La caja reserva la proporcion del archivo: si el HTML dice 1:1 el navegador
-  // aparta el doble de alto del que ocupa el dibujo y el tablero salta al cargar.
-  assert.match(html, /width="480" height="240"/, 'El logo debe reservar 480x240 px (2:1)');
+  // La caja reserva la proporcion del archivo: si el HTML dijera otra, el
+  // navegador apartaria un alto distinto del que ocupa el dibujo y el tablero
+  // saltaria al cargar.
+  assert.match(html, /width="480" height="294"/, 'El logo debe reservar 480x294 px (959 x 587)');
+
+  // El lockup estatico anterior (900 x 450) se retira: el arte animado lo
+  // sustituye y su nombre ya no se sirve.
+  assert.ok(
+    !fs.existsSync(path.join(PUBLIC_DIR, 'src', 'assets', 'MERIDIANOBET-CRUSH-LOGO.webp')),
+    'El logo estatico anterior ya no debe publicarse'
+  );
+
+  // El CSS reserva la caja con la relacion del lienzo y deja que el WebP se
+  // reproduzca solo (sin `animation` que lo sustituya).
+  assert.match(
+    css,
+    /--logo-h:\s*min\(calc\(var\(--logo-w\) \/ 1\.6337\), calc\(100cqh \* var\(--logo-max\)\)\);/,
+    'La caja del logo conserva la relacion 959:587 del lienzo animado'
+  );
 });
 
 test('el maestro del logo vive fuera de public/ y no viaja al CDN', () => {
-  // El PNG pesa 1,8 MB: si se queda en `public/src`, se publica en cada deploy y
+  // El GIF pesa 2,4 MB: si se queda en `public/src`, se publica en cada deploy y
   // el directorio deja de ser solo lo que consume el cliente.
   assert.ok(
     fs.existsSync(LOGO_MASTER_PATH),
-    'Falta el maestro design/MeridianoBet Sports Crush Logo.png'
+    'Falta el maestro design/SANTA-CRUSH-LOGO-ANIMADO.gif'
   );
   assert.ok(fs.statSync(LOGO_MASTER_PATH).size > 0, 'El maestro del logo esta vacio');
 
-  const signature = fs.readFileSync(LOGO_MASTER_PATH).subarray(0, 8);
-  assert.deepEqual(
-    [...signature],
-    [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
-    'El maestro del logo debe seguir siendo un PNG'
-  );
+  const gif = fs.readFileSync(LOGO_MASTER_PATH);
+  assert.match(gif.toString('ascii', 0, 6), /^GIF8[79]a$/, 'El maestro del logo debe ser un GIF');
+  assert.equal(gif.readUInt16LE(6), 959, 'El maestro mide 959 px de ancho');
+  // El header del GIF mide un fotograma; sharp lo expande a 959 x 7044 al contar
+  // las doce paginas de 587 px.
+  assert.equal(gif.readUInt16LE(8), 587, 'Cada fotograma del maestro mide 587 px de alto');
 
   const media = /\.(gif|png|jpe?g|webp|avif|psd|tiff?|mp4|mov|webm)$/i;
   const strays = fs
@@ -1516,20 +1552,33 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
     /padding:\s*0;/,
     'Sin padding propio: el sangrado lateral lo hace `.stage` con `--m-pad-x`'
   );
-  // El ancho sale del alto libre menos la separacion y el colchon del balanceo,
-  // repartido entre la relacion del logo (0,36: caja 2:1 al 72 % del ancho), la
-  // del marco (1216 / 1244 = 0,9775) y la de la consola (883 / 1780 = 0,4961):
-  // 1,8336 en total. La fila del logo es imprescindible desde el marco de baston
-  // porque su franja superior está ocupada de arte y la chapa ya no puede
-  // pegarse encima. La separacion se lee del token de la rejilla (`--row-gap`),
-  // que en movil vale 0: la junta va a tope (ver el test de la junta).
+  // Ancho: SIEMPRE el del viewport (`100cqw`). El escenario se come el padding
+  // lateral de `.app` (ver `.stage`), asi que el marco y la consola tocan los
+  // dos filos y no queda ninguna franja muerta a los lados, ni siquiera en los
+  // telefonos bajos. Lo que cede cuando falta alto es el chrome de alrededor
+  // (logo y consola), no el ancho: ver el test de `1bis`.
   // `cqw`/`cqh` en lugar de `%`: dentro de una custom property un `%` se
   // resuelve contra la propiedad que la usa, y el mismo token medía el ancho en
   // `width` y el alto en `height` (el HUD caía 12 px bajo sus placas).
   assert.match(
     machineGrid[0],
-    /--m-w:\s*min\(100cqw,\s*calc\(\(100cqh - var\(--row-gap\) - 20px\) \/ 1\.8336\)\);/,
-    'El ancho de la maquina descuenta logo + marco + separacion + consola del alto libre'
+    /--m-w:\s*100cqw;/,
+    'El ancho de la maquina es el del viewport: el marco va de borde a borde'
+  );
+  assert.doesNotMatch(
+    machineGrid[0],
+    /--m-w:\s*min\(100cqw/,
+    'El alto no puede recortar el ancho: eso devolveria las franjas laterales'
+  );
+  assert.match(
+    machineGrid[0],
+    /--logo-k:\s*1;/,
+    'El logo arranca en su tamano de diseno (el reparto vertical lo ajusta `1bis`)'
+  );
+  assert.match(
+    machineGrid[0],
+    /--console-k:\s*1;/,
+    'La consola arranca con el ancho del marco (el reparto vertical lo ajusta `1bis`)'
   );
 
   // El escenario devuelve el aire lateral de `.app` con el mismo `--m-pad-x`:
@@ -1556,8 +1605,8 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   );
   assert.match(
     css,
-    /\.app\s*\{[^}]*--m-pad-x:\s*clamp\(4px, 1\.5vw, 10px\);[^}]*var\(--m-pad-x\)[^}]*\}/,
-    '`.app` guarda su aire lateral en `--m-pad-x` y lo usa en el padding'
+    /\.app\s*\{[^}]*--m-pad-x:\s*0px;[^}]*var\(--m-pad-x\)[^}]*\}/,
+    '`.app` no deja aire lateral en movil: el marco y la consola van a sangre'
   );
 
   // 2) Las dos piezas se miden con esa unidad y con la relacion exacta de su
@@ -1583,7 +1632,11 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   assert.ok(caseRule, 'La consola debe declarar su relacion 1780/883');
   const rule = caseRule[0];
   assert.match(rule, /grid-area:\s*console;/, 'La consola vive en la fila `console`');
-  assert.match(rule, /width:\s*var\(--m-w\);/, 'La consola comparte el ancho exacto del marco');
+  assert.match(
+    rule,
+    /width:\s*calc\(var\(--m-w\) \* var\(--console-k\)\);/,
+    'La consola comparte el ancho del marco (y lo cede por `--console-k` en los telefonos bajos)'
+  );
   assert.match(rule, /justify-self:\s*center;/, 'Centrada por rejilla, no por un margen heredado');
   assert.match(rule, /padding:\s*0;/, 'Sin aire lateral descompensado');
   assert.match(rule, /border:\s*0;/, 'Sin filo que desplace el dibujo');
@@ -1662,9 +1715,11 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
 
   // 5) La chapa del logo tiene fila propia (`logo`) desde el marco de baston:
   //    el arte ocupa la franja superior entera y ya no hay cielo donde pegarla.
-  //    La caja mantiene la proporcion 2:1 del PNG (900 x 450) al 72 % del ancho de
-  //    la maquina, y su alto (0,36 de `--m-w`) es uno de los sumandos del divisor
-  //    de `--m-w`, asi que entra en el reparto vertical y nunca se sale.
+  //    La caja mantiene la proporcion del WebP animado (959 x 587 = 1,6337) al
+  //    72 % del ancho de la maquina; su alto se ajusta con `--logo-k` en los
+  //    escalones de `1bis` y tiene una red en `cqh` (`--logo-max`), asi que el
+  //    marco puede seguir a sangre sin que el logo empuje la maquina fuera del
+  //    viewport.
   const heroRule = css.match(/\.machine__side \.machine__hero\s*\{[^}]*--logo-w:[\s\S]*?\n  \}/);
   assert.ok(heroRule, 'La marca debe declarar su caja en la fila del logo');
   assert.match(heroRule[0], /grid-area:\s*logo;/, 'El logo vive en su propia fila de la rejilla');
@@ -1672,13 +1727,13 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   assert.match(heroRule[0], /justify-self:\s*center;/, 'La chapa se centra en la maquina');
   assert.match(
     heroRule[0],
-    /--logo-w:\s*calc\(var\(--m-w\) \* 0\.72\);/,
-    'El logo ocupa el 72 % del ancho de la maquina'
+    /--logo-w:\s*calc\(var\(--m-w\) \* 0\.72 \* var\(--logo-k\)\);/,
+    'El logo ocupa el 72 % del ancho de la maquina, con `--logo-k` como mando del reparto vertical'
   );
   assert.match(
     heroRule[0],
-    /--logo-h:\s*calc\(var\(--logo-w\) \/ 2\);/,
-    'La caja del logo conserva la proporcion 2:1 del PNG (900 x 450)'
+    /--logo-h:\s*min\(calc\(var\(--logo-w\) \/ 1\.6337\), calc\(100cqh \* var\(--logo-max\)\)\);/,
+    'La caja del logo conserva la proporcion 959:587 del WebP animado'
   );
   assert.doesNotMatch(heroRule[0], /--logo-sky/, 'Sin cielo de arte, el aire del logo lo reparte la rejilla');
   assert.doesNotMatch(heroRule[0], /bottom:\s*calc\(var\(--frame-h\)/, 'La chapa ya no se ancla sobre el dibujo');
@@ -1746,13 +1801,14 @@ test('en movil la junta marco-consola va a tope, sin franja de fondo', () => {
   assert.doesNotMatch(desktopGrid[0], /joint-tuck|--row-gap/, 'El escritorio no hereda la junta movil');
 });
 
-test('el logo entra en el reparto vertical en todo el rango movil (sin aire reservado)', () => {
+test('el marco movil va de borde a borde y el chrome cede alto en los telefonos bajos', () => {
   const css = read(STYLE_PATH);
 
-  // Con el marco nuevo la chapa ya no se pega sobre el arte: tiene su propia fila
-  // ("logo") y su relacion alto/ancho (0,36) suma en el divisor de `--m-w`. Eso
-  // sustituye al `--logo-air` que el tramo 600-899 px necesitaba con el marco
-  // anterior, cuando el unico cielo era el que dejaba el dibujo.
+  // La chapa conserva su fila propia ("logo") y el marco la suya ("frame"), pero
+  // el reparto ya no encoge el ancho: cuando falta alto bajan `--logo-k` y
+  // `--console-k` en los escalones de `1bis`, y `--logo-max` pone un techo en
+  // `cqh` al alto de la caja del logo. Asi el marco nunca pierde un pixel de
+  // ancho y la grilla 6 x 5 no se deforma.
   const machineGrid = css.match(
     /\.machine\s*\{[^}]*grid-template-areas:\s*"logo"\s*"frame"\s*"console";[^}]*\}/
   );
@@ -1762,20 +1818,34 @@ test('el logo entra en el reparto vertical en todo el rango movil (sin aire rese
     /grid-template-rows:\s*auto auto auto;/,
     'Las tres filas se miden por su contenido'
   );
+  assert.match(machineGrid[0], /\* 0\.977492\)/, 'El alto del marco se deriva de su lienzo (1216 / 1244)');
 
-  // El divisor 1,8336 = 0,36 (logo) + 0,9775 (marco) + 0,4961 (consola) es el
-  // unico presupuesto vertical: si alguien cambia una relacion del arte o el
-  // ancho del logo, este numero tiene que seguirlo o el conjunto se sale.
-  const divisor = machineGrid[0].match(/\* 0\.977492\)/);
-  assert.ok(divisor, 'El alto del marco se deriva de su lienzo (1216 / 1244)');
+  // Escalon suave: alto / ancho <= 2,04 (ancho / alto >= 0,49). Cubre los
+  // telefonos apretados (390 x 790, 414 x 844) sin tocar los 20:9 actuales.
   assert.match(
-    machineGrid[0],
-    /calc\(\(100cqh - var\(--row-gap\) - 20px\) \/ 1\.8336\)/,
-    'El alto libre descuenta la fila del logo y el colchon del balanceo'
+    css,
+    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 49 \/ 100\) \{\s*\.machine \{\s*--logo-k: 0\.82;\s*--console-k: 0\.86;\s*--logo-max: 0\.17;\s*\}\s*\}/,
+    'Los viewports de menos de 2,04 de alto por ancho encogen el chrome para que el marco siga a sangre'
   );
 
-  // El tramo intermedio (600-899 px) ya no necesita regla propia: el reparto es
-  // el mismo en todo el rango movil. Solo queda el modo compacto de paisaje.
+  // Escalon fuerte: alto / ancho <= 1,80 (16:9 y tablets bajas).
+  assert.match(
+    css,
+    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 5 \/ 9\) \{\s*\.machine \{\s*--logo-k: 0\.66;\s*--console-k: 0\.72;\s*--logo-max: 0\.14;\s*\}\s*\}/,
+    'En 16:9 el chrome cede mas: el marco no puede perder ancho'
+  );
+
+  // `aspect-ratio` en media queries es ancho / alto. Con `max-aspect-ratio` el
+  // escalon se dispararia en TODOS los telefonos verticales (0,46 < 1,8) y
+  // encogeria logo y consola sin que falte alto.
+  assert.doesNotMatch(
+    css,
+    /max-aspect-ratio:\s*(49 \/ 100|5 \/ 9)/,
+    'Los escalones se preguntan con `min-aspect-ratio` (ancho / alto), no al reves'
+  );
+
+  // El tramo intermedio (600-899 px) no necesita regla propia y el aire
+  // reservado del logo anterior tampoco vuelve.
   assert.doesNotMatch(css, /--logo-air\s*:/, 'El aire reservado del logo ya no se declara');
   assert.doesNotMatch(
     css,

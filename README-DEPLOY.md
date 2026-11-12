@@ -86,7 +86,7 @@ Medición real de `public/` en este repositorio:
 
 Características que condicionan el despliegue:
 
-- **Los nombres de archivo no incluyen hash de contenido** (por ejemplo `style.min.css`, `main.js`, `MERIDIANOBET-CRUSH-LOGO.webp`). Por eso JS y CSS se sirven con `Cache-Control: no-cache` y revalidan en cada visita; solo `src/assets/**` (arte, tipografía y audio) va con caché de un año e `immutable`.
+- **Los nombres de archivo no incluyen hash de contenido** (por ejemplo `style.min.css`, `main.js`, `SANTA-CRUSH-LOGO-ANIMADO.webp`). Por eso JS y CSS se sirven con `Cache-Control: no-cache` y revalidan en cada visita; solo `src/assets/**` (arte, tipografía y audio) va con caché de un año e `immutable`.
 - **El audio va comprimido y con el nombre versionado.** El bucle ambiental es `N-AUDIO-meridiano-con-fade.mp3`: MP3 128 kbps CBR, 20,1 s a 44,1 kHz estéreo y 314 KB, con el fundido de entrada y salida ya horneado en el archivo (sustituye al VBR `-q:a 4` de ~164 kbps y ~401 KB). Los aplausos se quedan a 128 kbps, que era su calidad original. El MP3 de origen llegó con doble extensión (`.MP3.mpeg`) y se normaliza a `.mp3` para que el MIME lo resuelva siempre el CDN, sin depender del servidor. Como `src/assets/**` se cachea un año con `immutable`, **cambiar el contenido de un MP3 exige cambiar el nombre** (de ahí el prefijo `N-`, como el `NEW` de los aplausos o el `_160k` del bucle anterior): con el mismo nombre, los navegadores que ya lo descargaron no lo volverían a pedir. Si hay que reexportar el bucle:
 
   ```bash
@@ -381,7 +381,7 @@ No es necesario para un despliegue normal: los WebP/WOFF2/PNG ya están versiona
 | `npm run build:art` | `marco_movil.png`, `consola_movil.png` | `marco_movil.webp`, `consola_movil.webp` |
 | `npm run build:desktop-art` | `d1.png`, `d2.png` | `d1.webp`, `d2.webp` |
 | `npm run build:bg` | `fondo_desk_meridino_crush.png`, `avenida_fantastica_reino_caramelos.png` | `fondo_desk_meridino_crush.webp`, `avenida_fantastica_reino_caramelos.webp` |
-| `npm run build:logo` | `MeridianoBet Sports Crush Logo.png` | `MERIDIANOBET-CRUSH-LOGO.webp` |
+| `npm run build:logo` | `SANTA-CRUSH-LOGO-ANIMADO.gif` | `SANTA-CRUSH-LOGO-ANIMADO.webp` (480 x 294, WebP **animado**: 12 fotogramas con los retardos del GIF en bucle infinito) |
 | `npm run build:symbols` | `symbols/s1.png` … `symbols/s11.png` | `slot/s1.webp` … `slot/s11.webp` |
 | `npm run build:slot-art -- --source="<carpeta>"` | renders del diseñador (`s1..s9.png` + `Bono ...png` + `Regalo ...png`) | `symbols/s1.png` … `symbols/s11.png` (antes de `build:symbols`) |
 | ~~`npm run build:seals`~~ | histórica: `MBETN-LOGO@3x.png` | ya **no** alimenta el tablero; sobrescribe `symbols/s10.png` y `s11.png` con el sello anterior |
@@ -1068,7 +1068,7 @@ curl -sSI "$BASE/ui/main.js" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-c
 curl -sSI "$BASE/src/css/style.min.css" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
 
 # 3) Assets: 200, MIME correcto e inmutable
-curl -sSI "$BASE/src/assets/MERIDIANOBET-CRUSH-LOGO.webp" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
+curl -sSI "$BASE/src/assets/SANTA-CRUSH-LOGO-ANIMADO.webp" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
 curl -sSI "$BASE/src/assets/fonts/fredoka-latin.woff2" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
 curl -sSI "$BASE/src/assets/slot/s1.webp" | tr -d '\r' | grep -Ei 'HTTP/|content-type|cache-control'
 ```
@@ -1080,7 +1080,7 @@ $BASE = "https://pana-crush.example.com"
 curl.exe -sSI "$BASE/" | Select-String -Pattern `
   "HTTP/|content-type|cache-control|content-security-policy|strict-transport-security|x-content-type-options"
 curl.exe -sSI "$BASE/ui/main.js" | Select-String -Pattern "HTTP/|content-type|cache-control"
-curl.exe -sSI "$BASE/src/assets/MERIDIANOBET-CRUSH-LOGO.webp" | Select-String -Pattern "HTTP/|content-type|cache-control"
+curl.exe -sSI "$BASE/src/assets/SANTA-CRUSH-LOGO-ANIMADO.webp" | Select-String -Pattern "HTTP/|content-type|cache-control"
 ```
 
 Resultados esperados:

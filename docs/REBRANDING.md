@@ -27,7 +27,7 @@ que distinguir dos grupos antes de tocar nada:
 | Nube del logo (`.machine__hero`, escritorio) | `d2.webp` | No: reexportar arte |
 | Marco del tablero (escritorio) | `d1.webp` | No: reexportar arte |
 | Carcasa movil (`.machine__table`, `.controls`) | `marco_movil.webp`, `consola_movil.webp` | No: reexportar arte |
-| Fondo de escenario y logotipo | `fondo_desk_meridino_crush.webp` / `avenida_fantastica_reino_caramelos.webp`, `MERIDIANOBET-CRUSH-LOGO.webp` | No: reexportar arte |
+| Fondo de escenario y logotipo | `fondo_desk_meridino_crush.webp` / `avenida_fantastica_reino_caramelos.webp`, `SANTA-CRUSH-LOGO-ANIMADO.webp` | No: reexportar arte |
 | Simbolos del tablero | `public/src/assets/slot/*.webp` (maestros en `design/symbols/*.png`) | No: reexportar arte |
 
 Las 30 casillas se pintan con el **azul de la consola**: `theme.css` define
@@ -139,17 +139,22 @@ el propio origen.
 
 ## Logotipo
 
-1. Deja el maestro en `design/` (fuera de `public/`, no viaja al CDN).
-2. Optimiza el asset servido dentro de `public/src/assets/`.
+1. Deja el maestro en `design/` (fuera de `public/`, no viaja al CDN): hoy es
+   `design/SANTA-CRUSH-LOGO-ANIMADO.gif`, un GIF de 959 x 587 px por fotograma y
+   12 fotogramas (2,4 MB).
+2. Optimiza el asset servido dentro de `public/src/assets/` con `npm run
+   build:logo`, que lo publica como **WebP animado** de 480 x 294 px (~267 KB):
+   conserva los 12 fotogramas, sus retardos y el bucle infinito, y se reproduce
+   solo dentro del `<img>` (no hace falta JS ni un sprite CSS con `steps()`).
 3. Cambia solo el `src` (y el `alt`) de:
 
 ```html
-<img class="machine__logo" src="/src/assets/MERIDIANOBET-CRUSH-LOGO.webp"
-     alt="MeridianoBet Crush" width="480" height="240" fetchpriority="high" />
+<img class="machine__logo" src="/src/assets/SANTA-CRUSH-LOGO-ANIMADO.webp"
+     alt="Santa Crush" width="480" height="294" fetchpriority="high" />
 ```
 
    El tamano reservado (`width`/`height`) evita saltos de layout y declara la
-   proporcion real del arte, **2:1** (900 x 450, sin margen transparente). En
+   proporcion real del arte, **959:587** (1,6337, sin recortar el alfa). En
    movil la caja del logo (`--logo-w` / `--logo-h` en `style.css`) usa esa misma
    proporcion y la imagen la rellena entera; si se cambia el arte por otro de
    distinta relacion hay que actualizar ambos sitios o el `object-fit: contain`
@@ -159,23 +164,24 @@ el propio origen.
    marco de baston de caramelo (`marco_movil.webp`, 1244 x 1216) el arte ocupa la
    franja superior de tapa a tapa —Santa, reno, campanas, tren y casa de
    jengibre—, asi que ya no queda cielo donde pegar la chapa: el logo entra en el
-   reparto vertical con su relacion alto/ancho (0,36, caja 2:1 al 72 %) y forma
-   parte del divisor de `--m-w` (1,8336 = logo 0,36 + marco 0,9775 + consola
-   0,4961). Ese reparto es el mismo en todo el rango movil, de modo que el tramo
-   600-899 px ya no necesita reglas propias: donde manda el ancho la chapa ocupa
-   el 72 % de la maquina y donde manda el alto encoge con ella, sin poder montarse
-   nunca sobre el marco ni sobre la barra superior.
+   reparto vertical con su relacion alto/ancho (0,4407, caja 959:587 al 72 %).
+   El ancho de la maquina ya no se recorta para que quepa todo: `--m-w` es
+   siempre `100cqw`, y lo que cede cuando el viewport es bajo es el chrome. En
+   los escalones `1bis` de `style.css` bajan `--logo-k` (escala la chapa) y
+   `--console-k` (escala la consola entera) y `--logo-max` pone un techo en `cqh`
+   al alto de la caja del logo, de modo que el marco y la consola siguen tocando
+   los dos filos y la grilla 6 x 5 no se deforma.
    La caja va **centrada** por la rejilla (`justify-self: center`), asi que la
    separacion a los dos filos es la misma en cualquier telefono.
    La barra del navegador movil usa la meta `theme-color`, ya en rojo de marca:
    `<meta name="theme-color" content="#c8102e" />`.
 
    El marco y la consola **sangran hasta los dos filos del viewport** en movil.
-   `.app` reserva su aire lateral en `--m-pad-x` (`clamp(4px, 1.5vw, 10px)`) y
-   `.stage` se lo come con margenes negativos (y deja de recortar: el corte lo
-   hace `.app`, que es el que llega al filo). Como `--m-w` se mide con `100cqw`,
-   al ensanchar el escenario ese ancho util pasa a ser el del viewport completo,
-   asi que marco, tablero y consola comparten el ancho de la pantalla. El lienzo
+   `.app` deja `--m-pad-x` en **0** (solo la cabecera conserva su respiro) y
+   `.stage` sigue leyendo el token: con 0 su ensanche y su margen negativo quedan
+   inertes, y si algun dia se quiere devolver un pelo de aire basta con cambiar
+   ese valor. Como `--m-w` se mide con `100cqw`, marco, tablero y consola
+   comparten el ancho de la pantalla. El lienzo
    de `marco_movil.webp` (1244 x 1216) llega **recortado al alfa**, sin aire a los
    lados, y se pinta a sangre con `background-size: 100% 100%` sobre una caja con
    su misma relacion: cada % medido sobre el recorte vale tal cual, sin
@@ -187,10 +193,6 @@ el propio origen.
    48,50 % del anterior), asi que las casillas de la grilla 6 x 5 pasan de 2,06:1
    a **1,17:1** —casi el 1,14:1 del tablero de escritorio— y los simbolos crecen
    con ellas (44 px de alto a 390 px de ancho, frente a 27 px).
-   Cuando manda el alto (movil apaisado, ventanas anchas y bajas) `--m-w` encoge
-   en proporcion y el conjunto vuelve a centrarse; el dibujo no se estira en
-   ningun eje.
-
    La **junta marco-consola** tambien va a tope. El dibujo del marco llega con
    tinta hasta su ultimo pixel, pero el recorte de `consola_movil.webp` trae el
    filo de arriba casi vacio (0,8 % de su alto sin tinta y el aro macizo a partir

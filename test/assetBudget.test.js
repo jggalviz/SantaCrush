@@ -8,10 +8,15 @@
  * convierten una regresion de assets en un test rojo en vez de en una portada
  * lenta:
  *
- *   - arte, tipografia y audio (`public/src/assets/**`)  < 3,0 MB
+ *   - arte, tipografia y audio (`public/src/assets/**`)  < 3,4 MB
  *   - cada simbolo del tablero                     < 48 KB
  *   - hojas minificadas (`*.min.css`)              < 165 KB
  *   - modulos de la UI (`public/ui/**`)            < 220 KB
+ *
+ * El tope subio de 3,0 a 3,4 MB cuando el logotipo paso a ser animado: el WebP
+ * de 12 fotogramas pesa ~267 KB (el lockup estatico anterior, 100 KB), asi que
+ * el presupuesto tiene que cubrirlo o cada rebranding del logo romperia el
+ * contrato por diseno.
  *
  * Tambien fija que los maestros no viajen al CDN y que el servidor local
  * aplique la cache larga al arte (igual que CloudFront en produccion).
@@ -44,12 +49,13 @@ function sizeOf(dir) {
 const mb = (bytes) => `${(bytes / MB).toFixed(2)} MB`;
 const kb = (bytes) => `${(bytes / KB).toFixed(1)} KB`;
 
-test('el arte y el audio servidos no pasan de 3 MB', () => {
+test('el arte y el audio servidos no pasan de 3,4 MB', () => {
   // Incluye los dos MP3: los aplausos de victoria (~40 KB a 128 kbps) y el
   // bucle ambiental de 20 s `N-AUDIO-meridiano-con-fade.mp3` a 128 kbps CBR
   // (~314 KB). El VBR anterior a ~164 kbps pesaba ~401 KB y ya no se sirve.
+  // Y el logo animado: 12 fotogramas de 480 x 294 a q=72 (~267 KB).
   const total = sizeOf(ASSETS_DIR);
-  assert.ok(total < 3.0 * MB, `public/src/assets pesa ${mb(total)}: revisa los assets`);
+  assert.ok(total < 3.4 * MB, `public/src/assets pesa ${mb(total)}: revisa los assets`);
 });
 
 test('los once simbolos son WebP y cada uno cabe en 48 KB', () => {
@@ -176,7 +182,7 @@ test('el paquete de integracion (dist/) omite fuentes y previews', () => {
 
   const total = files.reduce((acc, file) => acc + file.bytes, 0);
   assert.ok(
-    total < 3.5 * MB,
-    `dist/ pesa ${mb(total)}: el paquete de integracion debe bajar de 3,5 MB (arte + audio)`
+    total < 3.8 * MB,
+    `dist/ pesa ${mb(total)}: el paquete de integracion debe bajar de 3,8 MB (arte + audio)`
   );
 });

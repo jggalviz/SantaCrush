@@ -9,13 +9,14 @@
  *   movil/Nuevo-Marco-navideño-de-campanas-doradas.png -> design/marco_movil.png (1244x1216)
  *   movil/Panel navideño brillante con Santa y reno.png -> design/consola_movil.png (1780x883)
  *   Santa WIN Celebration-Animation.gif                -> design/win_celebracion.gif
+ *   SANTA-CRUSH-LOGO-ANIMADO.gif                       -> design/SANTA-CRUSH-LOGO-ANIMADO.gif
  *
  * Los maestros se reencajan para que el hueco/ventana del arte caiga donde el
  * CSS mide los anclajes, pero SIEMPRE con escala uniforme: recortar o estirar
  * un solo eje para clavar una caja antes se comia la cresta de la nieve del
  * toldo (d1) y el pie del marco con las estrellas y el lazo central (d2). La
- * animacion de victoria no se reencaja: se archiva tal cual porque el CSS
- * reserva su caja 1:1.
+ * animacion de victoria y el logo animado no se reencajan: se archivan tal cual
+ * porque el CSS reserva su caja con la relacion del lienzo (1:1 y 959:587).
  */
 
 const fs = require('node:fs');
@@ -182,14 +183,6 @@ async function fitInk(file, canvas) {
 /*  Auxiliares para las piezas sueltas (victoria, fondos, simbolos, logo)   */
 /* ======================================================================== */
 
-/** Nº de pixeles con alfa > 8: sirve para elegir el fotograma mas completo. */
-async function inkCount(buffer) {
-  const { data } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  let count = 0;
-  for (let i = 3; i < data.length; i += 4) if (data[i] > 8) count += 1;
-  return count;
-}
-
 /** Recorta al alfa y encaja en `box` sin deformar (contain), centrado. */
 async function containIn(file, canvas, box) {
   const trimmed = await sharp(file).ensureAlpha().trim({ threshold: 8 }).toBuffer();
@@ -288,19 +281,17 @@ async function containIn(file, canvas, box) {
 
   /* -------------------------------------------------------------- logo ----- */
   if (wants('logo')) {
-    // Del GIF animado se toma el fotograma con mas tinta (el lockup completo) y
-    // se encaja en el lienzo 2:1 que exige build:logo.
+    // El logo se publica como WebP animado de 12 fotogramas (`build:logo`), asi
+    // que el maestro es el GIF completo: se archiva tal cual, sin recortar. Antes
+    // se extraia el fotograma con mas tinta y se encajaba en un lienzo 2:1 para
+    // el lockup fijo; ese PNG ya no se sirve y regenerarlo pisaria el arte con
+    // el que se codifica la animacion.
     const gif = path.join(ROOT, 'SANTA-CRUSH-LOGO-ANIMADO.gif');
-    const pages = (await sharp(gif).metadata()).pages || 1;
-    let best = null;
-    for (let page = 0; page < pages; page += 1) {
-      const frame = await sharp(gif, { page, pages: 1 }).png().toBuffer();
-      const count = await inkCount(frame);
-      if (!best || count > best.count) best = { page, count, frame };
-    }
-    const logo = await containIn(best.frame, { width: 1774, height: 887 }, { left: 0, top: 0, width: 1774, height: 887 });
-    fs.writeFileSync(path.join(DESIGN, 'MeridianoBet Sports Crush Logo.png'), logo);
-    console.log(`design/MeridianoBet Sports Crush Logo.png  1774x887 (fotograma ${best.page}/${pages})`);
+    const meta = await sharp(gif, { animated: true }).metadata();
+    fs.copyFileSync(gif, path.join(DESIGN, 'SANTA-CRUSH-LOGO-ANIMADO.gif'));
+    console.log(
+      `design/SANTA-CRUSH-LOGO-ANIMADO.gif  ${meta.width}x${meta.pageHeight} x${meta.pages} (logo animado)`
+    );
   }
 })().catch((error) => {
   console.error(`build:santa-masters · ${error.message}`);

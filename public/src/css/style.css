@@ -4965,32 +4965,21 @@ body.is-demo .machine__side .controls .balance::after {
     /* Sin padding propio: el aire lateral de `.app` lo cancela el escenario
        (ver `.stage`), asi que la maquina llena el ancho completo. */
     padding: 0;
-    /* Ancho de la máquina: el menor entre el que cabe a lo ancho y el que deja
-       el alto libre. El divisor 1,8336 es la suma de las relaciones alto/ancho de
-       las TRES filas —logo 0,36 (caja 2:1 al 72 % del ancho), marco
-       1216 / 1244 = 0,9775 y consola 883 / 1780 = 0,4961—; la separación entre
-       ellas se resta del alto antes de dividir y no forma parte del divisor.
-       `--m-w` es además la unidad de medida de todo lo que se superpone al arte
+    /* Ancho de la maquina: SIEMPRE el ancho completo del viewport. El escenario
+       se come el padding lateral de `.app` (ver `.stage`), asi que `100cqw` es
+       el filo de la pantalla y el marco y la consola lo tocan de borde a borde,
+       sin franjas muertas a los lados en ningun telefono.
+
+       El alto no recorta ese ancho: si el viewport es bajo, lo que cede es el
+       "chrome" que va encima y debajo del marco —la chapa del logo (`--logo-k`)
+       y la consola (`--console-k`)—, que se escalan por relacion de aspecto en
+       los escalones de `1bis`. La grilla interna no se deforma nunca: el marco
+       conserva su relacion 1244 x 1216 (`--frame-h`) y el tablero se ancla con
+       % de su caja.
+
+       `--m-w` es ademas la unidad de medida de todo lo que se superpone al arte
        (`calc(var(--m-w) * k)`), de modo que cada capa escala con el dibujo y no
        con la altura de su celda.
-
-       Esa fila de logo es lo único que cambia respecto al marco anterior: allí el
-       cielo del estadio dejaba pegar la chapa SOBRE el dibujo y bastaba con
-       reservar el aire sobrante; aquí el arte ocupa la franja de arriba entera
-       (Santa, campanas, tren, casa de jengibre), así que el logo tiene su propia
-       fila y entra en el reparto. Sin contarlo, el marco se comía el aire de la
-       chapa y ésta se quedaba en el 18 % del ancho en los teléfonos cortos.
-
-       El `- 20px` del alto libre es el colchón del balanceo de la pegatina
-       (`pana-logo-sticker` sube 10 px en el fotograma 50 %) más el aire bajo la
-       barra superior: sin él, en un 320 x 568 la esquina alta del logo rozaba la
-       cabecera al llegar al fotograma más alto.
-
-       `100cqw` es el ancho COMPLETO del viewport: el escenario se come el
-       padding lateral de `.app` (ver `.stage`), asi que el marco y la consola
-       tocan los dos filos de la pantalla cuando manda el ancho. Cuando manda el
-       alto (ventanas anchas y bajas) `--m-w` encoge en proporcion y el conjunto
-       se centra, sin estirar el dibujo.
 
        Se mide en `cqw`/`cqh` y no en `%`: un `%` dentro de una custom property
        se resuelve contra la propiedad que la consume, así que el mismo token
@@ -4998,12 +4987,18 @@ body.is-demo .machine__side .controls .balance::after {
        quedara 12 px por debajo de sus placas). Con unidades de contenedor
        `--m-w` es una longitud y mide lo mismo en cualquier propiedad. */
     --m-w: 100cqw;
-    --m-w: min(100cqw, calc((100cqh - var(--row-gap) - 20px) / 1.8336));
     /* Alto del marco (aspect-ratio 1244 / 1216, la relación exacta del recorte:
        el arte no se estira). Los % verticales de las capas superpuestas se
        miden con `--frame-h`, porque el alto no es proporcional a `--m-w` en
        ninguna otra propiedad. */
     --frame-h: calc(var(--m-w) * 0.977492);
+    /* Chrome que puede ceder alto para que el marco siga a sangre. `1` es el
+       tamano de diseno (logo al 72 % del ancho y consola con el ancho del
+       marco); los escalones de `1bis` los bajan en los viewports bajos.
+       `--logo-max` es la red de seguridad en `cqh`: con `1` nunca muerde. */
+    --logo-k: 1;
+    --logo-max: 1;
+    --console-k: 1;
     /* Chrome del tablero (padding 4+4 + filo 2+2): lo consulta la regla base
        de escritorio al calcular el ancho con `cqh`. */
     --board-overhead: 12px;
@@ -5034,13 +5029,21 @@ body.is-demo .machine__side .controls .balance::after {
     justify-self: center;
     align-self: center;
     z-index: 6;
-    /* El arte es un lockup horizontal 2:1 (900 x 450, sin aire en el PNG), así
-       que la caja toma su misma proporción: el ancho manda y el alto es su mitad.
-       El 72 % del ancho de la máquina es el tamaño que lucía la chapa en el marco
-       anterior (78 % del marco, que medía lo mismo que la máquina) y deja aire a
-       los dos lados para el balanceo de la pegatina. */
-    --logo-w: calc(var(--m-w) * 0.72);
-    --logo-h: calc(var(--logo-w) / 2);
+    /* El arte es un lockup apaisado (lienzo de 959 x 587 sin recortar, con el
+       mono Santa a la izquierda y el emblema a la derecha), asi que la caja toma
+       su misma proporcion: el ancho manda y el alto sale de 1,6337. El 72 % del
+       ancho de la maquina es el tamano que lucia la chapa en el marco anterior
+       (78 % del marco, que medía lo mismo que la maquina) y deja aire a los dos
+       lados para el balanceo de la pegatina.
+
+       `--logo-k` es el unico mando del reparto vertical: vale 1 cuando el alto
+       sobra y baja en los escalones de `1bis` para que el marco siga a sangre en
+       los telefonos bajos. `--logo-max` añade un tope en `cqh` como red: la caja
+       se queda con el ancho del diseno pero el alto nunca pasa de esa fraccion
+       del viewport, y `object-fit: contain` encoge el dibujo dentro sin
+       deformarlo. */
+    --logo-w: calc(var(--m-w) * 0.72 * var(--logo-k));
+    --logo-h: min(calc(var(--logo-w) / 1.6337), calc(100cqh * var(--logo-max)));
     width: var(--logo-w);
     height: var(--logo-h);
     margin: 0;
@@ -5380,10 +5383,12 @@ body.is-demo .machine__side .controls .balance::after {
        muerto de su recorte), asi que subir la capa no cambia nada mas. */
     z-index: 2;
     display: block;
-    /* El arte manda: mismo ancho que el marco y la relacion exacta del
-       lienzo, de modo que el dibujo llena la caja y los seis pulsadores caen
-       sobre sus discos a cualquier escala. */
-    width: var(--m-w);
+    /* El arte manda: el ancho es el del marco cuando el alto sobra (y baja con
+       `--console-k` en los escalones de `1bis`, para que el marco siga a sangre
+       en los telefonos bajos), con la relacion exacta del lienzo, de modo que el
+       dibujo llena la caja y los seis pulsadores caen sobre sus discos a
+       cualquier escala. */
+    width: calc(var(--m-w) * var(--console-k));
     aspect-ratio: 1780 / 883;
     min-height: 0;
     max-width: none;
@@ -6341,15 +6346,22 @@ body.is-demo .machine__side .controls .balance::after {
   .app {
     height: 100dvh;
     gap: clamp(4px, 1.2dvh, 9px);
-    /* Aire lateral del viewport. `.stage` lo cancela con margenes negativos para
-       que el marco y la consola sangren hasta el filo; se guarda en un token
-       para que las dos reglas no se desalineen si cambia el rango. */
-    --m-pad-x: clamp(4px, 1.5vw, 10px);
+    /* Aire lateral CERO: el marco de los slots y la consola van de borde a
+       borde. `.stage` sigue leyendo el token (con 0 su ensanche y su margen
+       negativo quedan inertes), asi que si algun dia se quiere devolver un pelo
+       de aire basta con cambiar este valor. La topbar conserva su propio
+       respiro porque no cuelga del escenario. */
+    --m-pad-x: 0px;
     padding:
       max(5px, env(safe-area-inset-top))
       var(--m-pad-x)
       max(5px, env(safe-area-inset-bottom));
     overflow: hidden;
+  }
+
+  /* Los iconos de la cabecera no se pegan al filo aunque el escenario sangre. */
+  .topbar {
+    padding-inline: 5px;
   }
 
   .topbar {
@@ -8999,4 +9011,48 @@ html.is-low-graphics .toast {
     animation: none !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+   1bis) Cintura del chrome movil · el marco siempre a sangre
+   --------------------------------------------------------------------------
+   El marco de los slots mide el 100 % del viewport (`--m-w: 100cqw`), asi que
+   en un telefono bajo (16:9) la suma de logo + marco + consola no cabe y antes
+   se resolvia encogiendo el ANCHO: el marco se centraba y aparecian dos franjas
+   de fondo a los lados. Eso ya no pasa. Lo que cede ahora es el chrome:
+
+     - `--logo-k` escala la chapa del logo (mantiene su proporcion).
+     - `--console-k` escala la consola entera, discos y placas incluidos: los
+       pulsadores siguen cayendo sobre su sitio porque la caja conserva la
+       relacion 1780 / 883 y los anclajes son % de la caja.
+     - `--logo-max` es una red en `cqh` para los telefonos muy bajos: el alto de
+       la caja del logo nunca pasa de esa fraccion del viewport y el dibujo se
+       encoge dentro con `object-fit: contain`, sin deformarse.
+
+   Los dos escalones se disparan por relacion de aspecto del viewport —en media
+   queries `aspect-ratio` es ancho / alto, asi que "telefono bajo" se pregunta
+   con `min-aspect-ratio`— y solo en vertical: por debajo de 1,8 de alto / ancho
+   muerde el fuerte, hasta 2,04 el suave, y por encima de 2,04 (casi todos los
+   telefonos actuales, 390 x 844 incluido) no tocan nada y el reparto es el de
+   siempre. La grilla 6 x 5 no se deforma en ningun escalon: el tablero cuelga
+   del marco con % de su caja y el marco conserva 1244 x 1216.
+   -------------------------------------------------------------------------- */
+
+/* Alto / ancho <= 2,04 (ancho / alto >= 0,49). */
+@media (max-width: 899px) and (orientation: portrait) and (min-aspect-ratio: 49 / 100) {
+  .machine {
+    --logo-k: 0.82;
+    --console-k: 0.86;
+    --logo-max: 0.17;
+  }
+}
+
+/* Alto / ancho <= 1,80 (ancho / alto >= 0,5556): telefonos 16:9 y tablets bajas. */
+@media (max-width: 899px) and (orientation: portrait) and (min-aspect-ratio: 5 / 9) {
+  .machine {
+    --logo-k: 0.66;
+    --console-k: 0.72;
+    --logo-max: 0.14;
+  }
+}
+
 
