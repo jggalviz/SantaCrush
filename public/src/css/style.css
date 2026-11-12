@@ -5403,6 +5403,14 @@ body.is-demo .machine__side .controls .balance::after {
        dibujo llena la caja y los seis pulsadores caen sobre sus discos a
        cualquier escala. */
     width: calc(var(--m-w) * var(--console-k));
+    /* Unidad de las capas del pie. La consola no siempre mide `--m-w`: en los
+       telefonos con relacion de aspecto ancha para su alto (los escalones de
+       `1bis`, p. ej. 320x568 o 412x732) se encoge a `--console-k` para que el
+       marco siga a sangre. Los textos y las ventanas del pie tienen que medirse
+       con el ancho REAL del case, no con el del escenario: con `--m-w` el
+       rotulo y el estado crecian un 39 % respecto a su placa y se salian del
+       aro justo en esos telefonos. */
+    --cons-w: calc(var(--m-w) * var(--console-k));
     aspect-ratio: 1780 / 883;
     min-height: 0;
     max-width: none;
@@ -5596,66 +5604,69 @@ body.is-demo .machine__side .controls .balance::after {
     display: none;
   }
 
-  /* Placa 4 del pie (x 75,84-93,31 % · y 73,0-83,1 %): la apuesta se queda en la
-     mitad izquierda y el extremo derecho es el pulsador MAX (seccion 6). La
-     placa mide 17,47 % del ancho, asi que el dato se ciñe al interior del aro y
-     el rotulo baja de cuerpo. El centro vertical de la placa cae en 78,05 %: la
-     caja se ancla en 73,0 % con el mismo alto de antes, de modo que su contenido
-     (rotulo + dato) queda dentro del hueco interior del aro. */
+  /* Placa 4 del pie: el hueco interior del aro va de x 76,24 % a 93,26 % y de
+     y 73,95 % a 82,22 % (medido sobre `consola_movil.webp`). La mitad izquierda
+     es la apuesta y el tramo 85,6-92,0 % el pulsador MAX (sección 6), así que la
+     caja se ciñe a x 76,24-85,0 % y al alto completo del hueco: rótulo y dato
+     forman una columna flex centrada en el aro. Antes se anclaba en 73,0 % con
+     9,8 % de alto, así que «APUESTA» quedaba 1 px por encima del hueco y pisaba
+     el borde dorado mientras el dato caía pegado al aro inferior. */
   .machine__side .controls .bet-readout,
   .machine__side .controls__bet .bet-readout {
-    left: 76.9%;
-    top: 73.0%;
-    width: 8.4%;
-    height: 9.8%;
-    padding: 0 0.3%;
+    left: 76.24%;
+    top: 73.95%;
+    width: 8.76%;
+    height: 8.27%;
+    padding: 0;
   }
 
   .machine__side .controls .bet-readout__label {
     flex: 0 0 auto;
-    font-size: clamp(4.6px, calc(var(--m-w) * 0.0135), 6.8px);
+    max-width: 100%;
+    font-size: clamp(3px, calc(var(--cons-w) * 0.0135), 7.5px);
     line-height: 1;
     letter-spacing: 0.03em;
+    text-align: center;
     color: #ffd977;
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.65);
   }
 
   .machine__side .controls .bet-readout__value {
     flex: 0 0 auto;
-    /* 0,019 del ancho del marco (~7,4 px a 390 px): «1.000,00» (el peor caso de
-       la apuesta de demo) cabe en los 8,4 % de la placa sin tocar el aro. */
-    font-size: clamp(6.4px, calc(var(--m-w) * 0.019), 9px);
+    max-width: 100%;
+    /* 0,019 del ancho del case (~7,4 px a 390 px): «1.000,00» (el peor caso de
+       la apuesta de demo) cabe en los 8,76 % de la placa sin tocar el aro. */
+    font-size: clamp(4px, calc(var(--cons-w) * 0.019), 10.5px);
     line-height: 1;
     letter-spacing: -0.02em;
+    text-align: center;
     color: #fff6c9;
     text-shadow: 0 1px 0 rgba(80, 30, 0, 0.65), 0 0 8px rgba(255, 214, 90, 0.5);
   }
 
-  /* Placa 3 del pie (x 36,40-62,58 % · y 68,9-84,1 %): la mitad alta es el
-     rotulo GIRAR que pinta la seccion 6 y la baja, el estado del motor, en tinta
-     clara porque la placa del arte es dorada. Al compartir la placa con el
-     rotulo el aviso dispone de un solo renglon, asi que el texto largo se
-     recorta con puntos suspensivos en vez de envolver. */
+  /* Placa 3 del pie: el hueco interior del óvalo va de x 36,74 % a 62,87 % y de
+     y 71,12 % a 82,22 % (medido sobre `consola_movil.webp`), 101,9 × 21,5 px a
+     390 px de ancho. Rótulo y estado dejan de colocarse por separado (dos `top`
+     absolutos que se pisaban en cuanto el cuerpo crecía): ahora son un único
+     bloque flex en columna, centrado en el hueco, con el aire repartido por
+     `justify-content`. El texto largo se recorta con puntos suspensivos dentro
+     del aro en vez de desbordarlo. */
   .machine__side .controls .statusbar {
     position: absolute;
-    /* Hueco interior de la placa (x 37,0-62,8 % · y 71,7-81,9 %): la franja se
-       queda con la mitad baja, centrada en el eje real de la placa (49,9 % del
-       ancho) y sin tocar el aro inferior. Antes arrancaba en 77,0 % con 23 % de
-       ancho: el texto caia 3 px a la izquierda del aro y su ultima linea se
-       pegaba al borde dorado. */
-    left: 37.35%;
-    top: 78.06%;
-    width: 25.1%;
-    height: 2.98%;
+    left: 36.74%;
+    top: 71.12%;
+    width: 26.13%;
+    height: 11.1%;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: clamp(0.6px, calc(var(--cons-w) * 0.003), 1.6px);
     min-height: 0;
     padding: 0;
     margin: 0;
     color: #ffe7a6;
-    font-size: clamp(3.6px, calc(var(--m-w) * 0.0148), 5.8px);
+    font-size: clamp(3px, calc(var(--cons-w) * 0.0148), 8.2px);
     font-weight: 800;
     line-height: 1;
     letter-spacing: 0;
@@ -5664,17 +5675,35 @@ body.is-demo .machine__side .controls .balance::after {
     overflow: hidden;
   }
 
+  /* El rótulo GIRAR lo pinta la hoja (la placa del arte llega vacía) y comparte
+     bloque con el estado: al ser dos hijos de la misma columna flex no pueden
+     solaparse ni tocar el aro, cambie el cuerpo que cambie. */
+  .machine__side .controls .statusbar::before {
+    content: "GIRAR";
+    flex: 0 0 auto;
+    max-width: 100%;
+    font-size: clamp(5px, calc(var(--cons-w) * 0.0238), 13.2px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-align: center;
+    color: #ffd977;
+    text-shadow: 0 1px 1px rgba(30, 0, 20, 0.85), 0 0 6px rgba(255, 214, 90, 0.32);
+  }
+
   .machine__side .controls .statusbar__item--right { display: none; }
 
   .machine__side .controls .statusbar > .statusbar__item {
     flex: 0 1 auto;
     min-width: 0;
     max-height: 100%;
+    margin: 0;
+    padding: 0;
     overflow: hidden;
     text-align: center;
-    /* Un renglon centrado en la mitad baja de la placa. No se toca `display`:
-       el item ya se blockifica al ser hijo flexible (y asi el modificador
-       `--right` conserva su `display: none`). */
+    /* Un renglón centrado bajo el rótulo. No se toca `display`: el item ya se
+       blockifica al ser hijo flexible (y así el modificador `--right` conserva
+       su `display: none`). */
     white-space: nowrap;
     overflow-wrap: normal;
     text-overflow: ellipsis;
@@ -5711,17 +5740,23 @@ body.is-demo .machine__side .controls .balance::after {
     box-shadow: none;
   }
 
-  /* Giros restantes como insignia dorada en el hombro del disco. */
+  /* Giros restantes como insignia dorada en el hombro del disco. El texto se
+     centra con la propia caja (flex) y no con `line-height`: con 1,3 la cifra
+     caía 1 px por debajo del centro de la pastilla en cuanto el cuerpo crecía. */
   .machine__side .controls #btn-auto .pill {
     position: absolute;
     top: 0;
     right: 0;
     z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transform: translate(34%, -32%);
     min-width: 14px;
-    padding: 0 4px;
+    padding: 0.16em 0.5em;
     font-size: clamp(6px, 1.8vw, 8px);
-    line-height: 1.3;
+    line-height: 1;
+    text-align: center;
     color: #4a1200;
     background: linear-gradient(180deg, #fff6bc, #ffc53d 62%, #e58f12);
     border: 1px solid #fff3bb;
@@ -5759,7 +5794,7 @@ body.is-demo .machine__side .controls .balance::after {
     background: none;
     box-shadow: none;
     color: #ffd977;
-    font-size: clamp(6px, 2vw, 8.5px);
+    font-size: clamp(4px, calc(var(--cons-w) * 0.022), 8.5px);
     font-weight: 900;
     letter-spacing: 0.08em;
     text-shadow: 0 1px 1px rgba(40, 4, 0, 0.75);
@@ -5781,9 +5816,11 @@ body.is-demo .machine__side .controls .balance::after {
     border: 1px solid #fff3bb;
     box-shadow: 0 1px 0 rgba(120, 60, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.85);
     color: #4a1200;
-    /* La placa APUESTA nueva mide 17,47 % del ancho y el tramo MAX 6,4 %
-       (~23 px a 372 px): la pastilla es pequena y el rotulo tambien. */
-    font-size: clamp(4.8px, calc(var(--m-w) * 0.0132), 6.6px);
+    /* La placa APUESTA nueva mide 17,02 % del ancho del case y el tramo MAX
+       6,4 %: la pastilla es pequena y el rotulo tambien. Se mide con el ancho
+       real de la consola (`--cons-w`), no con el del escenario, para que el
+       rotulo no desborde la pastilla en los telefonos donde el case se encoge. */
+    font-size: clamp(3.6px, calc(var(--cons-w) * 0.0132), 7.3px);
     font-weight: 900;
     letter-spacing: 0.02em;
     line-height: 1;
@@ -5797,9 +5834,10 @@ body.is-demo .machine__side .controls .balance::after {
      con la misma sombra que los datos de la apuesta y el saldo. Es decorativo
      (`pointer-events: none`) y el nombre accesible sigue en el DOM, recortado a
      1x1 unas lineas mas abajo. La placa 1 no lleva rotulo fijo: rota el catalogo
-     de paquetes del boton amarillo (`.btn__opts`, mas abajo). */
-  .machine__side .controls #btn-auto::after,
-  .machine__side .controls #btn-spin::after {
+     de paquetes del boton amarillo (`.btn__opts`, mas abajo). El GIRAR ya no
+     vive aqui: comparte bloque flex con el estado del motor en `.statusbar`
+     (seccion 5), que es lo que lo mantiene centrado en el hueco de la placa. */
+  .machine__side .controls #btn-auto::after {
     position: absolute;
     display: flex;
     align-items: center;
@@ -5825,12 +5863,17 @@ body.is-demo .machine__side .controls .balance::after {
     position: static;
   }
 
+  /* Ventana del catalogo de paquetes: el hueco interior de la placa 1 va de
+     x 6,18 % a 18,48 % y de y 70,67 % a 82,22 %, y su centro (12,33 % del ancho
+     de la consola) cae 5,94 px a la derecha del centro del pulsador. La ventana
+     se ciñe a ese hueco para que el chip visible quede centrado en el óvalo y
+     entre y salga recortado por el aro, no por una caja más alta que la placa. */
   .machine__side .controls #btn-feature .btn__opts {
     position: absolute;
-    left: calc(50% + var(--m-w) * 0.0157);
-    top: calc(100% + var(--m-w) * 0.0367);
-    width: calc(var(--m-w) * 0.1309);
-    height: calc(var(--m-w) * 0.0506);
+    left: calc(50% + var(--cons-w) * 0.01523);
+    top: calc(100% + var(--cons-w) * 0.02903);
+    width: calc(var(--cons-w) * 0.123);
+    height: calc(var(--cons-w) * 0.05731);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5857,7 +5900,7 @@ body.is-demo .machine__side .controls .balance::after {
     border-radius: 0;
     background: none;
     box-shadow: none;
-    font-size: clamp(7px, calc(var(--m-w) * 0.0340), 14px);
+    font-size: clamp(6px, calc(var(--cons-w) * 0.0340), 18.8px);
     font-weight: 900;
     letter-spacing: 0;
     line-height: 1;
@@ -5889,37 +5932,24 @@ body.is-demo .machine__side .controls .balance::after {
     33.01%, 100% { opacity: 0; transform: translateY(64%); }
   }
 
-  /* Placa 2 (x 20,39-33,54 %): misma fila, y su centro cae 0,43 % a la derecha
-     del eje del disco AUTO (26,54 %), no a la izquierda como en el arte anterior. */
+  /* Placa 2: el hueco interior va de x 21,18 % a 33,54 % y de y 70,10 % a
+     82,33 %, así que su centro cae 3,15 px a la derecha del eje del disco AUTO.
+     La caja se ajusta al hueco entero para que «AUTO» quede centrado en el óvalo
+     y no medio pixel a la izquierda, como con la caja anterior (más alta que la
+     placa y descentrada hacia ese lado). */
   .machine__side .controls #btn-auto::after {
     content: "AUTO";
-    left: calc(50% + var(--m-w) * 0.0043);
-    top: calc(100% + var(--m-w) * 0.0367);
-    width: calc(var(--m-w) * 0.1321);
-    height: calc(var(--m-w) * 0.0506);
-    font-size: clamp(6px, calc(var(--m-w) * 0.0245), 9.8px);
+    left: calc(50% + var(--cons-w) * 0.00808);
+    top: calc(100% + var(--cons-w) * 0.0279);
+    width: calc(var(--cons-w) * 0.12359);
+    height: calc(var(--cons-w) * 0.06067);
+    font-size: clamp(5px, calc(var(--cons-w) * 0.0245), 13.5px);
   }
 
-  /* Placa 3 (x 36,40-62,58 % · y 68,9-84,1 %, el doble de alta que las otras
-     dos): el hueco interior va de 71,7 % a 81,9 % del alto de la consola, así
-     que la mitad alta (74,15 % de centro) lleva el rótulo y la baja (79,4 %), el
-     estado del motor. Se centra en el eje REAL de la placa —49,9 % del ancho de
-     la consola—, que cae 1,3 px a la derecha del eje de la caja táctil: por eso
-     el `left` suma 0,35 % del ancho del marco y el rótulo no queda descuadrado
-     respecto al aro dorado. */
-  .machine__side .controls #btn-spin::after {
-    content: "GIRAR";
-    left: calc(50% + var(--m-w) * 0.0035);
-    top: calc(100% + var(--m-w) * 0.0284);
-    width: calc(var(--m-w) * 0.2618);
-    /* La caja mide lo mismo que el cuerpo del texto y el par «rótulo + estado»
-       queda centrado en el hueco interior (19,1 px de alto a 390 px de ancho):
-       9,0 px de GIRAR + 1,5 px de aire + 5,6 px del estado, con 1,5 px arriba y
-       abajo. Antes el rótulo medía 10,6 px y su caja 12,8 px, así que el estado
-       se le encimaba y su línea tocaba el aro inferior. */
-    height: calc(var(--m-w) * 0.0238);
-    font-size: clamp(5.8px, calc(var(--m-w) * 0.0238), 9.2px);
-  }
+  /* Placa 3: el rótulo GIRAR ya no se pinta con un `::after` suelto del pulsador.
+     Se coloca en la columna flex de `.statusbar` (sección 5), junto al estado del
+     motor: dos `top` absolutos independientes se pisaban entre sí en cuanto el
+     cuerpo del texto crecía (320 px) y dejaban el par pegado al aro inferior. */
 
   /* --- Nombres accesibles de los discos -----------------------------------
      Los rotulos visibles ya los pinta el CSS sobre cada placa, y `MAX` lo pinta
@@ -5928,7 +5958,7 @@ body.is-demo .machine__side .controls .balance::after {
      duplique sobre el dibujo. Sigue siendo el nombre accesible del pulsador, y
      `#spin-label` es ademas el texto que el JS cambia a "GIRANDO…": el rotulo
      de la placa no cambia porque es decorativo y el estado real se lee en el de
-     abajo (seccion 5), que es la parte de la placa que si se actualiza. */
+     debajo (seccion 5), que es la parte de la placa que si se actualiza. */
   .machine__side .controls #btn-feature .btn__title,
   .machine__side .controls #btn-auto .btn__title,
   .machine__side .controls__bet #btn-bet-max .chip__label,
