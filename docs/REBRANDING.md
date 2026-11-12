@@ -159,18 +159,23 @@ el propio origen.
    proporcion y la imagen la rellena entera; si se cambia el arte por otro de
    distinta relacion hay que actualizar ambos sitios o el `object-fit: contain`
    devolvera el aire dentro de la caja.
-   La caja movil apunta al **72 % del ancho de la maquina** y vive en su propia
+   La caja movil apunta al **84 % del ancho de la maquina** y vive en su propia
    fila de la rejilla (`grid-template-areas: "logo" "frame" "console"`). Desde el
    marco de baston de caramelo (`marco_movil.webp`, 1244 x 1216) el arte ocupa la
    franja superior de tapa a tapa —Santa, reno, campanas, tren y casa de
    jengibre—, asi que ya no queda cielo donde pegar la chapa: el logo entra en el
-   reparto vertical con su relacion alto/ancho (0,4407, caja 959:587 al 72 %).
+   reparto vertical con su relacion alto/ancho (0,4407, caja 959:587 al 84 %).
    El ancho de la maquina ya no se recorta para que quepa todo: `--m-w` es
    siempre `100cqw`, y lo que cede cuando el viewport es bajo es el chrome. En
    los escalones `1bis` de `style.css` bajan `--logo-k` (escala la chapa) y
    `--console-k` (escala la consola entera) y `--logo-max` pone un techo en `cqh`
    al alto de la caja del logo, de modo que el marco y la consola siguen tocando
    los dos filos y la grilla 6 x 5 no se deforma.
+   La chapa se **apoya sobre el adorno superior del marco**: `.machine__hero`
+   lleva `align-self: end` y un margen inferior negativo de `--logo-drop` (1,6 %
+   de `--m-w`, 6 px a 390 px de ancho), asi que la base de la pegatina toca el
+   dibujo en vez de flotar sobre una franja de fondo. Ese solape devuelve alto al
+   reparto y es lo que paga el salto del 72 % al 84 % de ancho.
    La caja va **centrada** por la rejilla (`justify-self: center`), asi que la
    separacion a los dos filos es la misma en cualquier telefono.
    La barra del navegador movil usa la meta `theme-color`, ya en rojo de marca:
