@@ -1716,13 +1716,14 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   // 5) La chapa del logo tiene fila propia (`logo`) desde el marco de baston:
   //    el arte ocupa la franja superior entera y ya no hay cielo donde pegarla.
   //    La caja mantiene la proporcion del WebP animado (959 x 587 = 1,6337) al
-  //    84 % del ancho de la maquina; su alto se ajusta con `--logo-k` en los
+  //    95 % del ancho de la maquina; su alto se ajusta con `--logo-k` en los
   //    escalones de `1bis` y tiene una red en `cqh` (`--logo-max`), asi que el
   //    marco puede seguir a sangre sin que el logo empuje la maquina fuera del
-  //    viewport. La chapa se apoya sobre el adorno superior del marco con
-  //    `--logo-drop` (margen inferior negativo + `align-self: end`): a 390 px de
-  //    ancho son 6 px de solape, los justos para que la base de la pegatina toque
-  //    el dibujo en vez de flotar sobre una franja de fondo.
+  //    viewport. La chapa se monta sobre las campanas doradas y el lazo del
+  //    adorno superior del marco con `--logo-drop` (margen inferior negativo +
+  //    `align-self: end`): a 390 px de ancho son 47 px de solape, los justos para
+  //    que la base de la pegatina caiga sobre las campanas y aun quede aire hasta
+  //    las placas del HUD (18,59 % del alto del marco).
   const heroRule = css.match(/\.machine__side \.machine__hero\s*\{[^}]*--logo-w:[\s\S]*?\n  \}/);
   assert.ok(heroRule, 'La marca debe declarar su caja en la fila del logo');
   assert.match(heroRule[0], /grid-area:\s*logo;/, 'El logo vive en su propia fila de la rejilla');
@@ -1735,8 +1736,8 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   );
   assert.match(
     heroRule[0],
-    /--logo-w:\s*calc\(var\(--m-w\) \* 0\.84 \* var\(--logo-k\)\);/,
-    'El logo ocupa el 84 % del ancho de la maquina, con `--logo-k` como mando del reparto vertical'
+    /--logo-w:\s*calc\(var\(--m-w\) \* 0\.95 \* var\(--logo-k\)\);/,
+    'El logo ocupa el 95 % del ancho de la maquina, con `--logo-k` como mando del reparto vertical'
   );
   assert.match(
     heroRule[0],
@@ -1835,27 +1836,27 @@ test('el marco movil va de borde a borde y el chrome cede alto en los telefonos 
 
   // Escalon suave: alto / ancho <= 2,13 (ancho / alto >= 0,47). Cubre los
   // telefonos apretados (360 x 740, 390 x 790, 414 x 844) sin tocar los 20:9
-  // actuales. `--logo-k` 0,8 sobre el 84 % de diseno = 67 % del ancho.
+  // actuales. `--logo-k` 0,78 sobre el 95 % de diseno = 74 % del ancho.
   assert.match(
     css,
-    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 47 \/ 100\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--logo-k: 0\.8;\s*--console-k: 0\.86;\s*--logo-max: 0\.22;\s*\}\s*\}/,
+    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 47 \/ 100\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--logo-k: 0\.78;\s*--console-k: 0\.86;\s*--logo-max: 0\.24;\s*\}\s*\}/,
     'Los viewports de menos de 2,13 de alto por ancho encogen el chrome para que el marco siga a sangre'
   );
 
-  // Escalon fuerte: alto / ancho <= 1,80 (16:9 y tablets bajas). 0,6 sobre el
-  // 84 % = 50 % del ancho.
+  // Escalon fuerte: alto / ancho <= 1,80 (16:9 y tablets bajas). 0,58 sobre el
+  // 95 % = 55 % del ancho.
   assert.match(
     css,
-    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 5 \/ 9\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--logo-k: 0\.6;\s*--console-k: 0\.72;\s*--logo-max: 0\.17;\s*\}\s*\}/,
+    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 5 \/ 9\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--logo-k: 0\.58;\s*--console-k: 0\.72;\s*--logo-max: 0\.185;\s*\}\s*\}/,
     'En 16:9 el chrome cede mas: el marco no puede perder ancho'
   );
 
   // El solape con el marco se declara una sola vez, en el bloque movil de
-  // `.machine`, y la chapa lo consume con margen negativo: 1,6 % de `--m-w`
-  // (6,2 px a 390 px de ancho).
+  // `.machine`, y la chapa lo consume con margen negativo: 12 % de `--m-w`
+  // (47 px a 390 px de ancho), lo que monta el logo sobre las campanas.
   assert.match(
     machineGrid[0],
-    /--logo-drop:\s*calc\(var\(--m-w\) \* 0\.016\);/,
+    /--logo-drop:\s*calc\(var\(--m-w\) \* 0\.12\);/,
     'El solape del logo se mide con el ancho de la maquina'
   );
   assert.equal(

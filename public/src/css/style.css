@@ -4999,13 +4999,15 @@ body.is-demo .machine__side .controls .balance::after {
     --logo-k: 1;
     --logo-max: 1;
     /* Cuanto se mete la chapa sobre el adorno superior del marco, en `--m-w`.
-       El dibujo del marco trae sus campanas y regalos en la franja de arriba, asi
-       que la chapa se apoya en ella en vez de flotar: la fila `logo` encoge en
-       esta medida y la caja del logo (anclada abajo con `align-self: end`) la
-       muerde. Es 1,6 % de `--m-w` (6,2 px a 390 px de ancho): suficiente para que
-       la base de la pegatina toque el dibujo, corto para no tapar el filo del
-       marco. */
-    --logo-drop: calc(var(--m-w) * 0.016);
+       El dibujo del marco trae sus campanas doradas y el lazo rojo en la franja
+       de arriba, asi que la chapa se monta sobre ellas en vez de flotar: la fila
+       `logo` encoge en esta medida y la caja del logo (anclada abajo con
+       `align-self: end`) la muerde. Es 12 % de `--m-w` (47 px a 390 px de ancho):
+       la base de la pegatina cae sobre el lazo y las campanas, y aun le quedan
+       ~18 px de aire hasta el aro de las placas del HUD, que empieza al 18,59 %
+       del alto del marco. El solape devuelve alto al reparto, que es lo que paga
+       el crecimiento del logo al 95 %. */
+    --logo-drop: calc(var(--m-w) * 0.12);
     --console-k: 1;
     /* Chrome del tablero (padding 4+4 + filo 2+2): lo consulta la regla base
        de escritorio al calcular el ancho con `cqh`. */
@@ -5041,10 +5043,10 @@ body.is-demo .machine__side .controls .balance::after {
     z-index: 6;
     /* El arte es un lockup apaisado (lienzo de 959 x 587 sin recortar, con el
        mono Santa a la izquierda y el emblema a la derecha), asi que la caja toma
-       su misma proporcion: el ancho manda y el alto sale de 1,6337. El 84 % del
-       ancho de la maquina es el tamano de la chapa: crece sobre el 72 % anterior
-       (que dejaba demasiado aire entre la tinta y el marco) y aun deja 8 % por
-       lado para el balanceo de la pegatina.
+       su misma proporcion: el ancho manda y el alto sale de 1,6337. El 95 % del
+       ancho de la maquina es el tamano de la chapa: crece sobre el 84 % anterior
+       para que el logo sea el protagonista de la pantalla y aun deja 2,5 % por
+       lado para el balanceo de la pegatina (3 % de escala como mucho).
 
        `--logo-k` es el unico mando del reparto vertical: vale 1 cuando el alto
        sobra y baja en los escalones de `1bis` para que el marco siga a sangre en
@@ -5052,7 +5054,7 @@ body.is-demo .machine__side .controls .balance::after {
        se queda con el ancho del diseno pero el alto nunca pasa de esa fraccion
        del viewport, y `object-fit: contain` encoge el dibujo dentro sin
        deformarlo. */
-    --logo-w: calc(var(--m-w) * 0.84 * var(--logo-k));
+    --logo-w: calc(var(--m-w) * 0.95 * var(--logo-k));
     --logo-h: min(calc(var(--logo-w) / 1.6337), calc(100cqh * var(--logo-max)));
     width: var(--logo-w);
     height: var(--logo-h);
@@ -9048,29 +9050,32 @@ html.is-low-graphics .toast {
    siempre. La grilla 6 x 5 no se deforma en ningun escalon: el tablero cuelga
    del marco con % de su caja y el marco conserva 1244 x 1216.
 
-   El tercer mando es `--logo-drop` (ver el bloque 2): la chapa se apoya sobre
-   el adorno superior del marco en vez de flotar encima, y ese solape devuelve
-   alto al reparto, que es justo lo que paga el crecimiento del logo al 84 %.
+   El tercer mando es `--logo-drop` (ver el bloque 2): la chapa se monta sobre
+   las campanas y el lazo del adorno superior del marco en vez de flotar encima,
+   y ese solape devuelve alto al reparto, que es justo lo que paga el crecimiento
+   del logo al 95 %.
    -------------------------------------------------------------------------- */
 
 /* Alto / ancho <= 2,13 (ancho / alto >= 0,47). */
 @media (max-width: 899px) and (orientation: portrait) and (min-aspect-ratio: 47 / 100) {
   .machine {
-    /* 0,84 * 0,80 = 67 % del ancho: la chapa pierde un quinto respecto al tamano
-       de diseno (84 %) pero sigue un 14 % por encima de lo que media antes. */
-    --logo-k: 0.8;
+    /* 0,95 * 0,78 = 74 % del ancho: la chapa pierde un quinto respecto al tamano
+       de diseno (95 %) pero sigue por encima de lo que media el diseno anterior
+       (84 %). `--logo-max` sube en la misma proporcion (0,22 -> 0,24) para que el
+       techo en `cqh` no se coma el crecimiento. */
+    --logo-k: 0.78;
     --console-k: 0.86;
-    --logo-max: 0.22;
+    --logo-max: 0.24;
   }
 }
 
 /* Alto / ancho <= 1,80 (ancho / alto >= 0,5556): telefonos 16:9 y tablets bajas. */
 @media (max-width: 899px) and (orientation: portrait) and (min-aspect-ratio: 5 / 9) {
   .machine {
-    /* 0,84 * 0,60 = 50 % del ancho; el marco y su grilla no pierden un pixel. */
-    --logo-k: 0.6;
+    /* 0,95 * 0,58 = 55 % del ancho; el marco y su grilla no pierden un pixel. */
+    --logo-k: 0.58;
     --console-k: 0.72;
-    --logo-max: 0.17;
+    --logo-max: 0.185;
   }
 }
 
