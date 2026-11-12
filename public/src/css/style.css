@@ -5255,7 +5255,7 @@ body.is-demo .machine__side .controls .balance::after {
        medido sobre el recorte vale tal cual. El marco anterior sí necesitaba un
        3,4175 % de estiramiento horizontal porque su recorte traía 23 px
        transparentes a cada lado. */
-    background: url('../assets/marco_movil.webp?v=2') no-repeat center / 100% 100%;
+    background: url('../assets/marco_movil.webp?v=3') no-repeat center / 100% 100%;
     box-shadow: none;
     container-type: normal;
     overflow: visible;

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T17:54:19.460Z",
+  "generatedAt": "2026-11-12T18:37:17.779Z",
   "files": {
     "index.html": 20373,
     "src/assets/AUDIO-WIN-NEW-stadium-applause.MP3": 28541,
@@ -12,7 +12,7 @@
     "src/assets/fonts/fredoka-latin.woff2": 29732,
     "src/assets/fonts/lilita-one-latin-ext.woff2": 1384,
     "src/assets/fonts/lilita-one-latin.woff2": 10672,
-    "src/assets/marco_movil.webp": 262238,
+    "src/assets/marco_movil.webp": 257788,
     "src/assets/N-AUDIO-meridiano-con-fade.mp3": 320156,
     "src/assets/SANTA-CRUSH-LOGO-ANIMADO.webp": 273562,
     "src/assets/slot/s1.webp": 35542,
@@ -47,5 +47,5 @@
     "ui/services/ApiClient.js": 7915,
     "ui/services/SessionManager.js": 7685
   },
-  "totalBytes": 3680433
+  "totalBytes": 3675983
 }

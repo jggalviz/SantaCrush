@@ -22,8 +22,18 @@
  * interior alta) y el panel azul con corona dorada (cinco discos y cuatro placas
  * de pie). Los nombres de destino NO cambian: el CSS y el HTML siguen apuntando
  * a `marco_movil.webp` y `consola_movil.webp`, asi que el cambio de arte no toca
- * el mapeo de los componentes. El WebP del marco se sirve con `?v=2` en el CSS
- * y en el `preload` porque `/src/assets/**` viaja como `immutable`.
+ * el mapeo de los componentes. El WebP del marco se sirve con `?v=3` en el CSS
+ * y en el `preload` porque `/src/assets/**` viaja como `immutable`: al
+ * republicar el mismo nombre hay que subir la version, o los clientes se quedan
+ * con el arte viejo bajo los anclajes del CSS.
+ *
+ * El maestro vigente (`design/marco_movil.png`, 1244 x 1216) sale del
+ * entregable `movil/9f8ed94d-9976-4a0d-a378-ebae884d2f8b.png` (1254 x 1254 con
+ * alfa): se recorta su bbox de alfa (1248 x 1225) y se encaja al lienzo. El
+ * dibujo conserva las posiciones del anterior —ventana 8,28 / 32,07 /
+ * 83,44 x 60,61 % frente a 8,12 / 32,15 / 83,52 x 60,61 %—, asi que las capas
+ * superpuestas del CSS (HUD y tablero) caen sobre su sitio sin recalibrar un
+ * solo porcentaje.
  *
  * `design/marco_movil_v1.png` es el toldo con la nube rosa (el marco mas
  * antiguo, 1325 x 941 tras el recorte). El arte del marco anterior al de baston

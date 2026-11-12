@@ -1616,13 +1616,13 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   assert.match(frameRule[0], /width:\s*var\(--m-w\);/, 'El marco se mide con `--m-w`');
   // El WebP se publica recortado al alfa (sin aire a los lados), asi que el
   // dibujo entra a sangre con `100% 100%` sobre una caja con su misma relacion.
-  // La URL lleva `?v=2` porque `/src/assets/**` se sirve como `immutable`:
+  // La URL lleva `?v=3` porque `/src/assets/**` se sirve como `immutable`:
   // republicar el marco con el mismo nombre dejaria a los clientes con el arte
   // viejo bajo los anclajes nuevos. El `preload` de `index.html` lleva la misma
   // version.
   assert.match(
     frameRule[0],
-    /background:\s*url\('\.\.\/assets\/marco_movil\.webp\?v=2'\)\s*no-repeat\s*center\s*\/\s*100% 100%;/,
+    /background:\s*url\('\.\.\/assets\/marco_movil\.webp\?v=3'\)\s*no-repeat\s*center\s*\/\s*100% 100%;/,
     'El marco se pinta a sangre sobre su propio lienzo (sin estiramientos)'
   );
 
