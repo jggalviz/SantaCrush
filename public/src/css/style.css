@@ -9190,20 +9190,18 @@ html.is-low-graphics .toast {
   #balance-label {
     transform: translate(-13px, 2px);
   }
-}
 
-@media (max-width: 899px) {
-  #btn-auto > span.btn__main > span.btn__title {
-    transform: translate(0px, -1px);
-  }
-
+  /* Tinta afinada con el token `--btn-text-dy` (ver el bloque de arriba), no con
+     `transform`: en la placa el rotulo AUTO lo pinta su `::after` -el
+     `.btn__title` va recortado a 1x1, asi que moverlo no pinta nada- y el chip x5
+     lo pinta su `.btn__text`. En el chip el `transform` de la caja tampoco sirve:
+     `featurePlateRoll` es infinito y lo pisa durante todo el turno. */
   #btn-auto {
-    transform: translate(0px, 3px);
+    transform: translate(0px, 3px);   /* disco */
+    --btn-text-dy: -3px;              /* rotulo AUTO 3 px arriba */
   }
-  
-}
-@media (max-width: 899px) {
+
   [data-spins="5"] {
-    transform: translate(0px, 7px);
+    --btn-text-dy: 2px;               /* tinta del chip x5 2 px abajo */
   }
 }
