@@ -9181,14 +9181,43 @@ html.is-low-graphics .toast {
 }
 
 @media (max-width: 899px) {
-  /* ... tus otros estilos móviles ya existentes ... */
-
-  /* Ajustes desde el visual-tuner para móvil */
-  #balance-value {
-    transform: translate(-14px, 2px);
+  /* Paneles superiores · la tinta cabe entera en su capsula
+     La caja de linea de etiquetas y valores (1 y 1,1) era mas baja que la tinta
+     del rotulo —la fuente pixel sobresale de su `em`— y la celda recorta con
+     `overflow: hidden`: arriba se perdia una fila de la etiqueta y abajo el
+     numero rozaba la banda de la capsula. Con 1,35 la tinta cabe en su caja y
+     el centrado fino va por el token, que mueve el texto sin tocar la capsula,
+     el arte ni la zona tactil. */
+  .machine__side .hud__cell {
+    --btn-text-dy: 1px;               /* centra el par en el hueco del arte */
   }
-  #balance-label {
-    transform: translate(-13px, 2px);
+
+  .machine__side .hud__label,
+  .machine__side .hud__value,
+  .machine__side .hud__cell--win .hud__label,
+  .machine__side .hud__cell--win .hud__value {
+    position: relative;
+    top: var(--btn-text-dy, 0px);
+    line-height: 1.35;
+  }
+
+  /* Mismo ajuste en el saldo. Los dos `transform` que dejaba el tuner (-13 y
+     -14 px) sacaban el texto de su capsula: ahora el unico desplazamiento es
+     el token y el saldo queda centrado en el arte. */
+  .machine__side .controls .balance {
+    --btn-text-dy: 1px;
+  }
+
+  .machine__side .controls .balance__label,
+  .machine__side .controls .balance__value {
+    position: relative;
+    top: var(--btn-text-dy, 0px);
+    line-height: 1.35;
+  }
+
+  #balance-label,
+  #balance-value {
+    transform: none;
   }
 
   /* Tinta afinada con el token `--btn-text-dy` (ver el bloque de arriba), no con
