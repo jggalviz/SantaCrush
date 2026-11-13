@@ -6297,11 +6297,22 @@ body.is-demo .machine__side .controls .balance::after {
 @media (max-width: 899px) {
   /* La caja tactil ya es el bbox del disco (o de la capsula del GIRAR), asi que
      el centro de la caja ES el centro del dibujo y encoger desde el 50 % no
-     desplaza el bisel: el disco se hunde hacia si mismo. */
+     desplaza el bisel: el disco se hunde hacia si mismo.
+     `50% 50%` es literalmente `center center` (misma definicion en la spec de
+     `transform-origin`), y es el UNICO origen que se declara en el pie: no hay
+     un segundo origen que pueda competir. Las siete cajas tactiles comparten
+     este punto. */
   .machine__side .controls #btn-feature { transform-origin: 50% 50%; }
   .machine__side .controls #btn-auto { transform-origin: 50% 50%; }
   .machine__side .controls .btn--spin { transform-origin: 50% 50%; }
 
+  /* El `scale` es PINTURA, no maquetacion: `transform` no toca `width`,
+     `height` ni el flujo, asi que el panel y sus vecinos no se reajustan al
+     pulsar (medido: `.controls` mide lo mismo en reposo, hover y pulsado, y la
+     caja del disco solo cambia en el eje visual del hundimiento). Es la unica
+     escala de la version movil; ninguna regla multiplica el tamaño del pie.
+     La POSICION de cada pulsador -el `margin-top` de AUTO incluido- vive fuera
+     de `transform`, para que un `transform: none` de hover no pueda moverla. */
   .machine__side .controls #btn-feature:active:not(:disabled),
   .machine__side .controls #btn-auto:active:not(:disabled),
   .machine__side .controls .btn--spin:active:not(:disabled),
@@ -9246,8 +9257,34 @@ html.is-low-graphics .toast {
      AUTO iba a -3 px y el rotulo quedaba pegado al aro superior de su placa: con
      +2 px la tinta cae centrada en el ovalo. */
   #btn-auto {
-    transform: translate(0px, 3px);   /* disco */
+    /* El disco -y la placa AUTO que cuelga de su `::after`, `top: calc(100% +
+       ...)`- se bajan 3 px con `margin-top`, NUNCA con `transform`. El reset de
+       reposo del pie declara `transform: none` en
+       `#btn-auto:hover:not(:disabled):not(:active)` y, mientras el
+       desplazamiento vivio en el `transform`, el simple hover lo borraba: el
+       disco y su placa saltaban 3 px hacia arriba bajo el raton (medido a
+       390 px: y 707,48 -> 704,48). Con el margen, ningun estado -hover,
+       `:active`, foco o una animacion- puede perder el sitio, porque la
+       posicion ya no depende de `transform`. */
+    margin-top: 3px;
     --btn-text-dy: 2px;               /* rotulo AUTO centrado en su placa */
+  }
+
+  /* Blindaje del texto interno del AUTO: ningun estado lo desplaza.
+     OJO: este `.btn__title` va recortado a 1x1 (seccion 6), el rotulo visible lo
+     pinta `#btn-auto::after`. Aqui solo se anula cualquier `transform` heredado o
+     inyectado; el offset de tinta no se toca, porque el que pinta es el token
+     `--btn-text-dy: 2px` de la regla de arriba y bajarlo a -3 px devolveria la
+     tinta al aro superior de la placa (verificado midiendo la banda del arte). */
+  #btn-auto > .btn__main > .btn__title {
+    transform: none !important;
+  }
+
+  /* El rotulo visible se sostiene en `translate(-50%, -50%)`: si una regla
+     generica de hover, de `:active` o el brillo `pana-art-sheen` lo anularan, el
+     texto se iria medio ancho a la derecha y medio alto abajo. Se clava aqui. */
+  #btn-auto::after {
+    transform: translate(-50%, -50%) !important;
   }
 
   [data-spins="5"] {

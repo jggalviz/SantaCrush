@@ -2523,6 +2523,42 @@ test('el reset de pintura del case deja viva la respuesta al toque', () => {
   }
 });
 
+test('el AUTO no se mueve bajo el raton: su desplazamiento vive en el layout', () => {
+  const css = read(STYLE_PATH);
+
+  // El disco AUTO y la placa del pie que cuelga de su `::after` se colocaban con
+  // `transform: translate(0px, 3px)`, mientras el reset de reposo del pie
+  // declara `transform: none` en `#btn-auto:hover:not(:disabled):not(:active)`.
+  // El hover borraba el desplazamiento y la placa entera saltaba 3 px hacia
+  // arriba (medido a 390 px: y 707,48 -> 704,48). El desplazamiento va ahora en
+  // el layout (`margin-top`), que ningun estado puede anular.
+  assert.doesNotMatch(
+    css,
+    /#btn-auto\s*\{[^}]*transform:\s*translate\(/,
+    'el disco AUTO no puede posicionarse con `transform`: el hover lo borra'
+  );
+  assert.match(
+    css,
+    /#btn-auto\s*\{[\s\S]{0,900}?margin-top:\s*3px;[\s\S]{0,120}?--btn-text-dy:\s*2px;/,
+    'el desplazamiento del disco AUTO va en `margin-top` y el rotulo conserva su token'
+  );
+
+  // Blindaje del texto interno: el `.btn__title` de AUTO (recortado a 1x1) no
+  // admite `transform` de ningun estado, y el rotulo visible -su `::after`- clava
+  // el centrado para que ni el hover ni el brillo puedan descolocarlo.
+  assert.match(
+    css,
+    /#btn-auto > \.btn__main > \.btn__title\s*\{\s*transform:\s*none !important;\s*\}/,
+    'el texto interno del AUTO debe quedar blindado'
+  );
+  assert.match(
+    css,
+    /#btn-auto::after\s*\{\s*transform:\s*translate\(-50%, -50%\) !important;\s*\}/,
+    'el rotulo AUTO conserva su centrado pase lo que pase'
+  );
+});
+
+
 test('el GIRAR del case recupera el acabado candy: cristal y destellos', () => {
   const css = read(STYLE_PATH);
 
