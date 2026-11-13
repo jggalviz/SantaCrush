@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-13T17:16:45.857Z",
+  "generatedAt": "2026-11-13T18:18:59.792Z",
   "files": {
     "index.html": 21420,
     "src/assets/AUDIO-WIN-NEW-stadium-applause.MP3": 28541,
@@ -28,7 +28,7 @@
     "src/assets/slot/s9.webp": 45080,
     "src/assets/win_celebracion_still.webp": 100542,
     "src/assets/win_celebracion.webp": 289220,
-    "src/css/style.min.css": 155368,
+    "src/css/style.min.css": 155770,
     "src/css/theme.min.css": 10429,
     "ui/audio/sfx.js": 14670,
     "ui/components/GameControls.js": 3846,
@@ -47,5 +47,5 @@
     "ui/services/ApiClient.js": 7915,
     "ui/services/SessionManager.js": 7685
   },
-  "totalBytes": 3677805
+  "totalBytes": 3678207
 }
