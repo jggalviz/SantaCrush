@@ -680,6 +680,37 @@ button:disabled { cursor: not-allowed; }
   font-variant-numeric: tabular-nums;
 }
 
+/* --------------------------------------------------------------------------
+   Texto interno de los pulsadores · `--btn-text-dy`
+   --------------------------------------------------------------------------
+   El rotulo de un pulsador vive siempre en su propio nodo —`.btn__title` en
+   los botones de la maqueta y `.btn__text` en los chips de tiradas—, nunca
+   como texto suelto: asi se afina su centrado sin rozar la caja. El borde, el
+   radio, el relleno y la sombra siguen siendo del boton.
+
+   Todo el ajuste pasa por un token que cada pulsador fija en su regla, de modo
+   que subir el texto de AUTO no mueve los chips ni al reves:
+
+     #btn-auto { --btn-text-dy: -1px; }   · sube el rotulo 1 px
+     .btn__opt { --btn-text-dy: 0.5px; }  · baja los chips medio pixel
+
+   El desplazamiento es relativo (`position` + `top`) y no un `transform`: el
+   chip de la pastilla de escritorio es `inline` y un `transform` no aplica a los
+   elementos inline, asi que alli el texto no se moveria. `top` relativo mueve
+   la tinta sin tocar el flujo: el ancho del boton y el sitio de sus hermanos no
+   cambian y la zona tactil mide lo mismo.
+
+   En la placa movil el chip desplaza su caja con `featurePlateRoll`, asi que el
+   ajuste va en el hijo y no compite con el keyframe; el rotulo `AUTO` de esa
+   placa se pinta con `::after` y suma el mismo token a su `top` (seccion 6).
+   -------------------------------------------------------------------------- */
+
+.btn__title,
+.btn__text {
+  position: relative;
+  top: var(--btn-text-dy, 0px);
+}
+
 .btn--feature {
   border-color: rgba(255, 196, 77, 0.55);
   background: linear-gradient(180deg, #ffcf66, #ff8b57 52%, #ed4d8d);
@@ -718,20 +749,37 @@ button:disabled { cursor: not-allowed; }
   font-size: 0.62em;
   font-weight: 800;
   line-height: 1.2;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
   color: rgba(94, 44, 0, 0.78);
   background: rgba(255, 255, 255, 0.26);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
+/* Clase del grupo: los tres paquetes llevan `btn-spin-option` ademas de
+   `btn__opt`, de modo que el catalogo se mueve como un bloque. En vez de repetir
+   `.machine__side .controls #btn-feature .btn__opt` en cada regla, la placa del
+   pie se ajusta entera desde `.btn-spin-option` en su media query. Aqui va lo
+   que vale en las dos maquetas: cifras tabulares, sin partir el texto y sin
+   tracking.
+
+   La transicion es **solo de pintura**: al pasar el paquete vigente de un chip a
+   otro se funden tinta, fondo y sombra, pero la caja no se toca (ni `transform`,
+   ni tamaños, ni margenes), asi que el chip no salta ni empuja a sus vecinos. */
+.btn-spin-option {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  letter-spacing: 0;
+  transition: color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
 /* El paquete vigente: capsula clara con tinta tostada, el mismo contraste que el
-   rotulo del boton. */
+   rotulo del boton. El aro va por dentro (`inset`): un anillo exterior con
+   `spread` sumaria 2 px al ancho pintado del chip y, al cambiar de paquete, el
+   resaltado se comeria el hueco de 0.1em y pareceria que el chip se ha movido.
+   Solo se declara pintura: la geometria la fija `.btn-spin-option`. */
 .btn__opt.is-active {
   color: #6b2a00;
   background: #fff3bd;
-  box-shadow: inset 0 1px 0 #fffdf0, 0 0 0 1px rgba(120, 60, 0, 0.35);
+  box-shadow: inset 0 1px 0 #fffdf0, inset 0 0 0 1px rgba(120, 60, 0, 0.35);
 }
 
 /* --------------------------------------------------------------------------
@@ -5882,13 +5930,22 @@ body.is-demo .machine__side .controls .balance::after {
     pointer-events: none;
   }
 
-  /* Cada chip ocupa la ventana entera y entra por abajo mientras el anterior ya
+  /* --- Chips de la placa: una sola geometria para los tres -----------------
+     Cada chip ocupa la ventana entera y entra por abajo mientras el anterior ya
      esta saliendo por arriba. El turno dura un tercio del ciclo (1,2 s) y el
      visible cubre casi todo el turno (4 %-29 % de entrada y salida, 0,14 s cada
      una), asi que el relevo no deja la placa vacia: entre el final de un chip y
-     el arranque del siguiente solo queda el fotograma del cruce. */
-  .machine__side .controls #btn-feature .btn__opt {
+     el arranque del siguiente solo queda el fotograma del cruce.
+
+     Todo lo que coloca la caja se declara aqui y solo aqui: posicion, `inset`,
+     tamaño, margen, relleno, radio y el `transform` de partida del turno. Ni
+     `.is-active` ni ningun otro estado los repiten, asi que los tres chips
+     comparten exactamente las mismas coordenadas y seleccionar uno no lo mueve
+     respecto a los demas. `box-sizing` explicito porque la pastilla de
+     escritorio trae relleno y la ventana no debe crecer con el. */
+  .machine__side .controls .btn-spin-option {
     position: absolute;
+    box-sizing: border-box;
     inset: 0;
     display: flex;
     align-items: center;
@@ -5898,6 +5955,7 @@ body.is-demo .machine__side .controls .balance::after {
     margin: 0;
     padding: 0;
     border-radius: 0;
+    /* Pintura: en la placa no hay capsula, manda la tinta. */
     background: none;
     box-shadow: none;
     font-size: clamp(6px, calc(var(--cons-w) * 0.0340), 18.8px);
@@ -5906,24 +5964,29 @@ body.is-demo .machine__side .controls .balance::after {
     line-height: 1;
     color: #ffd977;
     text-shadow: 0 1px 1px rgba(30, 0, 20, 0.85), 0 0 6px rgba(255, 214, 90, 0.32);
+    /* Turno: arranca fuera por abajo y el keyframe lleva `opacity` y `transform`. */
     opacity: 0;
     transform: translateY(64%);
     animation: featurePlateRoll 3.6s linear infinite;
   }
 
-  .machine__side .controls #btn-feature .btn__opt:nth-child(1) { animation-delay: 0s; }
-  .machine__side .controls #btn-feature .btn__opt:nth-child(2) { animation-delay: 1.2s; }
-  .machine__side .controls #btn-feature .btn__opt:nth-child(3) { animation-delay: 2.4s; }
+  .machine__side .controls .btn-spin-option:nth-child(1) { animation-delay: 0s; }
+  .machine__side .controls .btn-spin-option:nth-child(2) { animation-delay: 1.2s; }
+  .machine__side .controls .btn-spin-option:nth-child(3) { animation-delay: 2.4s; }
 
   /* En la placa no hay capsula: el paquete vigente se distingue por el turno, no
      por el fondo, asi que el resaltado del escritorio se queda sin pintura y los
-     tres chips se leen igual. */
-  .machine__side .controls #btn-feature .btn__opt.is-active {
+     tres chips se leen igual. Esta regla es de pintura pura: no declara `inset`,
+     `transform` ni opacidad, que pertenecen al grupo y al keyframe; si los
+     tocase, el chip vigente saltaria a otra coordenada al seleccionarlo. */
+  .machine__side .controls .btn-spin-option.is-active {
     color: #ffd977;
     background: none;
     box-shadow: none;
   }
 
+  /* El turno mueve los tres chips igual: misma entrada, misma salida y misma
+     pausa, solo cambiados de fase por `animation-delay`. */
   @keyframes featurePlateRoll {
     0% { opacity: 0; transform: translateY(64%); }
     2% { opacity: 1; transform: translateY(0); }
@@ -5940,7 +6003,10 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .controls #btn-auto::after {
     content: "AUTO";
     left: calc(50% + var(--cons-w) * 0.00808);
-    top: calc(100% + var(--cons-w) * 0.0279);
+    /* Aqui el rotulo de la placa es el "texto interno" del pulsador, y el token
+       `--btn-text-dy` (fijado en `#btn-auto`) se hereda hasta el pseudo: suma
+       al `top` y afina el centrado optico sin mover el disco ni la placa. */
+    top: calc(100% + var(--cons-w) * 0.0279 + var(--btn-text-dy, 0px));
     width: calc(var(--cons-w) * 0.12359);
     height: calc(var(--cons-w) * 0.06067);
     font-size: clamp(5px, calc(var(--cons-w) * 0.0245), 13.5px);
@@ -5958,7 +6024,9 @@ body.is-demo .machine__side .controls .balance::after {
      duplique sobre el dibujo. Sigue siendo el nombre accesible del pulsador, y
      `#spin-label` es ademas el texto que el JS cambia a "GIRANDO…": el rotulo
      de la placa no cambia porque es decorativo y el estado real se lee en el de
-     debajo (seccion 5), que es la parte de la placa que si se actualiza. */
+     debajo (seccion 5), que es la parte de la placa que si se actualiza. El
+     `top` del token de texto (`--btn-text-dy`) llega tambien a estos nodos, pero
+     siguen siendo un recorte de 1x1: no pintan nada sobre el arte. */
   .machine__side .controls #btn-feature .btn__title,
   .machine__side .controls #btn-auto .btn__title,
   .machine__side .controls__bet #btn-bet-max .chip__label,
@@ -6502,12 +6570,12 @@ body.is-demo .machine__side .controls .balance::after {
     opacity: 0.8;
   }
   /* La placa del autogiro no rota: se queda con el paquete vigente a la vista. */
-  .machine__side .controls #btn-feature .btn__opt {
+  .machine__side .controls .btn-spin-option {
     animation: none;
     opacity: 0;
     transform: none;
   }
-  .machine__side .controls #btn-feature .btn__opt.is-active { opacity: 1; }
+  .machine__side .controls .btn-spin-option.is-active { opacity: 1; }
 }
 
 
@@ -7264,10 +7332,13 @@ body.is-demo .machine__side .controls .balance::after {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
+  /* El resaltado de la capsula, igual que en la base: aro interior para que el
+     chip vigente pinte el mismo ancho que los otros dos y el hueco de `gap` no
+     se estrangule al cambiar de paquete. Sin propiedades de caja. */
   .machine__side .controls .btn__opt.is-active {
     color: #6b2a00;
     background: #fff3bd;
-    box-shadow: inset 0 1px 0 #fffdf0, 0 0 0 1px rgba(120, 60, 0, 0.4);
+    box-shadow: inset 0 1px 0 #fffdf0, inset 0 0 0 1px rgba(120, 60, 0, 0.4);
   }
 
   /* Capsula azul: tinta blanca con contorno marino. */
@@ -9109,4 +9180,30 @@ html.is-low-graphics .toast {
   }
 }
 
+@media (max-width: 899px) {
+  /* ... tus otros estilos móviles ya existentes ... */
 
+  /* Ajustes desde el visual-tuner para móvil */
+  #balance-value {
+    transform: translate(-14px, 2px);
+  }
+  #balance-label {
+    transform: translate(-13px, 2px);
+  }
+}
+
+@media (max-width: 899px) {
+  #btn-auto > span.btn__main > span.btn__title {
+    transform: translate(0px, -1px);
+  }
+
+  #btn-auto {
+    transform: translate(0px, 3px);
+  }
+  
+}
+@media (max-width: 899px) {
+  [data-spins="5"] {
+    transform: translate(0px, 7px);
+  }
+}

@@ -747,8 +747,11 @@ test('el marcado trae el boton AUTOGIRO con los tres chips y la hoja GIROS RAPID
   for (const spins of [5, 10, 25]) {
     assert.match(
       html,
-      new RegExp(`<span class="btn__opt" data-spins="${spins}">x${spins}</span>`),
-      `el chip x${spins} esta en el marcado`
+      new RegExp(
+        `<span class="btn__opt btn-spin-option" data-spins="${spins}">` +
+          `<span class="btn__text">x${spins}</span></span>`
+      ),
+      `el chip x${spins} esta en el marcado, con la clase comun del grupo y su cifra en un nodo`
     );
   }
   assert.match(
@@ -767,6 +770,9 @@ test('el marcado trae el boton AUTOGIRO con los tres chips y la hoja GIROS RAPID
 
 test('los estilos de la hoja y de los chips estan en la fuente y en el minificado', () => {
   const css = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.css'), 'utf8');
+  /* Las reglas sin comentarios: los comentarios citan a proposito la cadena
+     vieja y no son estilo. */
+  const rules = css.replace(/\/\*[\s\S]*?\*\//g, '');
 
   assert.match(
     css,
@@ -783,10 +789,205 @@ test('los estilos de la hoja y de los chips estan en la fuente y en el minificad
   );
   assert.match(css, /@keyframes featurePlateRoll/, 'el turno de chips es animado');
 
+  /* Una sola clase gobierna el grupo: `.btn-spin-option` declara lo comun a las
+     dos maquetas en la base y la placa movil entera (ventana, turno y tinta) en
+     su media query, sin repetir la cadena del pulsador chip por chip. */
+  assert.match(
+    rules,
+    /\.btn-spin-option\s*\{[^}]*font-variant-numeric:\s*tabular-nums;/,
+    'la clase del grupo declara lo comun a las dos maquetas'
+  );
+  assert.match(
+    rules,
+    /\.machine__side \.controls \.btn-spin-option\s*\{\s*position:\s*absolute;[\s\S]*?animation:\s*featurePlateRoll/,
+    'en movil los tres chips rotan desde la regla agrupada'
+  );
+  assert.match(
+    rules,
+    /\.machine__side \.controls \.btn-spin-option\.is-active\s*\{/,
+    'el resaltado de la placa tambien se agrupa'
+  );
+  assert.doesNotMatch(
+    rules,
+    /#btn-feature \.btn__opt(?!s)/,
+    'ningun chip repite la cadena del pulsador'
+  );
+
   const min = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.min.css'), 'utf8');
   assert.ok(min.includes('.fever__flame'), 'el minificado conserva la estrella de la hoja');
   assert.ok(min.includes('.btn__opt.is-active'), 'el minificado conserva el chip vigente');
+  assert.ok(min.includes('.btn-spin-option'), 'el minificado conserva la clase del grupo');
   assert.ok(min.includes('featurePlateRoll'), 'el minificado conserva la rotacion de la placa');
+});
+
+/**
+ * Recorre las reglas hoja de la hoja de estilos (las de dentro de un `@media`
+ * salen igual, porque el bloque del `@media` no encaja en el patron) y devuelve
+ * `{ selector, body }` por cada una.
+ *
+ * @param {string} css hoja sin comentarios
+ * @returns {{ selector: string, body: string }[]}
+ */
+function cssRules(css) {
+  const out = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let match;
+  while ((match = re.exec(css)) !== null) {
+    const selector = match[1].replace(/\s+/g, ' ').trim();
+    /* Los pasos de `@keyframes` (`0%`, `from`, `to`) no son selectores. */
+    if (/^(?:\d|from$|to$)/.test(selector)) continue;
+    out.push({ selector, body: match[2] });
+  }
+  return out;
+}
+
+test('los chips del autogiro comparten la caja y el estado vigente solo repinta', () => {
+  const css = fs
+    .readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.css'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules = cssRules(css);
+
+  /* Solo los chips: la pastilla de escritorio y la placa movil. */
+  const isChip = (selector) => /\.btn__opt(?!s)|\.btn-spin-option/.test(selector);
+
+  /* 1) El estado vigente no puede colocar la caja. Si `.is-active` declara
+     posicion, tamaño, margenes, relleno o `transform`, el chip se mueve (o
+     empuja a sus vecinos) justo al seleccionarlo: es el salto que se corrige
+     aqui, y el candado impide que vuelva por una regla nueva. */
+  const GEOMETRIA = new RegExp(
+    '(?:^|;)\\s*(' +
+      [
+        'position', 'inset', 'top', 'right', 'bottom', 'left',
+        'width', 'min-width', 'max-width', 'height', 'min-height', 'max-height',
+        'margin(-\\w+)?', 'padding(-\\w+)?',
+        'transform', 'translate', 'rotate', 'scale',
+        'flex(-\\w+)?', 'order', 'align-self', 'justify-self', 'grid-area',
+        'font-size', 'line-height', 'border(-width)?',
+        'transition'
+      ].join('|') +
+      ')\\s*:'
+  );
+  const estados = rules.filter(
+    (rule) => isChip(rule.selector) && rule.selector.includes('is-active')
+  );
+  assert.ok(estados.length >= 2, 'el vigente se declara en la pastilla y en la placa');
+  for (const rule of estados) {
+    const hit = GEOMETRIA.exec(rule.body);
+    assert.equal(
+      hit,
+      null,
+      `"${rule.selector}" solo puede pintar; declara "${hit && hit[1]}" y eso mueve el chip`
+    );
+  }
+
+  /* 2) El aro del vigente va por dentro: un `box-shadow` exterior con `spread`
+     suma 2 px al ancho pintado y se come el hueco de `gap` al cambiar paquete. */
+  for (const rule of estados) {
+    for (const ring of rule.body.match(/[^,;{}]*0 0 0 1px[^,;{}]*/g) || []) {
+      assert.match(ring, /\binset\b/, `el aro de "${rule.selector}" debe ir por dentro: ${ring.trim()}`);
+    }
+  }
+
+  /* 3) La caja de la placa se declara una sola vez y para los tres. Ningun otro
+     selector de chip puede fijar posicion, tamaño o `transform` en movil: si
+     alguien lo hace, los chips dejan de compartir coordenadas. */
+  const COLOCA = /(?:^|;)\s*(position|inset|top|left|right|bottom|width|height|transform|translate)\s*:/;
+  const GRUPO = '.machine__side .controls .btn-spin-option';
+  const colocadores = rules
+    .filter((rule) => isChip(rule.selector) && COLOCA.test(rule.body))
+    .map((rule) => rule.selector);
+  assert.deepEqual(
+    colocadores.filter((selector) => selector !== GRUPO),
+    [],
+    'la caja de los chips solo la fija la regla del grupo'
+  );
+  assert.ok(colocadores.includes(GRUPO), 'la placa movil coloca los tres chips desde la regla agrupada');
+
+  /* 4) La transicion del grupo es de pintura: animar la caja produciria el mismo
+     desplazamiento en diferido. */
+  const grupo = rules.find((rule) => rule.selector === '.btn-spin-option');
+  assert.ok(grupo, 'la clase del grupo tiene regla propia');
+  assert.match(grupo.body, /transition:\s*color/, 'el cambio de paquete funde la tinta');
+  assert.doesNotMatch(
+    grupo.body,
+    /transition:[^;]*(?:\ball\b|transform|width|height|margin|padding|font-size)/,
+    'la transicion del chip no puede animar la caja'
+  );
+
+  const min = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.min.css'), 'utf8');
+  const minGrupo = /\.machine__side \.controls \.btn-spin-option\s*\{([^}]*)\}/.exec(min);
+  assert.ok(minGrupo, 'el minificado conserva la regla del grupo');
+  assert.match(
+    minGrupo[1],
+    /box-sizing:\s*border-box/,
+    'el minificado mantiene blindada la caja de la placa'
+  );
+  assert.match(
+    minGrupo[1],
+    /transform:\s*translateY\(64%\)/,
+    'el minificado conserva el arranque unico del turno'
+  );
+});
+
+test('el texto interno de los pulsadores se afina con un token, sin mover la caja', () => {
+  const html = fs.readFileSync(path.join(ROOT_DIR, 'public', 'index.html'), 'utf8');
+  const css = fs
+    .readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.css'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules = cssRules(css);
+
+  /* 1) La cifra de cada chip va en su nodo. Mientras sea texto suelto, el unico
+     nodo ajustable es la caja: moverlo seria mover el chip. */
+  for (const spins of [5, 10, 25]) {
+    assert.match(
+      html,
+      new RegExp(
+        `<span class="btn__opt btn-spin-option" data-spins="${spins}">` +
+          `<span class="btn__text">x${spins}</span></span>`
+      ),
+      `el chip x${spins} guarda su cifra en un nodo propio`
+    );
+  }
+  assert.doesNotMatch(html, /data-spins="\d+">[^<]/, 'ningun chip deja la cifra como texto suelto');
+
+  /* 2) El ajuste mueve el texto, no la caja: si la regla declarase tamaño,
+     relleno o alineacion, afinarlo seria cambiar el boton. Se aplica con
+     `position` + `top` y no con `transform` porque el chip de la pastilla de
+     escritorio es `inline` y ahi un `transform` no se aplica. */
+  const texto = rules.find((rule) => rule.selector === '.btn__title, .btn__text');
+  assert.ok(texto, 'el texto interno de los pulsadores tiene regla propia');
+  assert.match(texto.body, /position:\s*relative/, 'el texto se desplaza sin salir del flujo');
+  assert.match(
+    texto.body,
+    /top:\s*var\(--btn-text-dy, 0px\)/,
+    'la posicion del texto se ajusta con `--btn-text-dy` (0 por defecto)'
+  );
+  assert.doesNotMatch(
+    texto.body,
+    /(?:^|;)\s*(?:inset|left|right|bottom|width|height|margin|padding|font-size|line-height|transition|transform)\s*:/,
+    'afinar el texto no puede tocar la caja, la tipografia ni depender de `transform`'
+  );
+
+  /* 3) El rotulo `AUTO` de la placa movil es un `::after`: hereda el mismo token
+     y lo suma a su `top`, dejando intacto el `translate(-50%, -50%)` que lo
+     centra en la placa. */
+  const rotulo = rules.filter((rule) => rule.selector === '.machine__side .controls #btn-auto::after');
+  assert.ok(rotulo.length >= 2, 'el rotulo AUTO se pinta y se coloca en reglas separadas');
+  assert.ok(
+    rotulo.some((rule) => /top:\s*calc\([^;]*var\(--btn-text-dy, 0px\)\)/.test(rule.body)),
+    'el rotulo de la placa suma `--btn-text-dy` a su `top`'
+  );
+  const centrado = rotulo.find((rule) => rule.body.includes('transform:'));
+  assert.ok(centrado, 'el rotulo conserva su centrado');
+  assert.match(
+    centrado.body,
+    /transform:\s*translate\(-50%, -50%\)/,
+    'el ajuste vertical no reescribe el centrado del rotulo'
+  );
+
+  const min = fs.readFileSync(path.join(ROOT_DIR, 'public', 'src', 'css', 'style.min.css'), 'utf8');
+  assert.ok(min.includes('.btn__text'), 'el minificado conserva el nodo del texto');
+  assert.ok(min.includes('--btn-text-dy'), 'el minificado conserva el token del ajuste');
 });
 
 

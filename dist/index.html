@@ -10,7 +10,7 @@
        <meta name="game-api-base" content="https://engine.latingames.net" /> -->
   <meta name="game-api-base" content="" />
   <title>Santa Crush</title>
-  <link rel="stylesheet" href="/src/css/style.min.css?v=51f2f2b5ed" />
+  <link rel="stylesheet" href="/src/css/style.min.css?v=45e98728a9" />
   <!-- Capa de marca (Meridianobet). Solo tokens, superficies y acentos; no
        toca la maqueta ni el arte del juego. Se carga despues de style.min.css y
        se activa con `data-theme="meridianobet"` en <html>: quitando ese
@@ -185,11 +185,18 @@
                   <span class="btn__title">AUTOGIRO</span>
                   <!-- Los tres paquetes del selector, de un vistazo. Es texto
                        decorativo: el nombre accesible del boton ya los enumera y
-                       en movil rotan sobre la placa del pie. -->
+                       en movil rotan sobre la placa del pie. Comparten
+                       `btn-spin-option`, la clase con la que el CSS mueve el
+                       catalogo entero desde una sola regla.
+
+                       La cifra va en su propio nodo (`btn__text`) y no como
+                       texto suelto del chip: asi el CSS afina su centrado con
+                       `--btn-text-dy` sin tocar la caja, que es la que comparten
+                       los tres y la que anima la placa. -->
                   <span class="btn__opts" id="feature-options" aria-hidden="true">
-                    <span class="btn__opt" data-spins="5">x5</span>
-                    <span class="btn__opt" data-spins="10">x10</span>
-                    <span class="btn__opt" data-spins="25">x25</span>
+                    <span class="btn__opt btn-spin-option" data-spins="5"><span class="btn__text">x5</span></span>
+                    <span class="btn__opt btn-spin-option" data-spins="10"><span class="btn__text">x10</span></span>
+                    <span class="btn__opt btn-spin-option" data-spins="25"><span class="btn__text">x25</span></span>
                   </span>
                 </span>
                 <i class="shine" aria-hidden="true"></i>
@@ -369,6 +376,13 @@
       <p class="fever__summary" id="fever-summary"></p>
     </div>
   </div>
+
+  <!-- Inspector visual de maqueta (`visual-tuner`). Herramienta de DESARROLLO:
+       no forma parte del juego ni viaja en el paquete de integracion
+       (`npm run build:dist`). Se enchufa descomentando la linea de abajo y se
+       quita volviendo a comentarla; mientras este comentada, el jugador no
+       descarga ni un byte. Se activa con `?edit=1` o con Alt + E. -->
+  <!-- <script type="module" src="/dev/visual-tuner.js"></script> -->
 
   <script type="module" src="/ui/main.js"></script>
 </body>

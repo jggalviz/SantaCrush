@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-12T22:29:11.026Z",
+  "generatedAt": "2026-11-13T16:51:12.376Z",
   "files": {
-    "index.html": 20373,
+    "index.html": 21420,
     "src/assets/AUDIO-WIN-NEW-stadium-applause.MP3": 28541,
     "src/assets/avenida_fantastica_reino_caramelos.webp": 365788,
     "src/assets/consola_movil.webp": 480434,
@@ -28,7 +28,7 @@
     "src/assets/slot/s9.webp": 45080,
     "src/assets/win_celebracion_still.webp": 100542,
     "src/assets/win_celebracion.webp": 289220,
-    "src/css/style.min.css": 154967,
+    "src/css/style.min.css": 155489,
     "src/css/theme.min.css": 10429,
     "ui/audio/sfx.js": 14670,
     "ui/components/GameControls.js": 3846,
@@ -47,5 +47,5 @@
     "ui/services/ApiClient.js": 7915,
     "ui/services/SessionManager.js": 7685
   },
-  "totalBytes": 3676357
+  "totalBytes": 3677926
 }

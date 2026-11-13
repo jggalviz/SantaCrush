@@ -12,6 +12,8 @@
  *     HTML enlaza los `.min.css`, asi que publicarlas es peso muerto que ademas
  *     invita a servir la version sin minificar.
  *   - `.preview-*.html`: maquetas internas de comparacion de temas.
+ *   - `dev/**`: herramientas de maqueta (`visual-tuner.js`), que no forman
+ *     parte del juego ni las descarga el jugador.
  *   - `*.map`, `*.log` y cualquier `.DS_Store`.
  *
  * El resultado es el arbol que se sincroniza con el bucket o se copia a
@@ -29,7 +31,16 @@ const TARGET_DIR = path.join(ROOT_DIR, 'dist');
 
 /* Fuentes que no viajan: se sirve su version minificada. */
 const EXCLUDED_FILES = new Set(['src/css/style.css', 'src/css/theme.css']);
-const EXCLUDED_PATTERNS = [/\.preview-.*\.html$/i, /\.map$/i, /\.log$/i, /(^|\/)\.DS_Store$/];
+const EXCLUDED_PATTERNS = [
+  /\.preview-.*\.html$/i,
+  /\.map$/i,
+  /\.log$/i,
+  /(^|\/)\.DS_Store$/,
+  /* `public/dev/**` son herramientas de maqueta (p. ej. `visual-tuner.js`).
+     El juego no las referencia y no deben acabar en el CDN del operador. */
+  /^dev\//
+];
+
 const EXCLUDED_DIRS = new Set(['.git']);
 
 /**
