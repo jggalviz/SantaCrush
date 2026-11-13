@@ -9186,15 +9186,26 @@ html.is-low-graphics .toast {
      del rotulo —la fuente pixel sobresale de su `em`— y la celda recorta con
      `overflow: hidden`: arriba se perdia una fila de la etiqueta y abajo el
      numero rozaba la banda de la capsula. Con 1,35 la tinta cabe en su caja y
-     el centrado fino va por el token, que mueve el texto sin tocar la capsula,
-     el arte ni la zona tactil. */
+     el centrado fino va por los tokens, que mueven el texto sin tocar la capsula,
+     el arte ni la zona tactil.
+
+     El rotulo lleva ademas su propio delta (`--hud-label-dy`): el hueco util del
+     arte arranca pegado al aro y la etiqueta quedaba rozando el borde superior
+     mientras el hueco con el numero sobraba. Bajarla 3 px reparte ese aire y el
+     valor sube 1 px para no comerse el aro inferior. */
   .machine__side .hud__cell {
-    --btn-text-dy: 1px;               /* centra el par en el hueco del arte */
+    --btn-text-dy: 0px;               /* valor · centrado en el hueco del arte */
+    --hud-label-dy: 3px;              /* etiqueta · 3 px mas abajo que el valor */
   }
 
   .machine__side .hud__label,
+  .machine__side .hud__cell--win .hud__label {
+    position: relative;
+    top: calc(var(--btn-text-dy, 0px) + var(--hud-label-dy, 0px));
+    line-height: 1.35;
+  }
+
   .machine__side .hud__value,
-  .machine__side .hud__cell--win .hud__label,
   .machine__side .hud__cell--win .hud__value {
     position: relative;
     top: var(--btn-text-dy, 0px);
@@ -9203,12 +9214,18 @@ html.is-low-graphics .toast {
 
   /* Mismo ajuste en el saldo. Los dos `transform` que dejaba el tuner (-13 y
      -14 px) sacaban el texto de su capsula: ahora el unico desplazamiento es
-     el token y el saldo queda centrado en el arte. */
+     el de los tokens y el saldo queda centrado en el arte. */
   .machine__side .controls .balance {
-    --btn-text-dy: 1px;
+    --btn-text-dy: 0px;
+    --hud-label-dy: 3px;
   }
 
-  .machine__side .controls .balance__label,
+  .machine__side .controls .balance__label {
+    position: relative;
+    top: calc(var(--btn-text-dy, 0px) + var(--hud-label-dy, 0px));
+    line-height: 1.35;
+  }
+
   .machine__side .controls .balance__value {
     position: relative;
     top: var(--btn-text-dy, 0px);
@@ -9220,14 +9237,17 @@ html.is-low-graphics .toast {
     transform: none;
   }
 
-  /* Tinta afinada con el token `--btn-text-dy` (ver el bloque de arriba), no con
-     `transform`: en la placa el rotulo AUTO lo pinta su `::after` -el
-     `.btn__title` va recortado a 1x1, asi que moverlo no pinta nada- y el chip x5
-     lo pinta su `.btn__text`. En el chip el `transform` de la caja tampoco sirve:
-     `featurePlateRoll` es infinito y lo pisa durante todo el turno. */
+  /* Tinta afinada con los tokens (ver el bloque de arriba), no con `transform`:
+     en la placa el rotulo AUTO lo pinta su `::after` -el `.btn__title` va
+     recortado a 1x1, asi que moverlo no pinta nada- y el chip x5 lo pinta su
+     `.btn__text`. En el chip el `transform` de la caja tampoco sirve:
+     `featurePlateRoll` es infinito y lo pisa durante todo el turno.
+
+     AUTO iba a -3 px y el rotulo quedaba pegado al aro superior de su placa: con
+     +2 px la tinta cae centrada en el ovalo. */
   #btn-auto {
     transform: translate(0px, 3px);   /* disco */
-    --btn-text-dy: -3px;              /* rotulo AUTO 3 px arriba */
+    --btn-text-dy: 2px;               /* rotulo AUTO centrado en su placa */
   }
 
   [data-spins="5"] {
