@@ -1,8 +1,8 @@
-# Integración con el repositorio del backend (GitLab · rama `development`)
+# Integración con el repositorio del backend (GitLab · rama `developer`)
 
 - **Remoto de entrega:** `origin` → `https://git.latinongroup.com/renier/santa-crush`
 - **Espejo de despliegue:** `github` → `https://github.com/jggalviz/SantaCrush` (lo consume la integración Git de Vercel).
-- **Rama de entrega:** `development` (`main` es la línea de desarrollo del frontend).
+- **Rama de entrega:** `developer` en GitLab. `development` es la línea de trabajo del frontend: se fusiona en `developer` con `--no-ff` antes de publicar. `main` es la rama que despliega Vercel.
 - **Artefacto que consume backend:** `dist/`, **versionado en git**.
 - **Comando de build:** `npm run build`.
 
@@ -14,7 +14,7 @@
 2. [Build y paquete `dist/`](#2-build-y-paquete-dist)
 3. [Qué hace backend tras el merge](#3-qué-hace-backend-tras-el-merge)
 4. [Requisitos del hosting del paquete](#4-requisitos-del-hosting-del-paquete)
-5. [Checklist antes de cada push a `development`](#5-checklist-antes-de-cada-push-a-development)
+5. [Checklist antes de cada push a `developer`](#5-checklist-antes-de-cada-push-a-developer)
 
 ---
 
@@ -22,22 +22,31 @@
 
 | Remoto | URL | Uso |
 | --- | --- | --- |
-| `origin` | `https://git.latinongroup.com/renier/santa-crush` | Repositorio compartido con backend (GitLab del cliente). Es a donde se sube `development`. |
+| `origin` | `https://git.latinongroup.com/renier/santa-crush` | Repositorio compartido con backend (GitLab del cliente). Es a donde se sube `developer`. |
 | `github` | `https://github.com/jggalviz/SantaCrush` | Espejo del frontend; la integración Git de Vercel despliega desde aquí (`main`). |
 
 ```bash
 git remote -v
 git fetch origin
-git checkout development       # rama de entrega
-git pull origin development
+git checkout developer        # rama de entrega en GitLab
+git pull origin developer
 ```
 
-`origin` es el remoto por defecto: `git push origin development` publica la entrega
+`origin` es el remoto por defecto: `git push origin developer` publica la entrega
 en el GitLab del cliente. Para mantener sincronizado el espejo que despliega Vercel:
 
 ```bash
 git push github main           # despliegue automatico en Vercel
-git push github development    # opcional: respaldo de la rama de entrega
+git push github development    # opcional: respaldo de la rama de trabajo
+```
+
+El trabajo diario se hace en `development` (local y espejo `github/development`).
+GitLab tiene `developer`, no `development`: cada entrega se fusiona antes de subir.
+
+```bash
+git checkout developer
+git merge --no-ff development
+git push origin developer
 ```
 
 ## 2. Build y paquete `dist/`
@@ -58,7 +67,7 @@ npm run build
 npm test           # incluye test/gitIntegration.test.js: dist/ debe estar al dia
 git add -A
 git commit -m "chore: build para produccion"
-git push origin development
+git push origin developer
 ```
 
 `dist/` **se versiona** (no está en `.gitignore`) para que el backend haga `pull`
@@ -80,8 +89,8 @@ lo provocó.
 
 ```bash
 git fetch origin
-git checkout development
-git pull origin development
+git checkout developer
+git pull origin developer
 
 # El paquete es autocontenido: se sirve tal cual.
 rsync -a --delete dist/ /var/www/santa-crush/     # nginx / Apache
@@ -113,11 +122,11 @@ aws s3 sync dist/ "s3://<bucket>/" --delete       # CloudFront / S3
 - MIME correctos: `.webp`, `.woff2`, `.mp3` (los tres los sirve `express.static`
   sin configuración adicional; en nginx conviene declararlos en `types`).
 
-## 5. Checklist antes de cada push a `development`
+## 5. Checklist antes de cada push a `developer`
 
 1. `npm run build` sin errores.
-2. `npm test` en verde (232+ tests, incluidos `assetBudget` y `gitIntegration`).
+2. `npm test` en verde (251+ tests, incluidos `assetBudget` y `gitIntegration`).
 3. `git status` muestra `dist/` actualizado en el mismo commit que el cambio de
    `public/` o `ui/`.
 4. Sin `.env` ni arte fuente en el stage (`git status --short | Select-String .env`).
-5. `git push origin development` y avisar al equipo de backend del commit publicado.
+5. `git push origin developer` y avisar al equipo de backend del commit publicado.
