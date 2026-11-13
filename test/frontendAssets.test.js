@@ -2558,6 +2558,66 @@ test('el AUTO no se mueve bajo el raton: su desplazamiento vive en el layout', (
   );
 });
 
+test('la tinta de los paneles y de los chips cabe en su capsula', () => {
+  const css = read(STYLE_PATH);
+
+  // El rótulo y el dato de los paneles superiores se centran como un bloque
+  // dentro del hueco rojo del arte, que mide 20 px a 390 px de ancho. El bloque
+  // mide ~19 px porque cada línea conserva el `line-height` de la maqueta móvil
+  // (1 en el rótulo y 1,1-1,15 en el dato); forzar 1,35 lo engordaba hasta
+  // 23,8 px, el dato se salía por debajo del aro y el rótulo quedaba pegado al
+  // de arriba. El centrado fino va sólo por tokens.
+  const paneles = css.match(/\/\* Paneles superiores[\s\S]*?#balance-value\s*\{[^}]*\}/);
+  assert.ok(paneles, 'el bloque de los paneles superiores debe existir');
+  assert.doesNotMatch(
+    paneles[0],
+    /line-height:/,
+    'afinar los paneles no puede tocar el interlineado: el bloque dejaría de caber'
+  );
+  assert.match(
+    paneles[0],
+    /\.machine__side \.hud__cell\s*\{[^}]*--btn-text-dy:\s*-1px;[^}]*--hud-label-dy:\s*0px;/,
+    'el HUD sube sus dos renglones 1 px con `--btn-text-dy` y no añade delta al rótulo'
+  );
+  assert.match(
+    paneles[0],
+    /\.machine__side \.controls \.balance\s*\{[^}]*--btn-text-dy:\s*-1px;[^}]*--hud-label-dy:\s*0px;/,
+    'el saldo del pie usa los mismos tokens que el HUD'
+  );
+
+  // La ventana de los chips se ciñe al hueco interior del óvalo de la placa 1
+  // (17 px de alto y centrada en la fila 150 del arte a 390 px). Con los 22,3 px
+  // anteriores sobresalía 3,7 px por arriba y por abajo: el chip, que entra y
+  // sale rodando, asomaba fuera de la cápsula verde.
+  const ventana = css.match(/\.machine__side \.controls #btn-feature \.btn__opts\s*\{[\s\S]*?\n  \}/);
+  assert.ok(ventana, 'la ventana de los chips debe declarar su caja');
+  assert.match(
+    ventana[0],
+    /height:\s*calc\(var\(--cons-w\) \* 0\.04359\)/,
+    'la ventana mide 17 px a 390 px de ancho: el hueco del óvalo'
+  );
+  assert.match(
+    ventana[0],
+    /top:\s*calc\(100% \+ var\(--cons-w\) \* 0\.03441\)/,
+    'la ventana se ancla 2,1 px más abajo para quedar centrada en el óvalo'
+  );
+  assert.doesNotMatch(
+    ventana[0],
+    /0\.05731/,
+    'la ventana no puede volver a ser más alta que el hueco del óvalo'
+  );
+
+  // Los tres chips comparten el centrado por defecto: el token que llevaba el
+  // x5 lo bajaba 2 px respecto a x10 y x25 dentro del mismo turno.
+  assert.doesNotMatch(
+    css,
+    /\[data-spins="5"\]\s*\{[^}]*--btn-text-dy/,
+    'el chip x5 no lleva token propio: los tres se centran igual'
+  );
+});
+
+
+
 
 test('el GIRAR del case recupera el acabado candy: cristal y destellos', () => {
   const css = read(STYLE_PATH);

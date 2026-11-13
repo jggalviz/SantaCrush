@@ -5911,17 +5911,22 @@ body.is-demo .machine__side .controls .balance::after {
     position: static;
   }
 
-  /* Ventana del catalogo de paquetes: el hueco interior de la placa 1 va de
-     x 6,18 % a 18,48 % y de y 70,67 % a 82,22 %, y su centro (12,33 % del ancho
-     de la consola) cae 5,94 px a la derecha del centro del pulsador. La ventana
-     se ciñe a ese hueco para que el chip visible quede centrado en el óvalo y
-     entre y salga recortado por el aro, no por una caja más alta que la placa. */
+  /* Ventana del catalogo de paquetes: el hueco util de la placa 1 va de
+     x 5,64 % a 18,97 % y de y 72,5 % a 82,9 % del arte de la consola (medido
+     sobre `consola_movil.webp` a 390 px: aro dorado en las filas 140-142 y
+     158-160, interior verde de la 143 a la 157, centro x 48 = 12,31 % del
+     ancho). La ventana se ciñe a ese hueco interior -17 px de alto y centrada
+     en la fila 150- para que el chip entre y salga recortado por el aro, no por
+     una caja mas alta que la placa: con los 22,3 px anteriores el recorte
+     sobresalia 3,7 px por arriba y por abajo del ovalo y el chip en transito se
+     veia fuera de la capsula. El centro cae 2,1 px por debajo del que daba
+     aquella caja, asi que el anclaje sube de 2,903 % a 3,441 % del ancho. */
   .machine__side .controls #btn-feature .btn__opts {
     position: absolute;
     left: calc(50% + var(--cons-w) * 0.01523);
-    top: calc(100% + var(--cons-w) * 0.02903);
+    top: calc(100% + var(--cons-w) * 0.03441);
     width: calc(var(--cons-w) * 0.123);
-    height: calc(var(--cons-w) * 0.05731);
+    height: calc(var(--cons-w) * 0.04359);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -9193,54 +9198,54 @@ html.is-low-graphics .toast {
 
 @media (max-width: 899px) {
   /* Paneles superiores · la tinta cabe entera en su capsula
-     La caja de linea de etiquetas y valores (1 y 1,1) era mas baja que la tinta
-     del rotulo —la fuente pixel sobresale de su `em`— y la celda recorta con
-     `overflow: hidden`: arriba se perdia una fila de la etiqueta y abajo el
-     numero rozaba la banda de la capsula. Con 1,35 la tinta cabe en su caja y
-     el centrado fino va por los tokens, que mueven el texto sin tocar la capsula,
-     el arte ni la zona tactil.
+     El hueco rojo del arte mide 20 px a 390 px de ancho (filas 359-378 del
+     panel) y el bloque de los dos renglones tiene que caber dentro. Con los
+     `line-height` con los que se diseña el HUD movil -1 en el rotulo y 1,1 en el
+     dato- ese bloque mide 19 px, asi que el `justify-content: center` de la
+     celda ya lo deja centrado; forzar 1,35 lo engordaba hasta 23,8 px y el dato
+     se salia por debajo del aro, pisando el borde dorado y dejando el rotulo
+     pegado al de arriba. Aqui no se toca la tipografia: el centrado fino va por
+     los tokens, que mueven el texto sin tocar la capsula, el arte ni la zona
+     tactil.
 
-     El rotulo lleva ademas su propio delta (`--hud-label-dy`): el hueco util del
-     arte arranca pegado al aro y la etiqueta quedaba rozando el borde superior
-     mientras el hueco con el numero sobraba. Bajarla 3 px reparte ese aire y el
-     valor sube 1 px para no comerse el aro inferior. */
+     El bloque centrado por flex cae 0,7 px por debajo del centro del hueco
+     rojo, asi que los dos renglones suben 1 px con `--btn-text-dy` y el rotulo
+     no lleva delta propio (`--hud-label-dy: 0`): quedan a la misma distancia
+     del aro superior y del inferior. */
   .machine__side .hud__cell {
-    --btn-text-dy: 0px;               /* valor · centrado en el hueco del arte */
-    --hud-label-dy: 3px;              /* etiqueta · 3 px mas abajo que el valor */
+    --btn-text-dy: -1px;              /* valor · centrado en el hueco del arte */
+    --hud-label-dy: 0px;              /* etiqueta · sin delta extra */
   }
 
   .machine__side .hud__label,
   .machine__side .hud__cell--win .hud__label {
     position: relative;
     top: calc(var(--btn-text-dy, 0px) + var(--hud-label-dy, 0px));
-    line-height: 1.35;
   }
 
   .machine__side .hud__value,
   .machine__side .hud__cell--win .hud__value {
     position: relative;
     top: var(--btn-text-dy, 0px);
-    line-height: 1.35;
   }
 
-  /* Mismo ajuste en el saldo. Los dos `transform` que dejaba el tuner (-13 y
-     -14 px) sacaban el texto de su capsula: ahora el unico desplazamiento es
-     el de los tokens y el saldo queda centrado en el arte. */
+  /* Mismo ajuste en el saldo del pie: es el mismo arte de placa, asi que lleva
+     los mismos tokens. Los dos `transform` que dejaba el tuner (-13 y -14 px)
+     sacaban el texto de su capsula; aqui ya no hay ninguno y el unico
+     desplazamiento es el de los tokens. */
   .machine__side .controls .balance {
-    --btn-text-dy: 0px;
-    --hud-label-dy: 3px;
+    --btn-text-dy: -1px;
+    --hud-label-dy: 0px;
   }
 
   .machine__side .controls .balance__label {
     position: relative;
     top: calc(var(--btn-text-dy, 0px) + var(--hud-label-dy, 0px));
-    line-height: 1.35;
   }
 
   .machine__side .controls .balance__value {
     position: relative;
     top: var(--btn-text-dy, 0px);
-    line-height: 1.35;
   }
 
   #balance-label,
@@ -9287,7 +9292,10 @@ html.is-low-graphics .toast {
     transform: translate(-50%, -50%) !important;
   }
 
-  [data-spins="5"] {
-    --btn-text-dy: 2px;               /* tinta del chip x5 2 px abajo */
-  }
+  /* Los tres chips comparten el token por defecto (`--btn-text-dy` sin declarar
+     -> 0): la ventana se ciñe al hueco del ovalo (ver la regla de `.btn__opts`)
+     y la cifra queda centrada por `align-items` + `justify-content`. El token
+     que llevaba el chip x5 (+2 px) compensaba a ojo la ventana descolocada: con
+     el recorte en su sitio, ese +2 lo bajaba respecto a x10 y x25, y tres chips
+     del mismo turno dejaban de compartir coordenadas. */
 }
