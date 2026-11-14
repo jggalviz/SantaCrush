@@ -9225,23 +9225,29 @@ html.is-low-graphics .toast {
 }
 
 @media (max-width: 899px) {
-  /* Paneles superiores · la tinta cabe entera en su capsula
-     El hueco rojo del arte mide 20 px a 390 px de ancho (filas 359-378 del
-     panel) y el bloque de los dos renglones tiene que caber dentro. Con los
-     `line-height` con los que se diseña el HUD movil -1 en el rotulo y 1,1 en el
-     dato- ese bloque mide 19 px, asi que el `justify-content: center` de la
-     celda ya lo deja centrado; forzar 1,35 lo engordaba hasta 23,8 px y el dato
-     se salia por debajo del aro, pisando el borde dorado y dejando el rotulo
-     pegado al de arriba. Aqui no se toca la tipografia: el centrado fino va por
-     los tokens, que mueven el texto sin tocar la capsula, el arte ni la zona
-     tactil.
+  /* Paneles superiores · la tinta cabe entera y centrada en su capsula
+     El hueco rojo del arte va de 19,40 % a 24,53 % del alto del marco: 19,56 px
+     a 390 px de ancho. La tinta de los dos renglones (del borde superior del
+     rotulo al inferior del dato, medido sobre captura a 2x) mide 16 px, asi que
+     sobran 3,5 px para repartir. No se toca la tipografia -con `line-height`
+     1,35 el bloque medía 23,8 px y el dato se salia por debajo del aro-; lo que
+     se ajusta es el reparto vertical: los dos numeros de abajo.
 
-     El bloque centrado por flex cae 0,7 px por debajo del centro del hueco
-     rojo, asi que los dos renglones suben 1 px con `--btn-text-dy` y el rotulo
-     no lleva delta propio (`--hud-label-dy: 0`): quedan a la misma distancia
-     del aro superior y del inferior. */
+     1. La separacion entre renglones baja a 0,2 px (`--m-w` * 0,0005). El hueco
+        de la celda era `clamp(1px, --m-w * 0,003, 2px)` = 1,17 px a 390 px, y
+        ese pixel largo se le restaba al aire de arriba y de abajo. Como el
+        bloque se centra con `justify-content`, recortar el hueco por `G` gana
+        `G/2` de aire en cada lado sin tocar el tamano del rotulo ni del dato
+        (el aire visible entre las dos lineas pasa de 4 a 3 px).
+     2. Los dos renglones bajan 0,3 px con `--btn-text-dy` y el rotulo no lleva
+        delta propio (`--hud-label-dy: 0`), porque el `top` del rotulo ya suma
+        los dos tokens. Con -1 px el bloque caia 1 px por encima del centro del
+        hueco: el rotulo quedaba a 1 px del aro de arriba y el dato a 2,5 px del
+        de abajo. Ahora el aire es simetrico (2,2 px / 2,3 px medidos a 390 y
+        412 px de ancho): el rotulo deja de pisar el borde dorado. */
   .machine__side .hud__cell {
-    --btn-text-dy: -1px;              /* valor · centrado en el hueco del arte */
+    gap: clamp(0px, calc(var(--m-w) * 0.0005), 0.6px);
+    --btn-text-dy: -0.3px;            /* los dos renglones · centro del hueco */
     --hud-label-dy: 0px;              /* etiqueta · sin delta extra */
   }
 
@@ -9258,11 +9264,13 @@ html.is-low-graphics .toast {
   }
 
   /* Mismo ajuste en el saldo del pie: es el mismo arte de placa, asi que lleva
-     los mismos tokens. Los dos `transform` que dejaba el tuner (-13 y -14 px)
-     sacaban el texto de su capsula; aqui ya no hay ninguno y el unico
-     desplazamiento es el de los tokens. */
+     los mismos tokens y la misma separacion entre renglones. Los dos
+     `transform` que dejaba el tuner (-13 y -14 px) sacaban el texto de su
+     capsula; aqui ya no hay ninguno y el unico desplazamiento es el de los
+     tokens. */
   .machine__side .controls .balance {
-    --btn-text-dy: -1px;
+    gap: clamp(0px, calc(var(--m-w) * 0.0005), 0.6px);
+    --btn-text-dy: -0.3px;
     --hud-label-dy: 0px;
   }
 

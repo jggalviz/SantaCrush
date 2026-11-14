@@ -2641,13 +2641,21 @@ test('la tinta de los paneles y de los chips cabe en su capsula', () => {
   );
   assert.match(
     paneles[0],
-    /\.machine__side \.hud__cell\s*\{[^}]*--btn-text-dy:\s*-1px;[^}]*--hud-label-dy:\s*0px;/,
-    'el HUD sube sus dos renglones 1 px con `--btn-text-dy` y no añade delta al rótulo'
+    /\.machine__side \.hud__cell\s*\{[^}]*gap:\s*clamp\(0px, calc\(var\(--m-w\) \* 0\.0005\), 0\.6px\);[^}]*--btn-text-dy:\s*-0\.3px;[^}]*--hud-label-dy:\s*0px;/,
+    'la celda del HUD recorta la separacion entre renglones y baja los dos 0,3 px para centrar la tinta en el hueco'
   );
   assert.match(
     paneles[0],
-    /\.machine__side \.controls \.balance\s*\{[^}]*--btn-text-dy:\s*-1px;[^}]*--hud-label-dy:\s*0px;/,
-    'el saldo del pie usa los mismos tokens que el HUD'
+    /\.machine__side \.controls \.balance\s*\{[^}]*gap:\s*clamp\(0px, calc\(var\(--m-w\) \* 0\.0005\), 0\.6px\);[^}]*--btn-text-dy:\s*-0\.3px;[^}]*--hud-label-dy:\s*0px;/,
+    'el saldo del pie usa la misma separacion y los mismos tokens que el HUD'
+  );
+  // El token subia 1 px los dos renglones cuando el bloque de cajas nacia 0,7 px
+  // alto, y con el rotulo a 1 px del aro. Ahora el aire es simetrico (2,2 px
+  // arriba y abajo medidos a 390 y 412 px) y el rotulo no pisa el borde dorado.
+  assert.doesNotMatch(
+    paneles[0],
+    /--btn-text-dy:\s*-1px/,
+    'el HUD ya no sube sus renglones 1 px: la tinta queda centrada en la capsula'
   );
 
   // La ventana de los chips se ciñe al hueco interior del óvalo de la placa 1
