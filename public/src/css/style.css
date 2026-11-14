@@ -5915,18 +5915,21 @@ body.is-demo .machine__side .controls .balance::after {
      x 5,64 % a 18,97 % y de y 72,5 % a 82,9 % del arte de la consola (medido
      sobre `consola_movil.webp` a 390 px: aro dorado en las filas 140-142 y
      158-160, interior verde de la 143 a la 157, centro x 48 = 12,31 % del
-     ancho). La ventana se ciñe a ese hueco interior -17 px de alto y centrada
+     ancho). La ventana se ciñe a ese hueco interior -15 px de alto y centrada
      en la fila 150- para que el chip entre y salga recortado por el aro, no por
-     una caja mas alta que la placa: con los 22,3 px anteriores el recorte
-     sobresalia 3,7 px por arriba y por abajo del ovalo y el chip en transito se
-     veia fuera de la capsula. El centro cae 2,1 px por debajo del que daba
-     aquella caja, asi que el anclaje sube de 2,903 % a 3,441 % del ancho. */
+     una caja mas alta que la placa. El centro del hueco cae 2,1 px por debajo
+     del que daba la caja de diseno, asi que el anclaje es 3,441 % del ancho.
+     Con `--cons-w` de referencia (390 px) la ventana mide 15 px, el interior
+     exacto del ovalo: con 17 se comia 1 px del aro por arriba y por abajo y el
+     chip en transito se veia fuera de la capsula. El alto no mueve el centro
+     -el `translate(-50%, -50%)` lo clava en `top`-, asi que el ajuste no
+     reabre el centrado de la cifra. */
   .machine__side .controls #btn-feature .btn__opts {
     position: absolute;
     left: calc(50% + var(--cons-w) * 0.01523);
     top: calc(100% + var(--cons-w) * 0.03441);
     width: calc(var(--cons-w) * 0.123);
-    height: calc(var(--cons-w) * 0.04359);
+    height: calc(var(--cons-w) * 0.03846);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -9179,9 +9182,14 @@ html.is-low-graphics .toast {
     /* 0,95 * 0,78 = 74 % del ancho: la chapa pierde un quinto respecto al tamano
        de diseno (95 %) pero sigue por encima de lo que media el diseno anterior
        (84 %). `--logo-max` sube en la misma proporcion (0,22 -> 0,24) para que el
-       techo en `cqh` no se coma el crecimiento. */
+       techo en `cqh` no se coma el crecimiento.
+
+       `--console-k` NO baja en este escalon: la consola es lo unico de la pila
+       que ocupa el ancho entero y, con el logo ya encogido, su caja cabe a
+       sangre (medido a 390 x 844: quedan 21,9 px entre el tablero y la
+       consola). Encogerla aqui dejaba 27 px de franja de fondo a cada lado en
+       un telefono corriente, que es justo lo que el arte no pide. */
     --logo-k: 0.78;
-    --console-k: 0.86;
     --logo-max: 0.24;
   }
 }
@@ -9191,8 +9199,28 @@ html.is-low-graphics .toast {
   .machine {
     /* 0,95 * 0,58 = 55 % del ancho; el marco y su grilla no pierden un pixel. */
     --logo-k: 0.58;
-    --console-k: 0.72;
     --logo-max: 0.185;
+  }
+}
+
+/* La consola solo cede ancho cuando el ALTO absoluto no da para el reparto.
+   La relacion de aspecto no basta como aviso: 360 x 640 (16:9) admite la
+   consola a sangre con 17,7 px de holgura y, en cambio, 360 x 600 -misma
+   relacion, 40 px menos de alto- no la admite. Por eso el escalon se pregunta
+   por alto de viewport, no por `aspect-ratio`: asi la consola toca los dos
+   filos en todos los telefonos actuales y solo se recoge en los muy bajos
+   (320 x 480, 360 x 600 y los que pierden alto por la barra del navegador). */
+@media (max-width: 899px) and (orientation: portrait) and (max-height: 620px) {
+  .machine {
+    --console-k: 0.72;
+  }
+}
+
+@media (max-width: 899px) and (orientation: portrait) and (max-height: 520px) {
+  .machine {
+    /* 0,6 x 0,4961 = 30 % del alto: la consola deja libre el tablero incluso
+       en 320 x 480, donde 0,72 ya se comia 14,6 px de la ultima fila. */
+    --console-k: 0.6;
   }
 }
 
@@ -9259,8 +9287,10 @@ html.is-low-graphics .toast {
      `.btn__text`. En el chip el `transform` de la caja tampoco sirve:
      `featurePlateRoll` es infinito y lo pisa durante todo el turno.
 
-     AUTO iba a -3 px y el rotulo quedaba pegado al aro superior de su placa: con
-     +2 px la tinta cae centrada en el ovalo. */
+     AUTO llevaba +2 px de token cuando la consola se recogia a 0,86 de su
+     ancho; con el case a sangre la placa es mas grande y el mismo +2 dejaba la
+     tinta 2 px por debajo del aro (medido a 390 px: tinta 775-780 dentro del
+     interior 769-784). Con +1 px la tinta cae en el centro del hueco. */
   #btn-auto {
     /* El disco -y la placa AUTO que cuelga de su `::after`, `top: calc(100% +
        ...)`- se bajan 3 px con `margin-top`, NUNCA con `transform`. El reset de
@@ -9272,7 +9302,7 @@ html.is-low-graphics .toast {
        `:active`, foco o una animacion- puede perder el sitio, porque la
        posicion ya no depende de `transform`. */
     margin-top: 3px;
-    --btn-text-dy: 2px;               /* rotulo AUTO centrado en su placa */
+    --btn-text-dy: 1px;               /* rotulo AUTO centrado en su placa */
   }
 
   /* Blindaje del texto interno del AUTO: ningun estado lo desplaza.

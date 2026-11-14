@@ -1639,6 +1639,12 @@ test('la consola y el tablero comparten el mismo eje X en movil', () => {
   );
   assert.match(rule, /justify-self:\s*center;/, 'Centrada por rejilla, no por un margen heredado');
   assert.match(rule, /padding:\s*0;/, 'Sin aire lateral descompensado');
+  assert.match(rule, /max-width:\s*none;/, 'Sin tope de ancho: el case nunca queda flotando');
+  assert.match(
+    rule,
+    /margin:\s*calc\(-1 \* var\(--joint-tuck\)\) 0 0;/,
+    'El margen solo sube la caja sobre el marco; no deja franjas a los lados'
+  );
   assert.match(rule, /border:\s*0;/, 'Sin filo que desplace el dibujo');
   assert.match(rule, /align-self:\s*center;/, 'La fila no estira el case');
   assert.match(
@@ -1837,18 +1843,35 @@ test('el marco movil va de borde a borde y el chrome cede alto en los telefonos 
   // Escalon suave: alto / ancho <= 2,13 (ancho / alto >= 0,47). Cubre los
   // telefonos apretados (360 x 740, 390 x 790, 414 x 844) sin tocar los 20:9
   // actuales. `--logo-k` 0,78 sobre el 95 % de diseno = 74 % del ancho.
+  //
+  // La consola NO baja aqui. Es la unica pieza de la pila que ocupa el ancho
+  // entero, y con el logo ya encogido su caja cabe a sangre (medido en Chrome a
+  // 390 x 844: 21,9 px entre el borde inferior del tablero y el alto de la
+  // consola). Encogerla dejaba 27 px de franja de fondo a cada lado en el
+  // telefono mas comun, con la botonera flotando en medio de la pantalla.
   assert.match(
     css,
-    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 47 \/ 100\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--logo-k: 0\.78;\s*--console-k: 0\.86;\s*--logo-max: 0\.24;\s*\}\s*\}/,
-    'Los viewports de menos de 2,13 de alto por ancho encogen el chrome para que el marco siga a sangre'
+    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 47 \/ 100\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--logo-k: 0\.78;\s*--logo-max: 0\.24;\s*\}\s*\}/,
+    'Los viewports de menos de 2,13 de alto por ancho encogen la chapa, no la consola'
+  );
+  assert.doesNotMatch(
+    css,
+    /min-aspect-ratio: 47 \/ 100[\s\S]{0,400}?--console-k:/,
+    'el escalon por relacion de aspecto no puede volver a recoger la consola'
   );
 
   // Escalon fuerte: alto / ancho <= 1,80 (16:9 y tablets bajas). 0,58 sobre el
-  // 95 % = 55 % del ancho.
+  // 95 % = 55 % del ancho. Tampoco toca `--console-k`: 412 x 732 y 414 x 736
+  // llevan la consola a sangre con 21,6 y 22,1 px de holgura.
   assert.match(
     css,
-    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 5 \/ 9\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--logo-k: 0\.58;\s*--console-k: 0\.72;\s*--logo-max: 0\.185;\s*\}\s*\}/,
-    'En 16:9 el chrome cede mas: el marco no puede perder ancho'
+    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(min-aspect-ratio: 5 \/ 9\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--logo-k: 0\.58;\s*--logo-max: 0\.185;\s*\}\s*\}/,
+    'En 16:9 la chapa cede mas: el marco no puede perder ancho'
+  );
+  assert.doesNotMatch(
+    css,
+    /min-aspect-ratio: 5 \/ 9[\s\S]{0,400}?--console-k:/,
+    'el escalon 16:9 tampoco puede recoger la consola'
   );
 
   // El solape con el marco se declara una sola vez, en el bloque movil de
@@ -2539,7 +2562,7 @@ test('el AUTO no se mueve bajo el raton: su desplazamiento vive en el layout', (
   );
   assert.match(
     css,
-    /#btn-auto\s*\{[\s\S]{0,900}?margin-top:\s*3px;[\s\S]{0,120}?--btn-text-dy:\s*2px;/,
+    /#btn-auto\s*\{[\s\S]{0,900}?margin-top:\s*3px;[\s\S]{0,120}?--btn-text-dy:\s*1px;/,
     'el desplazamiento del disco AUTO va en `margin-top` y el rotulo conserva su token'
   );
 
@@ -2558,7 +2581,49 @@ test('el AUTO no se mueve bajo el raton: su desplazamiento vive en el layout', (
   );
 });
 
+test('la consola solo cede ancho cuando el alto del viewport no da', () => {
+  const css = read(STYLE_PATH);
+
+  // La relacion de aspecto no sirve como aviso de "falta alto": 360 x 640 (16:9)
+  // lleva la consola a sangre con 17,7 px de holgura y 360 x 600 -misma
+  // relacion, 40 px menos de alto- no la lleva. Por eso el unico escalon que
+  // toca `--console-k` se pregunta por `max-height`, y lo hace en dos tramos:
+  // 0,72 hasta 620 px de alto y 0,6 por debajo de 520 (320 x 480, donde 0,72
+  // todavia se comia 14,6 px de la ultima fila del tablero).
+  const escalones = [...css.matchAll(
+    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(max-height: (\d+)px\) \{\s*\.machine \{\s*(?:\/\*[\s\S]*?\*\/\s*)?--console-k: ([\d.]+);/g
+  )].map((m) => ({ alto: Number(m[1]), k: Number(m[2]) }));
+
+  assert.deepEqual(
+    escalones,
+    [{ alto: 620, k: 0.72 }, { alto: 520, k: 0.6 }],
+    'La consola cede ancho en dos tramos de alto, del mas holgado al mas apretado'
+  );
+
+  // Un solo mando por tramo: si la regla declarase tambien el logo, el escalon
+  // por alto competiria con los de `aspect-ratio` y el reparto dejaria de ser
+  // predecible (el ultimo `--logo-k` de la cascada ganaria).
+  for (const tramo of css.matchAll(
+    /@media \(max-width: 899px\) and \(orientation: portrait\) and \(max-height: \d+px\) \{\s*\.machine \{([\s\S]*?)\}/g
+  )) {
+    assert.doesNotMatch(
+      tramo[1],
+      /--logo-k|--logo-max/,
+      'El tramo por alto solo mueve `--console-k`: el logo lo deciden los de `aspect-ratio`'
+    );
+  }
+
+  // Y el tramo de 0,6 tiene que seguir dejando sitio al tablero: la consola
+  // ocupa 0,4961 de su ancho en alto, asi que 0,6 de ancho son ~30 % del alto.
+  assert.match(
+    css,
+    /--console-k: 0\.6;/,
+    'Los telefonos de 480 px de alto necesitan la consola al 60 % del ancho'
+  );
+});
 test('la tinta de los paneles y de los chips cabe en su capsula', () => {
+
+
   const css = read(STYLE_PATH);
 
   // El rótulo y el dato de los paneles superiores se centran como un bloque
@@ -2586,15 +2651,16 @@ test('la tinta de los paneles y de los chips cabe en su capsula', () => {
   );
 
   // La ventana de los chips se ciñe al hueco interior del óvalo de la placa 1
-  // (17 px de alto y centrada en la fila 150 del arte a 390 px). Con los 22,3 px
-  // anteriores sobresalía 3,7 px por arriba y por abajo: el chip, que entra y
-  // sale rodando, asomaba fuera de la cápsula verde.
+  // (15 px de alto y centrada en la fila 150 del arte a 390 px). Con los 22,3 px
+  // originales sobresalía 3,7 px por arriba y por abajo y, con los 17 px del
+  // primer ajuste, todavía se comía 1 px del aro: el chip, que entra y sale
+  // rodando, asomaba fuera de la cápsula verde.
   const ventana = css.match(/\.machine__side \.controls #btn-feature \.btn__opts\s*\{[\s\S]*?\n  \}/);
   assert.ok(ventana, 'la ventana de los chips debe declarar su caja');
   assert.match(
     ventana[0],
-    /height:\s*calc\(var\(--cons-w\) \* 0\.04359\)/,
-    'la ventana mide 17 px a 390 px de ancho: el hueco del óvalo'
+    /height:\s*calc\(var\(--cons-w\) \* 0\.03846\)/,
+    'la ventana mide 15 px a 390 px de ancho: el hueco interior del óvalo'
   );
   assert.match(
     ventana[0],
@@ -2603,8 +2669,15 @@ test('la tinta de los paneles y de los chips cabe en su capsula', () => {
   );
   assert.doesNotMatch(
     ventana[0],
-    /0\.05731/,
+    /0\.05731|0\.04359/,
     'la ventana no puede volver a ser más alta que el hueco del óvalo'
+  );
+  // El alto sólo ciñe el recorte: el centro lo clava `translate(-50%, -50%)`
+  // sobre `top`, así que acortar la ventana no reabre el centrado de la cifra.
+  assert.match(
+    ventana[0],
+    /transform:\s*translate\(-50%, -50%\);/,
+    'el centro de la ventana viaja en el transform, no en el alto'
   );
 
   // Los tres chips comparten el centrado por defecto: el token que llevaba el
