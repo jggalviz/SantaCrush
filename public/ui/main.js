@@ -24,6 +24,7 @@ import {
   setDocumentHidden,
   watchVisibility
 } from './lib/perf.js';
+import { watchHudPlateDrift } from './lib/hudPlate.js';
 
 function describe(error) {
   if (error instanceof ApiError) return error.message;
@@ -41,6 +42,9 @@ function bootstrap() {
 
   const ui = new GameView();
   ui.mount();
+  /* El saldo se pinta desde la consola pero tiene que caer en la placa 1 del
+     marco: se mide el desfase real al montar y en cada cambio de maqueta. */
+  watchHudPlateDrift();
 
   let session = null;
   const api = new ApiClient({ getToken: () => (session ? session.current() : null) });

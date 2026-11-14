@@ -5596,7 +5596,17 @@ body.is-demo .machine__side .controls .balance::after {
   .machine__side .controls .balance,
   body.is-demo .machine__side .controls .balance {
     left: 27.01%;
-    top: calc(-1 * (var(--frame-h) * 0.81414 + var(--row-gap) - var(--joint-tuck)));
+    /* La cuenta vale mientras la rejilla respete el alto del marco: `--frame-h`
+       + 49,61 % de consola caben solo si el viewport da el alto. Cuando no lo da,
+       la rejilla comprime la fila del marco (la unica elastica: el arte va
+       absoluto) y la consola sube con ella, mientras las placas 2 y 3 -colgadas
+       de la franja del marco- se quedan en su aro. La diferencia es geometria
+       viva, no una constante: a 480x800 son 38 px y a 498x855 son 18. Por eso
+       `ui/lib/hudPlate.js` mide el desfase real entre esta caja y `.hud` y lo
+       publica en `--hud-plate-drift`, que aqui se suma (desplazamiento positivo
+       = hacia abajo). Sin JS -o en escritorio, donde el token no se escribe- el
+       respaldo es 0 y manda la cuenta de siempre. */
+    top: calc(-1 * (var(--frame-h) * 0.81414 + var(--row-gap) - var(--joint-tuck)) + var(--hud-plate-drift, 0px));
     width: 19.29%;
     height: calc(var(--frame-h) * 0.07236);
     gap: clamp(1px, calc(var(--m-w) * 0.003), 2px);

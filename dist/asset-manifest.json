@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-14T01:37:07.230Z",
+  "generatedAt": "2026-11-14T02:09:07.298Z",
   "files": {
     "index.html": 21420,
     "src/assets/AUDIO-WIN-NEW-stadium-applause.MP3": 28541,
@@ -28,18 +28,19 @@
     "src/assets/slot/s9.webp": 45080,
     "src/assets/win_celebracion_still.webp": 100542,
     "src/assets/win_celebracion.webp": 289220,
-    "src/css/style.min.css": 156282,
+    "src/css/style.min.css": 156311,
     "src/css/theme.min.css": 10429,
     "ui/audio/sfx.js": 14670,
     "ui/components/GameControls.js": 3846,
     "ui/config/gameConfig.js": 3374,
     "ui/controllers/GameController.js": 20811,
     "ui/lib/format.js": 6192,
+    "ui/lib/hudPlate.js": 5164,
     "ui/lib/perf.js": 5073,
     "ui/lib/reelMath.js": 6483,
     "ui/lib/timing.js": 764,
     "ui/lib/winLevel.js": 802,
-    "ui/main.js": 3755,
+    "ui/main.js": 3995,
     "ui/renderers/fx.js": 10676,
     "ui/renderers/GameView.js": 72429,
     "ui/renderers/reels.js": 19916,
@@ -47,5 +48,5 @@
     "ui/services/ApiClient.js": 7915,
     "ui/services/SessionManager.js": 7685
   },
-  "totalBytes": 3678719
+  "totalBytes": 3684152
 }
