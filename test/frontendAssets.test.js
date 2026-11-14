@@ -1805,8 +1805,17 @@ test('en movil la junta marco-consola va a tope, sin franja de fondo', () => {
   // (18,59 % del alto); la caja mide lo mismo que el aro (7,24 %).
   assert.match(
     css,
-    /top:\s*calc\(-1 \* \(var\(--frame-h\) \* 0\.81414 \+ var\(--row-gap\) - var\(--joint-tuck\)\)\);/,
+    /top:\s*calc\(-1 \* \(var\(--frame-h\) \* 0\.81414 \+ var\(--row-gap\) - var\(--joint-tuck\)\) \+ var\(--hud-plate-drift, 0px\)\);/,
     'El saldo sigue clavado en la primera placa del HUD'
+  );
+  // La cuenta de arriba solo vale mientras la fila del marco conserve su alto:
+  // cuando el viewport la comprime, la consola sube y el saldo tiene que
+  // descontarlo. `ui/lib/hudPlate.js` mide el desfase real y lo publica en este
+  // token; sin el, el rotulo se sale por arriba de la capsula (18 px a 498x855).
+  assert.match(
+    css,
+    /--hud-plate-drift/,
+    'El top del saldo suma el desfase medido contra la franja del HUD'
   );
   assert.match(
     css,
